@@ -1,0 +1,222 @@
+{
+  "$defs": {
+    "AllianceConfidence": {
+      "description": "Confidence of each external bloc in the nation, 0..1.",
+      "properties": {
+        "western_bloc": {
+          "description": "Western bloc confidence, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Western Bloc",
+          "type": "number"
+        },
+        "eastern_bloc": {
+          "description": "Eastern bloc confidence, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Eastern Bloc",
+          "type": "number"
+        }
+      },
+      "required": [
+        "western_bloc",
+        "eastern_bloc"
+      ],
+      "title": "AllianceConfidence",
+      "type": "object"
+    },
+    "InstitutionalTrust": {
+      "description": "Public trust in each institution, 0..1.",
+      "properties": {
+        "military": {
+          "description": "Trust in the military, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Military",
+          "type": "number"
+        },
+        "judiciary": {
+          "description": "Trust in the judiciary, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Judiciary",
+          "type": "number"
+        },
+        "media": {
+          "description": "Trust in the media, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Media",
+          "type": "number"
+        },
+        "central_bank": {
+          "description": "Trust in the central bank, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Central Bank",
+          "type": "number"
+        }
+      },
+      "required": [
+        "military",
+        "judiciary",
+        "media",
+        "central_bank"
+      ],
+      "title": "InstitutionalTrust",
+      "type": "object"
+    },
+    "MacroIndicators": {
+      "description": "The scalar national indicators updated each tick by the rules engine.",
+      "properties": {
+        "inflation_rate": {
+          "description": "Annualised inflation rate, e.g. 0.041.",
+          "title": "Inflation Rate",
+          "type": "number"
+        },
+        "unemployment_rate": {
+          "description": "Unemployment rate, fraction of labour force.",
+          "title": "Unemployment Rate",
+          "type": "number"
+        },
+        "gdp_growth_qoq": {
+          "description": "Quarter-on-quarter GDP growth, signed fraction.",
+          "title": "Gdp Growth Qoq",
+          "type": "number"
+        },
+        "shipping_throughput_pct_of_baseline": {
+          "description": "Strait shipping throughput as a fraction of pre-crisis baseline.",
+          "minimum": 0,
+          "title": "Shipping Throughput Pct Of Baseline",
+          "type": "number"
+        },
+        "government_approval": {
+          "description": "Overall government approval, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Government Approval",
+          "type": "number"
+        },
+        "institutional_trust": {
+          "$ref": "#/$defs/InstitutionalTrust",
+          "description": "Per-institution public trust."
+        },
+        "military_readiness": {
+          "description": "Aggregate military readiness, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Military Readiness",
+          "type": "number"
+        },
+        "alliance_confidence": {
+          "$ref": "#/$defs/AllianceConfidence",
+          "description": "Per-bloc external confidence."
+        },
+        "social_stability_index": {
+          "description": "Composite social stability, 0..1 (higher = calmer).",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Social Stability Index",
+          "type": "number"
+        },
+        "foreign_direct_investment_flow": {
+          "description": "Net FDI flow in millions USD (can be negative).",
+          "title": "Foreign Direct Investment Flow",
+          "type": "number"
+        },
+        "fuel_reserve_days": {
+          "description": "Days of national fuel reserve remaining at current burn.",
+          "minimum": 0,
+          "title": "Fuel Reserve Days",
+          "type": "number"
+        },
+        "public_finances": {
+          "$ref": "#/$defs/PublicFinances",
+          "description": "Fiscal position block."
+        }
+      },
+      "required": [
+        "inflation_rate",
+        "unemployment_rate",
+        "gdp_growth_qoq",
+        "shipping_throughput_pct_of_baseline",
+        "government_approval",
+        "institutional_trust",
+        "military_readiness",
+        "alliance_confidence",
+        "social_stability_index",
+        "foreign_direct_investment_flow",
+        "fuel_reserve_days",
+        "public_finances"
+      ],
+      "title": "MacroIndicators",
+      "type": "object"
+    },
+    "PublicFinances": {
+      "description": "Fiscal position of the state.",
+      "properties": {
+        "treasury_reserve_usd_m": {
+          "description": "Treasury cash reserve in millions USD.",
+          "title": "Treasury Reserve Usd M",
+          "type": "number"
+        },
+        "deficit_pct_gdp": {
+          "description": "Budget deficit as a fraction of GDP.",
+          "title": "Deficit Pct Gdp",
+          "type": "number"
+        },
+        "debt_service_pct_revenue": {
+          "description": "Debt service cost as a fraction of government revenue.",
+          "title": "Debt Service Pct Revenue",
+          "type": "number"
+        }
+      },
+      "required": [
+        "treasury_reserve_usd_m",
+        "deficit_pct_gdp",
+        "debt_service_pct_revenue"
+      ],
+      "title": "PublicFinances",
+      "type": "object"
+    }
+  },
+  "description": "Top-level MACRO state object, snapshotted immutably each tick.\n\nThe `seed` and `scenario_id` pin reproducibility: same seed + scenario + decisions\nproduce an identical sequence of `MacroState` values.",
+  "properties": {
+    "tick": {
+      "description": "Simulation tick index.",
+      "minimum": 0,
+      "title": "Tick",
+      "type": "integer"
+    },
+    "scenario_id": {
+      "description": "Identifier of the scenario being run.",
+      "title": "Scenario Id",
+      "type": "string"
+    },
+    "seed": {
+      "description": "Deterministic RNG seed for the run.",
+      "title": "Seed",
+      "type": "integer"
+    },
+    "indicators": {
+      "$ref": "#/$defs/MacroIndicators",
+      "description": "Scalar national indicators."
+    },
+    "derivation": {
+      "default": "rules_engine_v1",
+      "description": "Provenance string describing how this state was derived.",
+      "title": "Derivation",
+      "type": "string"
+    }
+  },
+  "required": [
+    "tick",
+    "scenario_id",
+    "seed",
+    "indicators"
+  ],
+  "title": "MacroState",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/macro_state.schema.json"
+}

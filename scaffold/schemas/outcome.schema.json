@@ -1,0 +1,63 @@
+{
+  "description": "The resolved result of a decision, with an explanation trace for the 'why' system.",
+  "properties": {
+    "outcome_id": {
+      "description": "Stable unique identifier for the outcome.",
+      "title": "Outcome Id",
+      "type": "string"
+    },
+    "decision_id": {
+      "description": "Id of the decision/intervention resolved.",
+      "title": "Decision Id",
+      "type": "string"
+    },
+    "macro_deltas": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Changes applied to macro indicators.",
+      "title": "Macro Deltas",
+      "type": "object"
+    },
+    "meso_deltas": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Changes applied to cohort/meso values.",
+      "title": "Meso Deltas",
+      "type": "object"
+    },
+    "micro_reactions": {
+      "description": "Micro-agent reactions triggered.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Micro Reactions",
+      "type": "array"
+    },
+    "explanation_trace": {
+      "description": "Ordered causal steps (data, not LLM prose).",
+      "items": {
+        "type": "string"
+      },
+      "title": "Explanation Trace",
+      "type": "array"
+    },
+    "confidence": {
+      "default": 1.0,
+      "description": "Engine confidence in the outcome, 0..1.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "outcome_id",
+    "decision_id"
+  ],
+  "title": "Outcome",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/outcome.schema.json"
+}

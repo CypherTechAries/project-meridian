@@ -1,0 +1,85 @@
+{
+  "$defs": {
+    "EventVisibility": {
+      "description": "Who can observe an event.",
+      "enum": [
+        "public",
+        "classified",
+        "leaked"
+      ],
+      "title": "EventVisibility",
+      "type": "string"
+    }
+  },
+  "description": "A recorded occurrence. `causal_parents` preserves the chain for explainability.",
+  "properties": {
+    "event_id": {
+      "description": "Stable unique identifier for the event.",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "tick": {
+      "description": "Tick at which the event occurred.",
+      "minimum": 0,
+      "title": "Tick",
+      "type": "integer"
+    },
+    "type": {
+      "description": "Event type tag.",
+      "title": "Type",
+      "type": "string"
+    },
+    "actors_involved": {
+      "description": "IDs of actors involved.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Actors Involved",
+      "type": "array"
+    },
+    "location": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Location label, if any.",
+      "title": "Location"
+    },
+    "visibility": {
+      "$ref": "#/$defs/EventVisibility",
+      "default": "public",
+      "description": "Observability of the event."
+    },
+    "causal_parents": {
+      "description": "Event IDs that caused this event.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Causal Parents",
+      "type": "array"
+    },
+    "effects": {
+      "description": "Structured effect records applied by the engine.",
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Effects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "event_id",
+    "tick",
+    "type"
+  ],
+  "title": "Event",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/event.schema.json"
+}

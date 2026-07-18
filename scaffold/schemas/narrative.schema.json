@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "TruthStatus": {
+      "description": "Ground-truth status of a narrative claim.",
+      "enum": [
+        "true",
+        "false",
+        "unverified"
+      ],
+      "title": "TruthStatus",
+      "type": "string"
+    }
+  },
+  "description": "A claim spreading through the information environment.",
+  "properties": {
+    "narrative_id": {
+      "description": "Stable unique identifier for the narrative.",
+      "title": "Narrative Id",
+      "type": "string"
+    },
+    "claim_text": {
+      "description": "Human-readable claim.",
+      "title": "Claim Text",
+      "type": "string"
+    },
+    "originating_campaign_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Campaign that seeded this narrative, if any.",
+      "title": "Originating Campaign Id"
+    },
+    "truth_status": {
+      "$ref": "#/$defs/TruthStatus",
+      "default": "unverified",
+      "description": "Ground-truth status of the claim."
+    },
+    "adoption_by_cohort": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Per-cohort adoption fraction, 0..1.",
+      "title": "Adoption By Cohort",
+      "type": "object"
+    },
+    "resistance_by_cohort": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Per-cohort resistance fraction, 0..1.",
+      "title": "Resistance By Cohort",
+      "type": "object"
+    }
+  },
+  "required": [
+    "narrative_id",
+    "claim_text"
+  ],
+  "title": "Narrative",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/narrative.schema.json"
+}

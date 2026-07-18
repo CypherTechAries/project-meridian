@@ -1,0 +1,286 @@
+{
+  "$defs": {
+    "CohortBeliefs": {
+      "description": "Belief levels for a cohort, each 0..1. Updated by the diffusion model, not the LLM.",
+      "properties": {
+        "government_competence": {
+          "description": "Belief in government competence.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Government Competence",
+          "type": "number"
+        },
+        "foreign_interference_probability": {
+          "description": "Believed probability of foreign interference.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Foreign Interference Probability",
+          "type": "number"
+        },
+        "trust_in_military": {
+          "description": "Trust in the military.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Trust In Military",
+          "type": "number"
+        },
+        "support_for_western_alignment": {
+          "description": "Support for aligning with the Western bloc.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Support For Western Alignment",
+          "type": "number"
+        },
+        "support_for_eastern_alignment": {
+          "default": 0.0,
+          "description": "Support for aligning with the Eastern bloc.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Support For Eastern Alignment",
+          "type": "number"
+        }
+      },
+      "required": [
+        "government_competence",
+        "foreign_interference_probability",
+        "trust_in_military",
+        "support_for_western_alignment"
+      ],
+      "title": "CohortBeliefs",
+      "type": "object"
+    },
+    "Demographics": {
+      "description": "Coarse demographic profile of a cohort.",
+      "properties": {
+        "median_age": {
+          "description": "Median age of the cohort in years.",
+          "title": "Median Age",
+          "type": "integer"
+        },
+        "urban_rural": {
+          "description": "Dominant settlement type, e.g. 'urban' or 'rural'.",
+          "title": "Urban Rural",
+          "type": "string"
+        },
+        "primary_language": {
+          "description": "Primary language of the cohort.",
+          "title": "Primary Language",
+          "type": "string"
+        },
+        "religion_majority": {
+          "description": "Majority religious identity label.",
+          "title": "Religion Majority",
+          "type": "string"
+        }
+      },
+      "required": [
+        "median_age",
+        "urban_rural",
+        "primary_language",
+        "religion_majority"
+      ],
+      "title": "Demographics",
+      "type": "object"
+    },
+    "EconomicProfile": {
+      "description": "Economic exposure of a cohort.",
+      "properties": {
+        "median_income_usd": {
+          "description": "Median annual income in USD.",
+          "title": "Median Income Usd",
+          "type": "number"
+        },
+        "employment_sector": {
+          "description": "Dominant employment sector.",
+          "title": "Employment Sector",
+          "type": "string"
+        },
+        "income_sensitivity_to_shipping_disruption": {
+          "description": "How strongly cohort income reacts to shipping disruption, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Income Sensitivity To Shipping Disruption",
+          "type": "number"
+        }
+      },
+      "required": [
+        "median_income_usd",
+        "employment_sector",
+        "income_sensitivity_to_shipping_disruption"
+      ],
+      "title": "EconomicProfile",
+      "type": "object"
+    },
+    "InfluenceSusceptibility": {
+      "description": "How persuadable the cohort is by each appeal type, 0..1. Feeds the diffusion model.",
+      "properties": {
+        "authority_appeal": {
+          "description": "Susceptibility to authority framing.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Authority Appeal",
+          "type": "number"
+        },
+        "identity_appeal": {
+          "description": "Susceptibility to identity framing.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Identity Appeal",
+          "type": "number"
+        },
+        "economic_appeal": {
+          "description": "Susceptibility to economic framing.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Economic Appeal",
+          "type": "number"
+        }
+      },
+      "required": [
+        "authority_appeal",
+        "identity_appeal",
+        "economic_appeal"
+      ],
+      "title": "InfluenceSusceptibility",
+      "type": "object"
+    },
+    "MediaExposure": {
+      "description": "Fraction of the cohort reached by each channel, 0..1 per channel.",
+      "properties": {
+        "state_tv": {
+          "default": 0.0,
+          "description": "Reach of state TV, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "State Tv",
+          "type": "number"
+        },
+        "local_radio": {
+          "default": 0.0,
+          "description": "Reach of local radio, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Local Radio",
+          "type": "number"
+        },
+        "social_video_short_form": {
+          "default": 0.0,
+          "description": "Reach of short-form social video, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Social Video Short Form",
+          "type": "number"
+        },
+        "messaging_apps": {
+          "default": 0.0,
+          "description": "Reach of messaging apps, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Messaging Apps",
+          "type": "number"
+        },
+        "foreign_language_channels": {
+          "default": 0.0,
+          "description": "Reach of foreign-language channels, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Foreign Language Channels",
+          "type": "number"
+        }
+      },
+      "title": "MediaExposure",
+      "type": "object"
+    },
+    "NetworkPosition": {
+      "description": "Cohort's position in the social graph.",
+      "properties": {
+        "internal_cohesion": {
+          "description": "Internal cohesion of the cohort, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Internal Cohesion",
+          "type": "number"
+        },
+        "bridges_to": {
+          "description": "IDs of cohorts/institutions this cohort bridges to.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Bridges To",
+          "type": "array"
+        }
+      },
+      "required": [
+        "internal_cohesion"
+      ],
+      "title": "NetworkPosition",
+      "type": "object"
+    }
+  },
+  "description": "MESO-tier representative agent. One record stands for `represents_population` citizens.",
+  "properties": {
+    "cohort_id": {
+      "description": "Stable unique identifier for the cohort.",
+      "title": "Cohort Id",
+      "type": "string"
+    },
+    "represents_population": {
+      "description": "Number of real citizens this single agent represents.",
+      "minimum": 0,
+      "title": "Represents Population",
+      "type": "integer"
+    },
+    "region": {
+      "description": "Region label the cohort is concentrated in.",
+      "title": "Region",
+      "type": "string"
+    },
+    "demographics": {
+      "$ref": "#/$defs/Demographics",
+      "description": "Demographic profile."
+    },
+    "economic_profile": {
+      "$ref": "#/$defs/EconomicProfile",
+      "description": "Economic exposure profile."
+    },
+    "media_exposure": {
+      "$ref": "#/$defs/MediaExposure",
+      "description": "Per-channel media reach."
+    },
+    "beliefs": {
+      "$ref": "#/$defs/CohortBeliefs",
+      "description": "Current belief levels (mutated by diffusion)."
+    },
+    "grievances": {
+      "description": "Active grievance tags driving susceptibility.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Grievances",
+      "type": "array"
+    },
+    "influence_susceptibility": {
+      "$ref": "#/$defs/InfluenceSusceptibility",
+      "description": "Per-appeal persuadability."
+    },
+    "network_position": {
+      "$ref": "#/$defs/NetworkPosition",
+      "description": "Position in the social graph."
+    }
+  },
+  "required": [
+    "cohort_id",
+    "represents_population",
+    "region",
+    "demographics",
+    "economic_profile",
+    "media_exposure",
+    "beliefs",
+    "influence_susceptibility",
+    "network_position"
+  ],
+  "title": "Cohort",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/cohort.schema.json"
+}

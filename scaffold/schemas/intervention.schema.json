@@ -1,0 +1,78 @@
+{
+  "description": "A player action, parsed by the LLM but validated and priced by the engine.",
+  "properties": {
+    "action_id": {
+      "description": "Stable unique identifier for the action.",
+      "title": "Action Id",
+      "type": "string"
+    },
+    "actor_role": {
+      "description": "Role initiating the action.",
+      "title": "Actor Role",
+      "type": "string"
+    },
+    "action_type": {
+      "description": "Type of action.",
+      "title": "Action Type",
+      "type": "string"
+    },
+    "target": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Target entity id, if any.",
+      "title": "Target"
+    },
+    "resource_cost": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Resource costs keyed by resource name.",
+      "title": "Resource Cost",
+      "type": "object"
+    },
+    "legal_check": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Legal-check outcome set by the engine (null until validated).",
+      "title": "Legal Check"
+    },
+    "timeline_days": {
+      "default": 0,
+      "description": "Days until the action takes effect.",
+      "minimum": 0,
+      "title": "Timeline Days",
+      "type": "integer"
+    },
+    "second_order_hooks": {
+      "description": "Tags of downstream consequences to schedule.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Second Order Hooks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "action_id",
+    "actor_role",
+    "action_type"
+  ],
+  "title": "Intervention",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/intervention.schema.json"
+}
