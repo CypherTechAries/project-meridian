@@ -1,0 +1,47 @@
+[
+  {
+    "id": "no-budget-or-treasury-enforcement",
+    "title": "No budget, treasury, or resource check anywhere — money never comes from anywhere",
+    "severity": "major",
+    "kind": "design-defect",
+    "evidence": "`PublicFinances.treasury_reserve_usd_m` = 210 (kestral-strait.json:30, macro_schema.py:31-33) and per-agent `budget_control_usd_m` (agent_schema.py:136; e.g. defence 340 at kestral-strait.json:287, head-of-government 0 at :259) are both parsed and never read. `Intervention.resource_cost` (agent_schema.py:239-241) and `ActionProposal` have no cost path into the engine — grep for `resource_cost` in backend/ returns only the schema line. Every entry in `ACTION_EFFECTS` (engine.py:35-43) touches only `military_readiness`, `government_approval` and `social_stability_index`; no economic or fiscal key appears. `apply_deltas` (macro_state.py:23-47) only handles top-level scalars and explicitly skips nested blocks (macro_state.py:26-28), so `public_finances` is unreachable by any delta even if one were authored.",
+    "why_it_matters": "Directly contradicts CHARTER.md:19 \"Money has to come from somewhere\" and the charter's \"Spend or reserve resources → Resource\" primitive (CHARTER.md:94). Procurement acceleration is free, forever. Treasury reserve is a decorative number that can never change, which also means the finance minister's stated objective `preserve_treasury_runway` (kestral-strait.json:301) is unfalsifiable.",
+    "remedy": "Extend `apply_deltas` to reach nested blocks (or add an explicit finances path in the engine), give `ACTION_EFFECTS` entries a cost component, and check affordability against treasury/agent budget in the validation gate before applying."
+  },
+  {
+    "id": "block-unfunded-spending-blocks-nothing",
+    "title": "Conflicting decisions do not interact: 'block_unfunded_spending' blocks nothing",
+    "severity": "major",
+    "kind": "design-defect",
+    "evidence": "engine.py:37 `\"block_unfunded_spending\": {\"government_approval\": -0.003}` — the action's only effect is an approval penalty on the actor's own side. The tick loop (engine.py:159-173) iterates institutions in list order and applies each proposal's deltas independently; there is no cross-proposal arbitration, no ordering semantics, no veto resolution. In kestral-strait.json the finance minister's objective is literally `\"block_unfunded_defence_spending\"` (:305) and the defence minister's is `\"secure_new_patrol_vessels\"` (:270); llm_gateway.py:44-45 makes both fire every tick. Both apply in full. The head-of-government's constraint `\"coalition_partner_veto\"` (:263) is likewise never evaluated.",
+    "why_it_matters": "The demo scenario is built around an institutional conflict the engine cannot represent. CHARTER.md:21 \"Officials have competing incentives\" and the \"Trigger an approval process → Procedural\" primitive (CHARTER.md:99) have no implementation. Commitment 4 asks \"which actors reacted\" — with no interaction model, the answer is always \"none reacted to each other\".",
+    "remedy": "Introduce a per-tick proposal arbitration stage: collect all proposals, resolve vetoes/blocks/approval prerequisites against each other and against agent authority, then apply survivors — logging both the applied and the blocked with the rule that blocked them."
+  },
+  {
+    "id": "scenario-legal-constraints-never-read",
+    "title": "Every legal/procedural constraint in kestral-strait.json is dead data — the engine never reads the field",
+    "severity": "critical",
+    "kind": "overclaim",
+    "evidence": "The scenario defines constraints on five of six agents: kestral-strait.json:263 `[\"coalition_partner_veto\", \"emergency_powers_90day_renewal\"]`; :291-295 `[\"procurement_law_18mo_minimum\", \"budget_ceiling_approval_required\", \"no_direct_foreign_arms_deal_without_cabinet_vote\"]`; :317 `[\"parliamentary_budget_approval\"]`; :342 `[\"treaty_non_binding_cooperation_only\"]`; :364 `[\"no_independent_cyber_attribution\", \"reliant_on_western_sigint_sharing\"]`. `MicroAgent.constraints` exists (agent_schema.py:181-183, \"Hard legal/procedural constraints on the agent\") and is parsed at engine.py:107 `spec = MicroAgent(**a)`. Grep for `constraint` across backend/app returns exactly two hits, both the schema field definition — zero reads. `win_conditions` (kestral-strait.json:419-436, incl. `max_emergency_powers_renewals: 1`) likewise: grep returns zero hits in backend/.",
+    "why_it_matters": "The scenario file advertises a legal system that does not exist. The word \"Hard\" in the schema description is false — these are inert strings. CHARTER.md:16 \"Governments have legal authority, but not unlimited authority\" and CHARTER.md:114 \"it never decides whether the composition is legal\" are both unbacked, because nothing in the codebase decides legality at all. Win/loss conditions are also unevaluated, so a run has no terminal semantics.",
+    "remedy": "Either implement a constraint evaluator that maps constraint tags to predicates over (proposal, agent, macro_state, tick), or mark `constraints` and `win_conditions` explicitly as not-yet-consumed scaffolding in the schema descriptions and README so they are not read as implemented behaviour."
+  },
+  {
+    "id": "procurement-constraint-actively-contradicted",
+    "title": "The engine's own effects table violates the demo scenario's headline procurement law on tick 1",
+    "severity": "critical",
+    "kind": "design-defect",
+    "evidence": "kestral-strait.json:292 constrains min-defence-oduya with `\"procurement_law_18mo_minimum\"`. llm_gateway.py:44 makes `minister_of_defence` propose `request_procurement_acceleration` every single tick. engine.py:36 prices it `{\"military_readiness\": 0.01, \"government_approval\": -0.002}` and engine.py:164 applies it immediately. `Intervention.timeline_days` (agent_schema.py:245-247, \"Days until the action takes effect\") is never read — grep returns only the schema definition. Starting `military_readiness` is 0.39 (kestral-strait.json:21); with +0.01/tick and the 0..1 clamp at macro_state.py:43-44, readiness ratchets monotonically to the ceiling by tick 61, with no cooldown, no budget check and no delay.",
+    "why_it_matters": "This is the single sharpest contradiction in the repo: the scenario says procurement takes 18 months minimum, and the engine grants readiness instantly, every tick, forever. CHARTER.md:20 \"Procurement takes time\" and CHARTER.md:19 \"Money has to come from somewhere\" are both directly falsified by the demo path that runs by default. Note this is not merely 'unimplemented' — `test_macro_state_actually_changes` (test_engine.py:52-58) asserts on exactly this ratchet, so the defect is load-bearing for a passing test.",
+    "remedy": "Gate `request_procurement_acceleration` on a scheduled-effect queue honouring `timeline_days`, and debit `resource_cost` from treasury/agent budget. At minimum, add a cooldown so a single action cannot be re-applied every tick."
+  },
+  {
+    "id": "player-intervention-path-is-a-no-op",
+    "title": "The player-intervention endpoint accepts any action and applies nothing — and its module docstring claims otherwise",
+    "severity": "major",
+    "kind": "overclaim",
+    "evidence": "`POST /api/simulation/runs/{run_id}/decision` exists (routes_simulation.py:80-101) and accepts an arbitrary `Intervention`. Its body only appends a log dict with `\"effects\": []` (routes_simulation.py:91-100) and returns `{\"accepted\": True}` (:101) — unconditionally true, for any actor_role and any action_type, including ones absent from `ACTION_EFFECTS`. The module docstring at routes_simulation.py:4-5 states \"Player decisions are parsed into `Intervention` objects — the engine validates and prices them\". The function docstring at :82 says validation \"happens on tick\" — it does not: the tick loop (engine.py:147-180) reads only `inst.last_proposal` from institutional agents and never inspects `event_log` or any pending-intervention queue. The `Intervention` type is never imported by engine.py.",
+    "why_it_matters": "So a player-intervention path exists in name only; there is no route by which a human decision can ever reach `_validate_and_price` or change a number. `accepted: True` for an unrecognised or illegal action is an affirmatively misleading API response. This also undercuts commitment 1's \"same decisions\" clause — decisions currently cannot affect numbers at all, so the reproducibility test is vacuous with respect to decisions.",
+    "remedy": "Queue submitted interventions on the model and drain them through the same gate as agent proposals during `step()`, returning a typed accepted/rejected verdict instead of a hardcoded True. Meanwhile correct routes_simulation.py:4-5 — the function docstring's honesty (:83-85) should be promoted to the module header, not contradicted by it."
+  }
+]

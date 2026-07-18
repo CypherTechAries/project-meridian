@@ -1,0 +1,216 @@
+{
+  "$defs": {
+    "AgentMemory": {
+      "description": "Bounded memory of recent events with decay.",
+      "properties": {
+        "recent_events": {
+          "description": "Event IDs the agent currently remembers.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Recent Events",
+          "type": "array"
+        },
+        "decay_rate": {
+          "default": 0.08,
+          "description": "Per-tick memory decay rate, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Decay Rate",
+          "type": "number"
+        }
+      },
+      "title": "AgentMemory",
+      "type": "object"
+    },
+    "AgentResources": {
+      "description": "Resources an agent controls.",
+      "properties": {
+        "budget_control_usd_m": {
+          "description": "Budget the agent controls, millions USD.",
+          "title": "Budget Control Usd M",
+          "type": "number"
+        },
+        "political_capital": {
+          "description": "Spendable political capital, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Political Capital",
+          "type": "number"
+        },
+        "personal_network_reach": {
+          "description": "Reach of the agent's personal network, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Personal Network Reach",
+          "type": "number"
+        }
+      },
+      "required": [
+        "budget_control_usd_m",
+        "political_capital",
+        "personal_network_reach"
+      ],
+      "title": "AgentResources",
+      "type": "object"
+    },
+    "AgentTraits": {
+      "description": "Stable behavioural traits influencing action selection, each 0..1.",
+      "properties": {
+        "risk_tolerance": {
+          "description": "Willingness to take risky actions.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Risk Tolerance",
+          "type": "number"
+        },
+        "status_seeking": {
+          "description": "Drive for status/visibility.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Status Seeking",
+          "type": "number"
+        },
+        "institutional_trust": {
+          "description": "Trust in institutions.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Institutional Trust",
+          "type": "number"
+        },
+        "corruption_susceptibility": {
+          "description": "Susceptibility to corrupt inducements.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Corruption Susceptibility",
+          "type": "number"
+        }
+      },
+      "required": [
+        "risk_tolerance",
+        "status_seeking",
+        "institutional_trust",
+        "corruption_susceptibility"
+      ],
+      "title": "AgentTraits",
+      "type": "object"
+    },
+    "Objective": {
+      "description": "A weighted goal an agent pursues.",
+      "properties": {
+        "goal": {
+          "description": "Machine-readable goal tag.",
+          "title": "Goal",
+          "type": "string"
+        },
+        "priority": {
+          "description": "Relative priority of the goal, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Priority",
+          "type": "number"
+        }
+      },
+      "required": [
+        "goal",
+        "priority"
+      ],
+      "title": "Objective",
+      "type": "object"
+    }
+  },
+  "description": "MICRO-tier individually simulated institutional agent (minister, commander, \u2026).\n\nThe LLM may *reason* about which action this agent should take, but the engine decides\nwhether the action is legal and computes its numeric effect.",
+  "properties": {
+    "agent_id": {
+      "description": "Stable unique identifier for the agent.",
+      "title": "Agent Id",
+      "type": "string"
+    },
+    "role": {
+      "description": "Institutional role, e.g. 'minister_of_defence'.",
+      "title": "Role",
+      "type": "string"
+    },
+    "agent_class": {
+      "default": "micro_institutional",
+      "description": "Agent class tag for the engine.",
+      "title": "Agent Class",
+      "type": "string"
+    },
+    "biography_ref": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Path/ref to the agent's biography document.",
+      "title": "Biography Ref"
+    },
+    "objectives": {
+      "description": "Weighted goals.",
+      "items": {
+        "$ref": "#/$defs/Objective"
+      },
+      "title": "Objectives",
+      "type": "array"
+    },
+    "beliefs": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Free-form belief map, each value 0..1.",
+      "title": "Beliefs",
+      "type": "object"
+    },
+    "traits": {
+      "$ref": "#/$defs/AgentTraits",
+      "description": "Behavioural traits."
+    },
+    "resources": {
+      "$ref": "#/$defs/AgentResources",
+      "description": "Controlled resources."
+    },
+    "relationships": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "description": "Valence toward other agents/roles, -1..1.",
+      "title": "Relationships",
+      "type": "object"
+    },
+    "information_access": {
+      "description": "Information channels the agent can see.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Information Access",
+      "type": "array"
+    },
+    "constraints": {
+      "description": "Hard legal/procedural constraints on the agent.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Constraints",
+      "type": "array"
+    },
+    "memory": {
+      "$ref": "#/$defs/AgentMemory",
+      "description": "Bounded event memory."
+    }
+  },
+  "required": [
+    "agent_id",
+    "role",
+    "traits",
+    "resources"
+  ],
+  "title": "MicroAgent",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/micro_agent.schema.json"
+}

@@ -1,0 +1,54 @@
+{
+  "description": "An edge in the social/institutional graph.",
+  "properties": {
+    "agent_a": {
+      "description": "Source agent/cohort id.",
+      "title": "Agent A",
+      "type": "string"
+    },
+    "agent_b": {
+      "description": "Target agent/cohort id.",
+      "title": "Agent B",
+      "type": "string"
+    },
+    "valence": {
+      "description": "Affective valence, -1..1.",
+      "maximum": 1,
+      "minimum": -1,
+      "title": "Valence",
+      "type": "number"
+    },
+    "trust": {
+      "description": "Trust level, 0..1.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Trust",
+      "type": "number"
+    },
+    "dependency": {
+      "description": "Dependency of a on b, 0..1.",
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Dependency",
+      "type": "number"
+    },
+    "last_interaction_tick": {
+      "description": "Tick of the most recent interaction.",
+      "minimum": 0,
+      "title": "Last Interaction Tick",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "agent_a",
+    "agent_b",
+    "valence",
+    "trust",
+    "dependency",
+    "last_interaction_tick"
+  ],
+  "title": "Relationship",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/relationship.schema.json"
+}

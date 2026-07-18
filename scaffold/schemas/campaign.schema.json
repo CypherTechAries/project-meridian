@@ -1,0 +1,235 @@
+{
+  "$defs": {
+    "AmplificationNetwork": {
+      "description": "Amplification assets behind a campaign.",
+      "properties": {
+        "coordinated_accounts": {
+          "description": "Number of coordinated accounts.",
+          "minimum": 0,
+          "title": "Coordinated Accounts",
+          "type": "integer"
+        },
+        "sympathetic_commentators": {
+          "description": "Number of organic sympathetic commentators.",
+          "minimum": 0,
+          "title": "Sympathetic Commentators",
+          "type": "integer"
+        },
+        "estimated_reach": {
+          "description": "Estimated raw reach (people).",
+          "minimum": 0,
+          "title": "Estimated Reach",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "coordinated_accounts",
+        "sympathetic_commentators",
+        "estimated_reach"
+      ],
+      "title": "AmplificationNetwork",
+      "type": "object"
+    },
+    "CampaignMessenger": {
+      "description": "The apparent source used to carry the campaign.",
+      "properties": {
+        "agent_id": {
+          "description": "Messenger agent id.",
+          "title": "Agent Id",
+          "type": "string"
+        },
+        "perceived_independence": {
+          "description": "How independent the messenger appears, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Perceived Independence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "agent_id",
+        "perceived_independence"
+      ],
+      "title": "CampaignMessenger",
+      "type": "object"
+    },
+    "CampaignMetrics": {
+      "description": "Live campaign metrics, all computed by the diffusion model \u2014 never by the LLM.",
+      "properties": {
+        "exposure": {
+          "default": 0.0,
+          "description": "Fraction of targets exposed, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Exposure",
+          "type": "number"
+        },
+        "belief_adoption": {
+          "default": 0.0,
+          "description": "Fraction adopting the belief, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Belief Adoption",
+          "type": "number"
+        },
+        "resistance": {
+          "default": 0.0,
+          "description": "Fraction resisting, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Resistance",
+          "type": "number"
+        },
+        "detection_probability": {
+          "default": 0.0,
+          "description": "Probability the campaign is detected, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Detection Probability",
+          "type": "number"
+        },
+        "attribution_probability": {
+          "default": 0.0,
+          "description": "Probability the campaign is correctly attributed, 0..1.",
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Attribution Probability",
+          "type": "number"
+        }
+      },
+      "title": "CampaignMetrics",
+      "type": "object"
+    },
+    "CampaignNarrative": {
+      "description": "The core claim of an information campaign.",
+      "properties": {
+        "claim": {
+          "description": "The claim the campaign pushes.",
+          "title": "Claim",
+          "type": "string"
+        },
+        "truth_status": {
+          "$ref": "#/$defs/TruthStatus",
+          "description": "Ground-truth status of the claim."
+        }
+      },
+      "required": [
+        "claim",
+        "truth_status"
+      ],
+      "title": "CampaignNarrative",
+      "type": "object"
+    },
+    "TruthStatus": {
+      "description": "Ground-truth status of a narrative claim.",
+      "enum": [
+        "true",
+        "false",
+        "unverified"
+      ],
+      "title": "TruthStatus",
+      "type": "string"
+    }
+  },
+  "description": "An information operation. The LLM may compose content; the engine computes spread.",
+  "properties": {
+    "campaign_id": {
+      "description": "Stable unique identifier for the campaign.",
+      "title": "Campaign Id",
+      "type": "string"
+    },
+    "sponsor": {
+      "description": "Sponsoring actor id.",
+      "title": "Sponsor",
+      "type": "string"
+    },
+    "strategic_objective": {
+      "description": "High-level objective tag.",
+      "title": "Strategic Objective",
+      "type": "string"
+    },
+    "target_cohorts": {
+      "description": "Cohort ids targeted.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Target Cohorts",
+      "type": "array"
+    },
+    "existing_grievance": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Pre-existing grievance the campaign exploits.",
+      "title": "Existing Grievance"
+    },
+    "narrative": {
+      "$ref": "#/$defs/CampaignNarrative",
+      "description": "Core claim."
+    },
+    "messenger": {
+      "$ref": "#/$defs/CampaignMessenger",
+      "description": "Apparent source."
+    },
+    "channels": {
+      "description": "Channels used.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Channels",
+      "type": "array"
+    },
+    "amplification_network": {
+      "$ref": "#/$defs/AmplificationNetwork",
+      "description": "Amplification assets."
+    },
+    "trigger_event_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Event that triggers/times the campaign.",
+      "title": "Trigger Event Id"
+    },
+    "desired_behaviour": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Behaviour the campaign aims to produce.",
+      "title": "Desired Behaviour"
+    },
+    "metrics": {
+      "$ref": "#/$defs/CampaignMetrics",
+      "description": "Live campaign metrics (engine-computed)."
+    }
+  },
+  "required": [
+    "campaign_id",
+    "sponsor",
+    "strategic_objective",
+    "narrative",
+    "messenger",
+    "amplification_network"
+  ],
+  "title": "Campaign",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://meridian.example/schemas/campaign.schema.json"
+}

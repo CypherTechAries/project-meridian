@@ -1,0 +1,437 @@
+{
+  "scenario_id": "kestral-strait",
+  "title": "Kestral Strait — Republic of Vantara",
+  "archetype": "small_island_strait_state",
+  "government_structure": "unitary_parliamentary_republic",
+  "default_seed": 88213,
+  "fiction_disclaimer": "Entirely fictional. No real nations, organisations, or individuals.",
+  "initial_macro_state": {
+    "indicators": {
+      "inflation_rate": 0.041,
+      "unemployment_rate": 0.072,
+      "gdp_growth_qoq": -0.006,
+      "shipping_throughput_pct_of_baseline": 0.61,
+      "government_approval": 0.44,
+      "institutional_trust": {
+        "military": 0.58,
+        "judiciary": 0.51,
+        "media": 0.33,
+        "central_bank": 0.62
+      },
+      "military_readiness": 0.39,
+      "alliance_confidence": {
+        "western_bloc": 0.55,
+        "eastern_bloc": 0.31
+      },
+      "social_stability_index": 0.47,
+      "foreign_direct_investment_flow": -12.4,
+      "fuel_reserve_days": 34,
+      "public_finances": {
+        "treasury_reserve_usd_m": 210,
+        "deficit_pct_gdp": 0.038,
+        "debt_service_pct_revenue": 0.19
+      }
+    }
+  },
+  "cohorts": [
+    {
+      "cohort_id": "urban-professional-vantaran",
+      "represents_population": 620000,
+      "region": "capital-metro",
+      "demographics": {
+        "median_age": 41,
+        "urban_rural": "urban",
+        "primary_language": "vantaran",
+        "religion_majority": "sunni-mixed"
+      },
+      "economic_profile": {
+        "median_income_usd": 18500,
+        "employment_sector": "services_finance_light_manufacturing",
+        "income_sensitivity_to_shipping_disruption": 0.42
+      },
+      "media_exposure": {
+        "state_tv": 0.31,
+        "local_radio": 0.28,
+        "social_video_short_form": 0.48,
+        "messaging_apps": 0.55,
+        "foreign_language_channels": 0.12
+      },
+      "beliefs": {
+        "government_competence": 0.52,
+        "foreign_interference_probability": 0.44,
+        "trust_in_military": 0.55,
+        "support_for_western_alignment": 0.61,
+        "support_for_eastern_alignment": 0.18
+      },
+      "grievances": [],
+      "influence_susceptibility": {
+        "authority_appeal": 0.45,
+        "identity_appeal": 0.38,
+        "economic_appeal": 0.52
+      },
+      "network_position": {
+        "internal_cohesion": 0.58,
+        "bridges_to": ["urban-nationalist-youth"]
+      }
+    },
+    {
+      "cohort_id": "coastal-creole-fishing",
+      "represents_population": 14200,
+      "region": "north-strait-coast",
+      "demographics": {
+        "median_age": 38,
+        "urban_rural": "rural",
+        "primary_language": "island-creole",
+        "religion_majority": "sunni-mixed"
+      },
+      "economic_profile": {
+        "median_income_usd": 4100,
+        "employment_sector": "fishing_shipping_logistics",
+        "income_sensitivity_to_shipping_disruption": 0.81
+      },
+      "media_exposure": {
+        "state_tv": 0.22,
+        "local_radio": 0.51,
+        "social_video_short_form": 0.61,
+        "messaging_apps": 0.44,
+        "foreign_language_channels": 0.05
+      },
+      "beliefs": {
+        "government_competence": 0.31,
+        "foreign_interference_probability": 0.57,
+        "trust_in_military": 0.61,
+        "support_for_western_alignment": 0.29,
+        "support_for_eastern_alignment": 0.24
+      },
+      "grievances": [
+        "income_loss_from_patrol_restrictions",
+        "perceived_neglect_by_capital_elite"
+      ],
+      "influence_susceptibility": {
+        "authority_appeal": 0.40,
+        "identity_appeal": 0.72,
+        "economic_appeal": 0.85
+      },
+      "network_position": {
+        "internal_cohesion": 0.74,
+        "bridges_to": ["military-veteran-families", "urban-nationalist-youth"]
+      }
+    },
+    {
+      "cohort_id": "inland-highland-minority",
+      "represents_population": 451000,
+      "region": "central-highlands",
+      "demographics": {
+        "median_age": 34,
+        "urban_rural": "rural",
+        "primary_language": "highland-vantaran",
+        "religion_majority": "highland-traditional"
+      },
+      "economic_profile": {
+        "median_income_usd": 5600,
+        "employment_sector": "agriculture_smallholding",
+        "income_sensitivity_to_shipping_disruption": 0.22
+      },
+      "media_exposure": {
+        "state_tv": 0.29,
+        "local_radio": 0.62,
+        "social_video_short_form": 0.34,
+        "messaging_apps": 0.30,
+        "foreign_language_channels": 0.03
+      },
+      "beliefs": {
+        "government_competence": 0.44,
+        "foreign_interference_probability": 0.41,
+        "trust_in_military": 0.48,
+        "support_for_western_alignment": 0.35,
+        "support_for_eastern_alignment": 0.31
+      },
+      "grievances": ["historic_neglect_by_capital"],
+      "influence_susceptibility": {
+        "authority_appeal": 0.55,
+        "identity_appeal": 0.60,
+        "economic_appeal": 0.58
+      },
+      "network_position": {
+        "internal_cohesion": 0.66,
+        "bridges_to": []
+      }
+    },
+    {
+      "cohort_id": "military-veteran-families",
+      "represents_population": 98000,
+      "region": "distributed",
+      "demographics": {
+        "median_age": 46,
+        "urban_rural": "mixed",
+        "primary_language": "vantaran",
+        "religion_majority": "sunni-mixed"
+      },
+      "economic_profile": {
+        "median_income_usd": 9800,
+        "employment_sector": "public_sector_defence",
+        "income_sensitivity_to_shipping_disruption": 0.31
+      },
+      "media_exposure": {
+        "state_tv": 0.44,
+        "local_radio": 0.40,
+        "social_video_short_form": 0.36,
+        "messaging_apps": 0.42,
+        "foreign_language_channels": 0.04
+      },
+      "beliefs": {
+        "government_competence": 0.58,
+        "foreign_interference_probability": 0.52,
+        "trust_in_military": 0.82,
+        "support_for_western_alignment": 0.47,
+        "support_for_eastern_alignment": 0.22
+      },
+      "grievances": ["equipment_underfunding"],
+      "influence_susceptibility": {
+        "authority_appeal": 0.68,
+        "identity_appeal": 0.55,
+        "economic_appeal": 0.50
+      },
+      "network_position": {
+        "internal_cohesion": 0.70,
+        "bridges_to": ["coastal-creole-fishing"]
+      }
+    },
+    {
+      "cohort_id": "urban-nationalist-youth",
+      "represents_population": 305000,
+      "region": "capital-metro",
+      "demographics": {
+        "median_age": 23,
+        "urban_rural": "urban",
+        "primary_language": "vantaran",
+        "religion_majority": "sunni-mixed"
+      },
+      "economic_profile": {
+        "median_income_usd": 6200,
+        "employment_sector": "gig_services_informal",
+        "income_sensitivity_to_shipping_disruption": 0.38
+      },
+      "media_exposure": {
+        "state_tv": 0.10,
+        "local_radio": 0.15,
+        "social_video_short_form": 0.88,
+        "messaging_apps": 0.71,
+        "foreign_language_channels": 0.18
+      },
+      "beliefs": {
+        "government_competence": 0.35,
+        "foreign_interference_probability": 0.63,
+        "trust_in_military": 0.44,
+        "support_for_western_alignment": 0.22,
+        "support_for_eastern_alignment": 0.40
+      },
+      "grievances": ["sovereignty_narrative_susceptible", "youth_unemployment"],
+      "influence_susceptibility": {
+        "authority_appeal": 0.30,
+        "identity_appeal": 0.86,
+        "economic_appeal": 0.62
+      },
+      "network_position": {
+        "internal_cohesion": 0.62,
+        "bridges_to": ["urban-professional-vantaran"]
+      }
+    }
+  ],
+  "institutional_agents": [
+    {
+      "agent_id": "head-of-government-varo",
+      "role": "head_of_government",
+      "objectives": [
+        { "goal": "maintain_coalition_stability", "priority": 0.95 },
+        { "goal": "restore_shipping_confidence", "priority": 0.8 },
+        { "goal": "avoid_alliance_overcommitment", "priority": 0.6 }
+      ],
+      "beliefs": { "coalition_fragility": 0.62, "threat_from_strait_militants": 0.6 },
+      "traits": {
+        "risk_tolerance": 0.45,
+        "status_seeking": 0.55,
+        "institutional_trust": 0.6,
+        "corruption_susceptibility": 0.15
+      },
+      "resources": {
+        "budget_control_usd_m": 0,
+        "political_capital": 0.7,
+        "personal_network_reach": 0.8
+      },
+      "information_access": ["full_cabinet_visibility", "coalition_stability_estimate"],
+      "constraints": ["coalition_partner_veto", "emergency_powers_90day_renewal"]
+    },
+    {
+      "agent_id": "min-defence-oduya",
+      "role": "minister_of_defence",
+      "biography_ref": "bios/oduya.md",
+      "objectives": [
+        { "goal": "secure_new_patrol_vessels", "priority": 0.9 },
+        { "goal": "preserve_domestic_arms_industry_jobs", "priority": 0.5 },
+        { "goal": "avoid_blame_for_shipping_losses", "priority": 0.8 }
+      ],
+      "beliefs": {
+        "threat_from_strait_militants": 0.71,
+        "reliability_of_western_ally": 0.44,
+        "reliability_of_eastern_partner": 0.39
+      },
+      "traits": {
+        "risk_tolerance": 0.55,
+        "status_seeking": 0.6,
+        "institutional_trust": 0.5,
+        "corruption_susceptibility": 0.2
+      },
+      "resources": {
+        "budget_control_usd_m": 340,
+        "political_capital": 0.6,
+        "personal_network_reach": 0.5
+      },
+      "information_access": ["cabinet_briefings", "military_intelligence_raw", "procurement_data"],
+      "constraints": [
+        "procurement_law_18mo_minimum",
+        "budget_ceiling_approval_required",
+        "no_direct_foreign_arms_deal_without_cabinet_vote"
+      ]
+    },
+    {
+      "agent_id": "min-finance-serel",
+      "role": "minister_of_finance",
+      "objectives": [
+        { "goal": "preserve_treasury_runway", "priority": 0.9 },
+        { "goal": "block_unfunded_defence_spending", "priority": 0.7 }
+      ],
+      "beliefs": { "fiscal_crisis_probability": 0.48 },
+      "traits": {
+        "risk_tolerance": 0.3,
+        "status_seeking": 0.4,
+        "institutional_trust": 0.65,
+        "corruption_susceptibility": 0.1
+      },
+      "resources": {
+        "budget_control_usd_m": 210,
+        "political_capital": 0.55,
+        "personal_network_reach": 0.45
+      },
+      "information_access": ["treasury_reserve_runway", "insurance_premium_gdp_model"],
+      "constraints": ["parliamentary_budget_approval"]
+    },
+    {
+      "agent_id": "min-foreign-affairs-lind",
+      "role": "minister_of_foreign_affairs",
+      "objectives": [
+        { "goal": "avoid_bloc_overcommitment", "priority": 0.85 },
+        { "goal": "preserve_western_aid_conditionality_terms", "priority": 0.6 }
+      ],
+      "beliefs": {
+        "reliability_of_western_ally": 0.5,
+        "reliability_of_eastern_partner": 0.42
+      },
+      "traits": {
+        "risk_tolerance": 0.4,
+        "status_seeking": 0.5,
+        "institutional_trust": 0.6,
+        "corruption_susceptibility": 0.15
+      },
+      "resources": {
+        "budget_control_usd_m": 40,
+        "political_capital": 0.5,
+        "personal_network_reach": 0.7
+      },
+      "information_access": ["western_aid_conditionality_terms", "eastern_bloc_backchannel"],
+      "constraints": ["treaty_non_binding_cooperation_only"]
+    },
+    {
+      "agent_id": "intel-lead-navarro",
+      "role": "intelligence_lead",
+      "objectives": [
+        { "goal": "prove_spoiler_attribution", "priority": 0.9 },
+        { "goal": "secure_investigation_resources", "priority": 0.8 }
+      ],
+      "beliefs": { "spoiler_involvement_confidence": 0.55 },
+      "traits": {
+        "risk_tolerance": 0.5,
+        "status_seeking": 0.35,
+        "institutional_trust": 0.55,
+        "corruption_susceptibility": 0.1
+      },
+      "resources": {
+        "budget_control_usd_m": 25,
+        "political_capital": 0.4,
+        "personal_network_reach": 0.6
+      },
+      "information_access": ["raw_attribution_lead_55pct", "border_humint"],
+      "constraints": ["no_independent_cyber_attribution", "reliant_on_western_sigint_sharing"]
+    },
+    {
+      "agent_id": "strat-comms-adeyemi",
+      "role": "strategic_comms",
+      "objectives": [
+        { "goal": "counter_hostile_narrative", "priority": 0.85 },
+        { "goal": "maintain_message_control", "priority": 0.6 }
+      ],
+      "beliefs": { "narrative_threat_level": 0.66 },
+      "traits": {
+        "risk_tolerance": 0.5,
+        "status_seeking": 0.6,
+        "institutional_trust": 0.5,
+        "corruption_susceptibility": 0.12
+      },
+      "resources": {
+        "budget_control_usd_m": 15,
+        "political_capital": 0.45,
+        "personal_network_reach": 0.65
+      },
+      "information_access": ["narrative_tracking_dashboard"],
+      "constraints": ["transparency_vs_foreign_affairs_tension"]
+    }
+  ],
+  "hidden_campaign": {
+    "campaign_id": "camp-eastern-veterans-01",
+    "sponsor": "regional_spoiler_power_proxy",
+    "strategic_objective": "weaken_public_support_for_western_naval_cooperation",
+    "target_cohorts": ["coastal-creole-fishing", "urban-nationalist-youth"],
+    "existing_grievance": "historic_foreign_interference_resentment",
+    "narrative": {
+      "claim": "government_is_surrendering_sovereignty_to_western_navy",
+      "truth_status": "false"
+    },
+    "messenger": {
+      "agent_id": "veterans-assoc-front-organiser",
+      "perceived_independence": 0.8
+    },
+    "channels": ["short_form_video", "local_forums", "messaging_groups"],
+    "amplification_network": {
+      "coordinated_accounts": 40,
+      "sympathetic_commentators": 6,
+      "estimated_reach": 210000
+    },
+    "trigger_event_id": "event_foreign_warship_arrival",
+    "desired_behaviour": "protest_and_parliamentary_pressure",
+    "metrics": {
+      "exposure": 0.0,
+      "belief_adoption": 0.0,
+      "resistance": 0.0,
+      "detection_probability": 0.15,
+      "attribution_probability": 0.05
+    }
+  },
+  "win_conditions": {
+    "win_leaning": {
+      "shipping_throughput_pct_of_baseline_min": 0.85,
+      "government_approval_min": 0.45,
+      "max_emergency_powers_renewals": 1,
+      "attribution_confidence_min": 0.70,
+      "no_unresolved_civil_liberties_crisis": true
+    },
+    "loss_leaning": {
+      "any_of": [
+        "coalition_government_collapse",
+        "shipping_throughput_below_0.50_for_10_ticks",
+        "dual_bloc_alliance_confidence_collapse",
+        "second_uncontained_crisis_vector"
+      ]
+    },
+    "ambiguous": "Crisis contained at high long-term cost (deep bloc dependency, eroded civil liberties, or a resentful cohort primed for future exploitation). The explanation system should surface the trade-off rather than scoring a simple win."
+  }
+}
