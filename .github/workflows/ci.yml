@@ -1,0 +1,101 @@
+# MERIDIAN CI — Phase 0 item P0.3.
+#
+# STATUS: PREPARED AND LOCALLY REPRODUCED. NOT YET RUN ON HOSTED CI.
+# This file has never executed on GitHub Actions, because committing and pushing it requires
+# separate founder authorisation. Until a hosted run succeeds, no document may claim MERIDIAN
+# "has CI" or that any check is "guarded in CI". See docs/delivery/CAPABILITY-CLAIMS.md C9.
+#
+# DESIGN PRINCIPLE: this workflow runs ONLY checks that genuinely exist and genuinely pass. It
+# deliberately contains no OS matrix, no multi-version matrix, no coverage gate, no performance
+# gate, no linter, no formatter, no Docker build, no deployment and no live model call. Every one
+# of those would either fail immediately or assert a standard the project has not adopted.
+# Adding any of them is a separate, deliberate decision.
+#
+# PLATFORM HONESTY: the local verification that this workflow reproduces was performed on
+# Windows 10 (build 19045) with CPython 3.12.10. GitHub's `windows-latest` is Windows Server,
+# NOT Windows 10, so a hosted run is a genuinely different environment and may behave
+# differently — in particular its long-path configuration may differ, which is the exact issue
+# the mesa `--no-deps` install works around. That difference is why the local result may not be
+# claimed as a hosted result.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend — install, smoke, tests
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: scaffold/backend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12.10
+        uses: actions/setup-python@v5
+        with:
+          # Pinned to the exact version verified locally on 19 July 2026.
+          # No version matrix: nothing else has been tested, so nothing else may be claimed.
+          python-version: '3.12.10'
+
+      - name: Show environment
+        run: |
+          python --version
+          python -c "import platform; print(platform.system(), platform.release())"
+          python -m pip --version
+
+      # Step 1 of the documented two-command install (scaffold/README.md).
+      - name: Install core requirements
+        run: python -m pip install -r requirements.txt
+
+      # Step 2. --no-deps is REQUIRED, not an optimisation: mesa's declared visualisation
+      # dependencies pull a solara/Jupyter tree whose paths break the install. See
+      # requirements-mesa.txt for the full reasoning and the reproduction.
+      - name: Install mesa (--no-deps, recorded exception)
+        run: python -m pip install --no-deps -r requirements-mesa.txt
+
+      # Reports the packaging exception explicitly rather than hiding it. Passes only if the
+      # ONLY inconsistencies are the four recorded mesa visualisation packages; fails on anything
+      # else. Does not claim the environment is dependency-consistent, because it is not.
+      - name: Packaging check (pip check, with recorded exception)
+        run: python tools/ci_pip_check.py
+
+      # Imports every third-party module and every MERIDIAN module, and verifies the specific
+      # mesa APIs the codebase subclasses — not merely that `import mesa` succeeds.
+      - name: Import smoke test
+        env:
+          PYTHONPATH: ${{ github.workspace }}/scaffold/backend
+        run: python tools/ci_smoke.py
+
+      - name: Run tests
+        env:
+          PYTHONPATH: ${{ github.workspace }}/scaffold/backend
+        run: python -m pytest tests -v
+
+      # Preserve useful failure output. `pip freeze` makes a failed run diagnosable: every
+      # requirement is an open-ended range with no lockfile, so two runs on different days can
+      # resolve to different versions, and the resolved set is the first thing to check.
+      - name: Record resolved dependency versions
+        if: always()
+        run: python -m pip freeze
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-diagnostics
+          path: |
+            scaffold/backend/.pytest_cache/
+          if-no-files-found: ignore
+          retention-days: 7
