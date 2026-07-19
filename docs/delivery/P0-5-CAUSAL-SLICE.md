@@ -45,6 +45,13 @@ same tick while feedback always waits for the next — **no same-tick causal cyc
 
 ## Measured evidence
 
+**Counterfactual verification.** A counterfactual disables a MECHANISM, never the incident. In
+both counterfactuals below the incident is still present and active at severity 0.5500 —
+identical to the full run — while the baseline never had one (0.0000, `incident_active=False`).
+Disabling `M-CARRIER-REROUTE` shows this most sharply: `insurer_risk` (0.5773) and
+`premium_pressure` (0.5810) are preserved *bit-identically*, `rerouting_level` — the disabled
+mechanism's own target — is prevented at 0.0000, and everything downstream collapses to zero.
+
 Seed `88213`, 20 ticks (**one tick = 6 simulated hours for this scenario only**; 20 ticks = 5
 simulated days). Tick durations are scenario-scoped — nothing in the engine assumes six hours.
 
@@ -52,7 +59,11 @@ simulated days). Tick durations are scenario-scoped — nothing in the engine as
 |---|---|---|---|---|---|---|
 | **Baseline** (no incident) | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **0.0000** | all AVAILABLE |
 | **Incident** | 0.5773 | 0.5875 | 0.3763 | 0.1416 | **0.1495** | publish ENABLED, quiet CONSTRAINED |
-| **Counterfactual** (insurer disabled) | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **0.0000** | all AVAILABLE |
+| **CF: `M-INSURER-RISK` disabled** | 0.0000 | 0.0000 | 0.0000 | 0.0000 | **0.0000** | all AVAILABLE |
+| **CF: `M-CARRIER-REROUTE` disabled** | 0.5773 | 0.0000 | 0.0000 | 0.0000 | **0.0000** | all AVAILABLE |
+
+*(Incident severity is 0.5500 in the incident run and in **both** counterfactuals; 0.0000 in the
+baseline. That column is what makes a disabled mechanism distinguishable from a removed incident.)*
 
 Propagation is visible tick by tick: incident at t1 → insurer reprices t2 (the declared lag) →
 rerouting t3 → employment t4 → household t4-6 → narrative t6 → political t8 → `publish_legal_advice`
@@ -62,8 +73,12 @@ ENABLED at t10 → `pursue_quiet_diplomacy` CONSTRAINED at t14.
 unlock emergency powers. An option that never fires in this scenario is a correct result, and it is
 what distinguishes a causal model from a one-way ratchet.
 
-**Extended no-new-input run:** political pressure peaks at 0.1495 (t20) and returns to **0.000000**
-by t520. Nothing accumulates indefinitely.
+**Extended no-new-input stability and recovery test:** political pressure peaks at 0.1495 (t20)
+and returns to **0.000000** by t520. Nothing accumulates indefinitely.
+
+**520 ticks is a stability test, not the demonstration horizon.** The Kestral Strait
+demonstration horizon remains **20 ticks — six simulated hours per tick, five simulated days**.
+The long run exists only to prove the chain returns to rest rather than plateauing upward.
 
 ---
 

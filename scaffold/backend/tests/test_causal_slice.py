@@ -458,3 +458,46 @@ def test_projection_exposes_population_share_without_implying_more(scenario: dic
     p = project_causal_slice(run(scenario).state)
     shares = sum(c["population_share"] for c in p["cohorts"])
     assert shares == pytest.approx(1.0, abs=1e-6)
+
+
+def test_counterfactual_is_not_equivalent_to_the_no_incident_baseline(
+    scenario: dict, baseline_scenario: dict
+) -> None:
+    """A counterfactual must disable a MECHANISM, not silently remove the incident.
+
+    Without this, "disabled mechanism" and "no incident" would be indistinguishable, and the
+    counterfactual would prove nothing about the link — only that an absent incident produces an
+    absent chain.
+
+    The distinction is that the incident is still present and active in the counterfactual, and
+    every stage UPSTREAM of the disabled mechanism is preserved bit-identically.
+    """
+    full = run(scenario)
+    baseline = run(baseline_scenario)
+    cf_insurer = run(scenario, enabled=[m.id for m in CHAIN if m.id != M_INSURER.id])
+    cf_reroute = run(scenario, enabled=[m.id for m in CHAIN if m.id != M_REROUTE.id])
+
+    # The incident survives in BOTH counterfactuals, and is absent in the baseline.
+    assert baseline.state.chain.incident_severity == 0.0
+    assert baseline.state.chain.incident_active is False
+    for cf in (cf_insurer, cf_reroute):
+        assert cf.state.chain.incident_severity > 0.0, "counterfactual lost its incident"
+        assert cf.state.chain.incident_active is True
+        assert cf.state.chain.incident_severity == pytest.approx(
+            full.state.chain.incident_severity, abs=1e-12
+        ), "the incident must be identical to the full run - only a mechanism was disabled"
+
+    # Disabling the FIRST mechanism: upstream is only the incident, so that is what survives.
+    assert cf_insurer.state.chain.insurer_risk == 0.0
+
+    # Disabling a MIDDLE mechanism proves the point most sharply: everything upstream is
+    # preserved bit-identically, the first target is prevented, downstream collapses.
+    assert cf_reroute.state.chain.insurer_risk == pytest.approx(
+        full.state.chain.insurer_risk, abs=1e-12
+    ), "upstream of the disabled mechanism must be unchanged"
+    assert cf_reroute.state.chain.premium_pressure == pytest.approx(
+        full.state.chain.premium_pressure, abs=1e-12
+    ), "upstream of the disabled mechanism must be unchanged"
+    assert cf_reroute.state.chain.rerouting_level == 0.0, "the disabled mechanism's target fired"
+    assert cf_reroute.state.chain.employment_pressure == 0.0
+    assert cf_reroute.state.chain.political_pressure == 0.0
