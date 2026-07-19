@@ -70,7 +70,19 @@ def test_unbuilt_sections_are_declared_and_empty(model: MeridianModel) -> None:
     assert s.entities == {}
     assert s.relationships == []
     assert s.external_input_cursor is None
-    assert s.run.named_substreams is False  # P0.4A has not happened
+
+
+def test_run_metadata_records_the_real_randomness_architecture(model: MeridianModel) -> None:
+    """P0.4A: run metadata must state the architecture actually in use, not a placeholder.
+
+    `named_substreams` was removed rather than set true — keys contain a subsystem field, but
+    there are no *stateful* substreams to name. `randomness_architecture` says what is true.
+    """
+    run = model.state.run
+    assert run.randomness_architecture == "keyed_counter_v1"
+    assert run.rng_algorithm == "hmac-sha256-v1"
+    assert run.key_encoding_version == "meridian-key-v1"
+    assert not hasattr(run, "named_substreams")
 
 
 # --------------------------------------------------------------------------- #

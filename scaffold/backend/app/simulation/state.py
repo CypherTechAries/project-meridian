@@ -51,19 +51,23 @@ class ScenarioIdentity(BaseModel):
 
 
 class RunMetadata(BaseModel):
-    """Seed and generator metadata for the run.
+    """Seed and randomness-architecture metadata for the run.
 
-    `rng_algorithm` records what actually produced the draws. It is `python-random-Mersenne`
-    today because the engine uses `random.Random`. P0.4A replaces this with a keyed/counter-based
-    draw service (ADR-010) and this field becomes the recorded algorithm + version.
+    P0.4A (19 July 2026): these fields now record the ARCHITECTURE ACTUALLY IN USE, not a
+    placeholder. Authoritative randomness is keyed and derived (ADR-010, accepted) — every draw is
+    a pure function of (run seed, canonical key). There is no shared sequential stream, so no draw
+    can displace another.
+
+    `named_substreams` was removed rather than set true. It would have been misleading: keys
+    contain a subsystem field, but there are no *stateful* substreams to name — nothing
+    accumulates and nothing advances. `randomness_architecture` says what is true instead.
     """
 
     seed: int
-    rng_algorithm: str = "python-random-Mersenne"
-    rng_algorithm_version: str = "cpython-stdlib"
-    # P0.4A: there are NO named draw substreams today. A draw added anywhere shifts every later
-    # draw everywhere else. This field exists so the successor architecture has a home.
-    named_substreams: bool = False
+    randomness_architecture: str = "keyed_counter_v1"
+    rng_algorithm: str = "hmac-sha256-v1"
+    rng_algorithm_version: str = "hmac-sha256-v1"
+    key_encoding_version: str = "meridian-key-v1"
 
 
 class CohortRuntimeState(BaseModel):

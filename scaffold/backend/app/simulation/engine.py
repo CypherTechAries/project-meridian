@@ -4,12 +4,18 @@ P0.4 (19 July 2026): the engine no longer writes authoritative state directly. A
 changes are routed through `TransitionService` (`transitions.py`), which owns the single mutation
 path. `state.py` holds the authoritative structure.
 
-Reproducibility, stated precisely: a `seed` is threaded through the constructor into `self.rng`
-(`random.Random`). The existing stubbed execution path reproduces the same tested numeric outputs
-when the seed, scenario and stubbed agent outputs remain identical. All engine draws come from
-`self.rng` and never the global `random` module — but there are **no named substreams**, so adding
-or removing a draw anywhere shifts every later draw everywhere else. Named draw isolation is
-Phase 0 item P0.4A (see `docs/adr/ADR-010-deterministic-randomness-architecture.md`).
+P0.4A (19 July 2026): authoritative randomness is KEYED, not sequential. `self.draws` is a
+`DeterministicDrawService` (ADR-010, accepted) in which every value is a pure function of
+(run seed, canonical key). There is no shared stream, nothing accumulates, and nothing advances —
+so adding, removing or reordering a draw in one subsystem cannot shift results in another. This
+replaces the previous single `random.Random`, whose call-order sensitivity was the mechanism
+behind A3's finding that apparent meso→macro coupling was stream displacement rather than
+causality. See `docs/adr/ADR-010-deterministic-randomness-architecture.md`.
+
+Reproducibility, stated precisely: the existing stubbed execution path reproduces the same tested
+numeric outputs when the seed, scenario and stubbed agent outputs remain identical. Determinism is
+verified on the tested CPython implementation, including across a subprocess with a different
+`PYTHONHASHSEED`. Cross-language reproducibility is **not** claimed and has not been measured.
 
 The engine still contains no cost, cooldown, decay, budget, prerequisite or revert mechanism, and
 no legality or feasibility validation. P0.4 did not add any of those.
@@ -17,7 +23,6 @@ no legality or feasibility validation. P0.4 did not add any of those.
 
 from __future__ import annotations
 
-import random
 from typing import Any, Optional
 
 import mesa
@@ -25,6 +30,7 @@ import mesa
 from .agents.cohort_agent import CohortAgent
 from .agents.institutional_agent import InstitutionalAgent
 from .diffusion import build_cohort_graph, linear_threshold_step
+from .draws import DeterministicDrawService
 from .schemas.agent_schema import ActionProposal, Cohort, MicroAgent
 from .schemas.macro_schema import (
     AllianceConfidence,
@@ -33,7 +39,7 @@ from .schemas.macro_schema import (
     MacroState,
     PublicFinances,
 )
-from .state import AuthoritativeState, build_initial_state, canonical_json
+from .state import RULE_PACK_VERSION, AuthoritativeState, build_initial_state, canonical_json
 from .transitions import Transition, TransitionOrigin, TransitionRecord, TransitionService, TransitionType
 
 # The engine's entire action vocabulary and every magnitude, hardcoded here. This is not a rule
@@ -86,7 +92,15 @@ class MeridianModel(mesa.Model):
     def __init__(self, scenario: dict, seed: Optional[int] = None) -> None:
         resolved_seed = seed if seed is not None else scenario.get("default_seed", 0)
         super().__init__(seed=resolved_seed)
-        self.rng = random.Random(resolved_seed)  # the ONLY source of engine randomness
+        # P0.4A: authoritative randomness is KEYED, not sequential. There is no shared stream and
+        # no `self.rng`. Every draw is a pure function of (run seed, canonical key), so no draw
+        # can displace another. mesa's own `Model.random` is seeded by `super().__init__` above;
+        # MERIDIAN never uses it for authoritative values.
+        self.draws = DeterministicDrawService(
+            seed=resolved_seed,
+            scenario=scenario["scenario_id"],
+            rule_pack=RULE_PACK_VERSION,
+        )
 
         self.scenario = scenario
         self.scenario_id: str = scenario["scenario_id"]
@@ -182,7 +196,9 @@ class MeridianModel(mesa.Model):
 
     def _step_macro_rules(self) -> None:
         """Seeded macro drift applied every tick, via the transition boundary."""
-        noise = self.rng.uniform(-0.002, 0.002)
+        noise = self.draws.jitter(
+            0.002, subsystem="macro", purpose="shipping_noise", context=str(self.tick)
+        )
         self.submit(
             Transition(
                 type=TransitionType.APPLY_MACRO_DELTAS,
@@ -202,7 +218,11 @@ class MeridianModel(mesa.Model):
             return
         susceptibility = {c.cohort.cohort_id: c.susceptibility for c in self.cohorts}
         updated = linear_threshold_step(
-            self.cohort_graph, self.state.narrative_adoption, susceptibility, self.rng
+            self.cohort_graph,
+            self.state.narrative_adoption,
+            susceptibility,
+            self.draws,
+            context=self.tick,
         )
         self.submit(
             Transition(
