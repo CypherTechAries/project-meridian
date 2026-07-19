@@ -1,0 +1,16 @@
+# Optional: live LLM gateway dependencies.
+#
+# NOT required to run the scaffold or its tests. The gateway ships in stub mode
+# (`app/simulation/llm_gateway.py`), returns canned output, calls no model, and needs no API key.
+# Nothing in the codebase currently imports litellm; see the sketch in that module's docstring.
+#
+# Install only when working on the live-model path:
+#     pip install -r requirements.txt -r requirements-llm.txt
+#
+# KNOWN CONSTRAINT (measured 19 July 2026): on CPython 3.13, litellm resolves to 1.92.0, which
+# publishes no cp313 wheel, falls back to an sdist and requires a Rust toolchain to build. This
+# is why it was removed from the default install under Phase 0 item P0.2 — pip resolves before
+# installing, so one unsatisfiable requirement caused the entire documented install to fail.
+# If you need it, use a Python version with a published wheel, or install a build toolchain.
+
+litellm>=1.34,<2.0
