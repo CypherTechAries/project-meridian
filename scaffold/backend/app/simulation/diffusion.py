@@ -1,14 +1,24 @@
 """Narrative-spread diffusion over a cohort network.
 
-A minimal, seeded Linear Threshold Model (LTM) used to spread a narrative between cohorts.
-This computes the *numbers* for information-campaign effectiveness — the LLM never does. The
-engine calls this to update `Narrative.adoption_by_cohort`.
+A minimal, seeded Linear Threshold Model (LTM) intended to spread a narrative between cohorts.
+This computes the *numbers* for information-campaign effectiveness — the LLM never does.
 
-Determinism: all randomness comes from the caller-supplied `rng` (the model's seeded RNG),
-so results are reproducible for a given seed.
+P0.1 correction (19 July 2026): this module previously stated that "the engine calls this to
+update `Narrative.adoption_by_cohort`". It does not. `MeridianModel._step_diffusion`
+(`engine.py:138-145`) assigns the result to `model.narrative_adoption`, a plain dict, which is
+read only by the run-state API response (`api/routes_simulation.py:75`). It reaches no
+`Narrative` object, no cohort belief and no macro indicator. Wiring diffusion output to belief
+is a target (Phase 0 item P0.5), not current behaviour.
+
+Determinism: all randomness comes from the caller-supplied `rng` (the model's seeded RNG), so
+results are reproducible for a given seed AND a given sequence of prior draws. Note that this
+module draws from the same shared stream as every other subsystem, so adding or removing a draw
+anywhere changes results here; named draw isolation is Phase 0 item P0.4A (see
+`docs/adr/ADR-010-deterministic-randomness-architecture.md`).
 """
 
 from __future__ import annotations
+
 
 import random
 
@@ -48,7 +58,15 @@ def linear_threshold_step(
 
     For each cohort, incoming influence is the cohesion-weighted mean adoption of its
     neighbours, scaled by that cohort's susceptibility. A small seeded jitter keeps runs
-    stochastic-but-reproducible. Adoption is monotonic non-decreasing and clamped to [0, 1].
+    stochastic-but-reproducible. Adoption is clamped to [0, 1].
+
+    P0.1 correction (19 July 2026): this docstring previously claimed adoption is "monotonic
+    non-decreasing". It is not. `gain` is `suscept * (influence + seed_pressure) + jitter` with
+    `jitter` drawn uniformly from [-0.01, 0.01], so whenever
+    `suscept * (influence + seed_pressure) < |jitter|` and the jitter is negative, `gain` is
+    negative and adoption DECREASES for that cohort. This is reachable for any low-susceptibility
+    or weakly-connected cohort. The [0, 1] clamp masks it only at the lower bound. No test
+    asserts monotonicity, so the property was never checked.
 
     Args:
         graph: Cohort influence graph from :func:`build_cohort_graph`.
