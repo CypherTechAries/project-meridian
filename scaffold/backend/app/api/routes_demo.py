@@ -42,9 +42,15 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from ..config import SCENARIOS_DIR
+from ..safety import (
+    FICTION_DISCLOSURE,
+    B5Violation,
+    assert_request_permitted,
+    fictional_world_metadata,
+    load_packaged_scenario,
+)
 from ..simulation.engine import MeridianModel
 from ..simulation.mechanisms import CHAIN
 from ..simulation.projection import project_causal_slice
@@ -69,6 +75,11 @@ class RunMode(str, Enum):
 
 
 class DemoRunRequest(BaseModel):
+    # B5-06 / B5-04 / B5-05: reject unknown fields rather than ignoring them. Pydantic's default is
+    # to DROP extras, which meant a hostile field never reached the screening call at all - the
+    # request was accepted and the control silently did nothing. Fail closed instead.
+    model_config = ConfigDict(extra="forbid")
+
     mode: RunMode = RunMode.INCIDENT
     ticks: int = Field(default=20, ge=1, le=200)
     # Only meaningful for `counterfactual`. Defaults to the carrier-rerouting link, which shows
@@ -85,6 +96,9 @@ class DemoRunResponse(BaseModel):
     ticks: int
     seed: int
     projection: dict[str, Any]
+    # B5-07: structured fictional-world metadata, present on every response so a machine reader
+    # cannot miss the world's status or have to infer it from prose.
+    fictional_world: dict[str, Any]
     # Per-tick values the run produced. Derived presentation data, not a stored history.
     trajectory: list[dict[str, Any]]
     # Restated in the response so a consumer cannot infer capabilities from the payload's shape.
@@ -92,6 +106,7 @@ class DemoRunResponse(BaseModel):
 
 
 _LIMITATIONS = [
+    f"{FICTION_DISCLOSURE}",
     "Ephemeral: this run is discarded when the request completes.",
     "No persistence — nothing is written to a database.",
     "No run registry — the run cannot be retrieved again.",
@@ -103,15 +118,20 @@ _LIMITATIONS = [
 
 
 def _load_scenario() -> dict:
-    path: Path = SCENARIOS_DIR / f"{DEMO_SCENARIO_ID}.json"
-    if not path.exists():  # pragma: no cover - configuration error
-        raise HTTPException(status_code=500, detail=f"demonstration scenario not found: {path}")
-    return json.loads(path.read_text(encoding="utf-8"))
+    """B5-01/B5-02: the only load path. Allowlist first, manifest second, engine third."""
+    return load_packaged_scenario(DEMO_SCENARIO_ID)
 
 
 @router.post("/kestral-strait/run", response_model=DemoRunResponse)
 def run_demonstration(req: DemoRunRequest) -> DemoRunResponse:
     """Execute an ephemeral deterministic run and return the read-only projection."""
+    # B5-04/B5-05/B5-06: screen the request before any work is done. Real-population scope,
+    # protected-trait targeting and persuadability optimisation are refused, never rewritten.
+    try:
+        assert_request_permitted(req.model_dump(), path="request")
+    except B5Violation as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     scenario = _load_scenario()
     disabled: str | None = None
     enabled: list[str] | None = None
@@ -158,6 +178,7 @@ def run_demonstration(req: DemoRunRequest) -> DemoRunResponse:
         ticks=req.ticks,
         seed=DEMO_SEED,
         projection=project_causal_slice(model.state, model.transition_log),
+        fictional_world=fictional_world_metadata(scenario, DEMO_SCENARIO_ID),
         trajectory=trajectory,
         limitations=list(_LIMITATIONS),
     )

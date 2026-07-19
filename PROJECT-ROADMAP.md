@@ -51,7 +51,7 @@ The existing architecture is a foundation for that future. It does not need to b
 | 4 | Baseline, incident and counterfactual runs | **Built** | `POST /api/demo/kestral-strait/run` |
 | 5 | A polished operational interface | **Built** | Strategic Command Centre, merged `cc1cce3` |
 | 6 | Hosted CI and reproducible setup | **Built** | [`P0-3-CI-STATUS.md`](docs/delivery/P0-3-CI-STATUS.md) |
-| 7 | Fictional-world safety controls | **NOT BUILT** | B5 — see below |
+| 7 | Fictional-world safety controls | **Implemented, in review** | [`docs/safety/B5-TECHNICAL-CONTROLS.md`](docs/safety/B5-TECHNICAL-CONTROLS.md) — all eight controls, 70 tests |
 | 8 | Clear limitations and roadmap | **Partial** | this file; README front door outstanding |
 
 **Item 7 is the substantive remaining engineering, and it comes first.** Founder decision of
@@ -77,7 +77,7 @@ LLM execution (C2). "Replay-capable" is a standing prohibited phrase.
 | Step | Action | Status |
 |---|---|---|
 | 1 | Complete and merge the current visual work | **Done** — PR #4 merged to `main` |
-| 2 | Implement and verify the eight B5 technical controls | **Not started** — next implementation work |
+| 2 | Implement and verify the eight B5 technical controls | **In review** — `feat/b5-publication-controls`, not merged |
 | 3 | Prepare the public repository front door | Not started |
 | 4 | Prepare the licence decision pack | Not started |
 | 5 | Run one bounded release review | Not started |

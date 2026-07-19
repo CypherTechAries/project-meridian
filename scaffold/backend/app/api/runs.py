@@ -7,23 +7,25 @@ generated run id.
 
 from __future__ import annotations
 
-import json
 import uuid
-from pathlib import Path
 from typing import Optional
 
-from ..config import SCENARIOS_DIR
+from ..safety import load_packaged_scenario
 from ..simulation.engine import MeridianModel
 
 _RUNS: dict[str, MeridianModel] = {}
 
 
 def load_scenario(scenario_id: str) -> dict:
-    """Load a scenario template JSON from the scenarios directory."""
-    path: Path = SCENARIOS_DIR / f"{scenario_id}.json"
-    if not path.exists():
-        raise FileNotFoundError(f"scenario '{scenario_id}' not found at {path}")
-    return json.loads(path.read_text())
+    """
+    Load a packaged fictional scenario.
+
+    B5-01/B5-02: this delegates to the single enforced loader. It does NOT read the scenarios
+    directory itself - the allowlist is checked before any filesystem access and the fictional
+    manifest before any engine object exists. Retained as a thin wrapper so existing callers keep
+    working; there is deliberately no path-, URL- or upload-based alternative.
+    """
+    return load_packaged_scenario(scenario_id)
 
 
 def create_run(scenario_id: str, seed: Optional[int] = None) -> tuple[str, MeridianModel]:
