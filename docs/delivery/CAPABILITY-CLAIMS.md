@@ -90,6 +90,21 @@ Row identifiers `C1`–`C15` are stable. The technical-evidence layer for each r
 
 ---
 
+## Amendment — 19 July 2026 (B5 enforcement branch)
+
+Two rows below are **stale** and are corrected here rather than silently rewritten in place:
+
+- **C8 (cross-tier causal coupling).** Its "TARGET, not delivered" column described P0.5 as
+  unbuilt. P0.5 shipped and merged; the nine-mechanism chain, population-weighted aggregation and
+  counterfactual execution are implemented and tested. The row's *prohibitions* still stand — the
+  shared-stream contamination described there was real and was fixed by P0.4A, and describing that
+  historical artefact as causality remains forbidden.
+- **B5 / safety controls.** Now implemented and tested on `feat/b5-publication-controls`
+  (backend 187, frontend 52) but **not merged and not yet green in hosted CI**. Until it is,
+  B5 may not appear in any implemented-capability list, release highlight or public claim.
+
+Everything else in the register stands unchanged.
+
 ## The register
 
 | # | Claim area | Accurate today — copy verbatim | Not permitted, and why | Target — **not a delivered capability** |

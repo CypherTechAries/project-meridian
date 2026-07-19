@@ -29,13 +29,23 @@ from .controls import (
 
 
 def assert_origin(origin: Any) -> str:
-    """The origin vocabulary is closed. Anything outside it fails closed."""
-    if origin not in ORIGIN_VOCABULARY:
+    """
+    The origin vocabulary is closed. Anything outside it fails closed.
+
+    Case is canonicalised rather than enforced: the shipped projection emits 'engine'/'fixture' and
+    the control governs WHICH origins exist, not how they are spelled. Renaming the wire values
+    would churn a working interface for no safety gain. Anything not in the set - including
+    invented variants like 'engine_derived' - still fails.
+    """
+    if not isinstance(origin, str):
+        raise B5Violation("B5-08", f"origin {origin!r} is not a string")
+    canonical = origin.strip().upper()
+    if canonical not in ORIGIN_VOCABULARY:
         raise B5Violation(
             "B5-08",
             f"origin '{origin}' is not in the approved vocabulary {sorted(ORIGIN_VOCABULARY)}",
         )
-    return str(origin)
+    return canonical
 
 
 @dataclass(frozen=True)
@@ -157,10 +167,10 @@ def assert_projection_provenance(projection: dict) -> None:
                 raise B5Violation(
                     "B5-08", f"{group}[{i}] has no origin; every visible record must carry one"
                 )
-            assert_origin(entry["origin"])
-            if entry["origin"] in ABSENCE_ORIGINS and entry.get("value") not in (None,):
+            canonical = assert_origin(entry["origin"])
+            if canonical in ABSENCE_ORIGINS and entry.get("value") not in (None,):
                 raise B5Violation(
                     "B5-08",
-                    f"{group}[{i}] declares origin '{entry['origin']}' but carries value "
+                    f"{group}[{i}] declares origin '{canonical}' but carries value "
                     f"{entry.get('value')!r}; absences must not render as numbers",
                 )

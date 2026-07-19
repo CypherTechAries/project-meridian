@@ -42,7 +42,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ..safety import (
     FICTION_DISCLOSURE,
@@ -75,6 +75,11 @@ class RunMode(str, Enum):
 
 
 class DemoRunRequest(BaseModel):
+    # B5-06 / B5-04 / B5-05: reject unknown fields rather than ignoring them. Pydantic's default is
+    # to DROP extras, which meant a hostile field never reached the screening call at all - the
+    # request was accepted and the control silently did nothing. Fail closed instead.
+    model_config = ConfigDict(extra="forbid")
+
     mode: RunMode = RunMode.INCIDENT
     ticks: int = Field(default=20, ge=1, le=200)
     # Only meaningful for `counterfactual`. Defaults to the carrier-rerouting link, which shows

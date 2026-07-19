@@ -1,6 +1,6 @@
 # B5 — technical control baseline
 
-> # FOUNDER-APPROVED CONTROL BASELINE — IMPLEMENTATION REQUIRED
+> # FOUNDER-APPROVED CONTROL BASELINE — IMPLEMENTED AND TESTED
 >
 > This is the **canonical** B5 control set for public v0.1, approved by the founder on
 > 19 July 2026. It supersedes every scattered reference to "the eight controls". No agent may
@@ -13,6 +13,8 @@
 **Blocker:** B5 — *dual-use influence-targeting schema with no acceptable-use terms.*
 **Decided:** 18 July 2026 (policy). **Baseline approved:** 19 July 2026 (this document).
 **Clears when:** all eight controls have code paths, have tests, and hosted CI is green.
+**Status 19 July 2026:** all eight implemented and tested locally (backend 187, frontend 52).
+Awaiting hosted CI and founder review on `feat/b5-publication-controls`; **not yet merged**.
 **Related:** [`../delivery/PUBLICATION-EXIT-CRITERIA.md`](../delivery/PUBLICATION-EXIT-CRITERIA.md) ·
 [`../delivery/CAPABILITY-CLAIMS.md`](../delivery/CAPABILITY-CLAIMS.md) ·
 [`../../PROJECT-ROADMAP.md`](../../PROJECT-ROADMAP.md)
@@ -193,14 +195,30 @@ test, and CI is green.
 
 | Control | Implementation | Tests | Status |
 |---|---|---|---|
-| B5-01 | | | pending |
-| B5-02 | | | pending |
-| B5-03 | | | pending |
-| B5-04 | | | pending |
-| B5-05 | | | pending |
-| B5-06 | | | pending |
-| B5-07 | | | pending |
-| B5-08 | | | pending |
+| B5-01 | `app/safety/scenarios.py::assert_fictional_manifest` | 1, 2, 3 | **enforced** |
+| B5-02 | `app/safety/scenarios.py::assert_packaged_scenario`, `load_packaged_scenario` (sole load path; `api/runs.py` and `api/routes_demo.py` both route through it) | 1, 4, 5 | **enforced** |
+| B5-03 | `app/safety/targets.py::FictionalTargetRegistry.resolve` | 6, 7, 8 | **enforced** |
+| B5-04 | `app/safety/targets.py::assert_no_protected_traits` | 9, 9b | **enforced** |
+| B5-05 | `app/safety/targets.py::assert_no_persuasion_optimisation` | 10, 12 | **enforced** |
+| B5-06 | `app/safety/targets.py::assert_not_real_population`; `DemoRunRequest.model_config = extra="forbid"` | 11, 11b | **enforced** |
+| B5-07 | `app/safety/scenarios.py::fictional_world_metadata`; `controls.FICTION_DISCLOSURE`; frontend per-panel marks | 13, 17 + frontend `honesty.test.ts` "crop safety" | **enforced** |
+| B5-08 | `app/safety/provenance.py` (`assert_origin`, `ProvenancedValue`, `assert_projection_provenance`) | 14, 15, 16 | **enforced** |
+
+**Evidence, 19 July 2026:** backend `187 passed` (70 B5 + 117 pre-existing), frontend `52 passed`.
+
+### Two findings the tests produced
+
+**A real enforcement gap, found by test 11b.** Screening ran on the *parsed* Pydantic model, and
+Pydantic's default is to **drop** unknown fields — so a request carrying `world: "real_world"` was
+accepted with the control silently doing nothing. Fixed by `extra="forbid"` on the request model, so
+an unexpected field is refused rather than discarded. This is exactly the failure mode the baseline
+warns about: a control that exists but does not fire.
+
+**A vocabulary mismatch, found by test 14.** The shipped projection emits lowercase `engine` /
+`fixture`; the approved vocabulary is uppercase. Resolved by canonicalising case at the control
+boundary rather than renaming wire values across a working interface — the control governs *which*
+origins exist, not how they are spelled. Invented near-misses (`engine_derived`, `computed`, `live`)
+still fail, and a record with no origin is refused rather than defaulted.
 
 ---
 
