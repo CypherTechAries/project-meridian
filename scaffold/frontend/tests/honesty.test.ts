@@ -365,8 +365,158 @@ describe('polish pass keeps disclosures out of collapsed regions', () => {
   it('labels metric direction only as description of ticks already produced', () => {
     const root = render()
     const dirs = Array.from(root.querySelectorAll('.krow__dir')).map((d) => d.textContent?.trim())
-    for (const d of dirs) expect(['RISING', 'STABLE', 'EASING', '—']).toContain(d)
+    for (const d of dirs) expect(['RISING', 'STABLE', 'EASING', 'UPSTREAMEASING', '—']).toContain(d)
     // No rate, no forecast, no per-tick extrapolation.
     expect(root.querySelector('.panel--metrics')?.textContent).not.toMatch(/\/tick|per tick|forecast|projected/i)
+  })
+})
+
+describe('lagged-response explanation is derived, not narrated', () => {
+  const rising = (n: number, from = 0.02, to = 0.15): number[] =>
+    Array.from({ length: n }, (_, i) => from + ((to - from) * i) / (n - 1))
+  const falling = (n: number, from = 0.6, to = 0.3): number[] =>
+    Array.from({ length: n }, (_, i) => from + ((to - from) * i) / (n - 1))
+
+  /** Builds a run whose trajectory we control, leaving projection metadata untouched. */
+  function withTrajectory(political: number[], upstream: number[]): RunResult {
+    const base = initialSnapshot()
+    const n = political.length
+    return {
+      ...base,
+      trajectory: Array.from({ length: n }, (_, i) => ({
+        tick: i + 1,
+        political_pressure: political[i] ?? 0,
+        insurer_risk: upstream[i] ?? 0,
+        rerouting_level: upstream[i] ?? 0,
+        employment_pressure: upstream[i] ?? 0,
+        household_expectation_pressure: upstream[i] ?? 0,
+        incident_severity: upstream[i] ?? 0,
+        narrative_attention: political[i] ?? 0,
+        collective_activity: political[i] ?? 0,
+      })),
+    }
+  }
+
+  it('shows the explanation when political rises while upstream indicators ease', () => {
+    const root = render(withTrajectory(rising(20), falling(20)))
+    expect(root.querySelector('.lagnote__chip')?.textContent).toBe('LAGGED RESPONSE')
+    expect(root.querySelector('.lagnote')?.textContent).toMatch(
+      /upstream disruption is easing, but political pressure is\s+still rising/i,
+    )
+    expect(root.querySelector('.bignum__dir')?.textContent).toBe('STILL RISING')
+  })
+
+  it('does NOT show it when upstream indicators are also rising', () => {
+    // Same rising political pressure — but nothing is easing, so there is no lag story to tell.
+    const root = render(withTrajectory(rising(20), rising(20, 0.1, 0.6)))
+    expect(root.querySelector('.lagnote')).toBeNull()
+    expect(root.querySelector('.bignum__dir')).toBeNull()
+  })
+
+  /** Rises to a late peak, then declines slowly — the shape the real Kestral run produces. */
+  const latePeak = (n: number): number[] =>
+    Array.from({ length: n }, (_, i) => {
+      const peak = Math.floor(n * 0.6)
+      return i <= peak ? 0.02 + (0.13 * i) / peak : 0.15 - 0.0008 * (i - peak)
+    })
+  /** Peaks early, then falls steeply. */
+  const earlyPeak = (n: number): number[] =>
+    Array.from({ length: n }, (_, i) => {
+      const peak = Math.floor(n * 0.2)
+      return i <= peak ? 0.2 + (0.6 * i) / peak : 0.8 - 0.03 * (i - peak)
+    })
+
+  it('shows the peak-lag variant when political peaked later than every upstream indicator', () => {
+    // This is what the real run shows at tick 20: political pressure has already turned over, but
+    // it peaked AFTER its causes and is holding nearer its peak. Claiming "still rising" here
+    // would be false, so the copy must adapt rather than the gate loosening.
+    const root = render(withTrajectory(latePeak(20), earlyPeak(20)))
+    expect(root.querySelector('.lagnote__chip')?.textContent).toBe('LAGGED RESPONSE')
+    expect(root.querySelector('.lagnote')?.textContent).toMatch(/peaked \d+\s+ticks later, at tick \d+/i)
+    expect(root.querySelector('.lagnote')?.textContent).not.toMatch(/still rising/i)
+    expect(root.querySelector('.bignum__dir')?.textContent).toMatch(/^PEAKED t\d+ · LAGGED$/)
+  })
+
+  it('does NOT show it when political peaked no later than upstream', () => {
+    // Both peak early: there is no propagation delay to demonstrate.
+    const root = render(withTrajectory(earlyPeak(20), earlyPeak(20)))
+    expect(root.querySelector('.lagnote')).toBeNull()
+  })
+
+  it('does NOT show it when political has given up more of its peak than upstream', () => {
+    const collapsing = Array.from({ length: 20 }, (_, i) => (i <= 17 ? 0.02 + 0.13 * (i / 17) : 0.01))
+    const root = render(withTrajectory(collapsing, falling(20, 0.6, 0.58)))
+    expect(root.querySelector('.lagnote')).toBeNull()
+  })
+
+  it('does NOT show it when the trajectory is too short to establish direction', () => {
+    const root = render(withTrajectory(rising(3), falling(3)))
+    expect(root.querySelector('.lagnote')).toBeNull()
+  })
+
+  it('requires the mechanism to declare a lag, not just the numbers to look right', () => {
+    // The claim is about declared lag. With lag_ticks stripped to 0 the numbers are unchanged,
+    // so a story-driven implementation would still render it. This one must not.
+    const run = withTrajectory(rising(20), falling(20))
+    const noLag: RunResult = {
+      ...run,
+      projection: {
+        ...run.projection,
+        stages: run.projection.stages.map((s) =>
+          s.field === 'political_pressure' ? { ...s, lag_ticks: 0 } : s,
+        ),
+      },
+    }
+    expect(render(noLag).querySelector('.lagnote')).toBeNull()
+  })
+
+  it('qualifies upstream easing labels only while the lagged state holds', () => {
+    const lagged = render(withTrajectory(rising(20), falling(20)))
+    expect(lagged.querySelector('.krow__dir-q')?.textContent).toBe('UPSTREAM')
+
+    const plain = render(withTrajectory(falling(20, 0.5, 0.1), falling(20)))
+    expect(plain.querySelector('.krow__dir-q')).toBeNull()
+  })
+
+  it('builds the inspector explanation from mechanism metadata, not fixed prose', () => {
+    const root = render(withTrajectory(rising(20), falling(20)))
+    const lagBlock = root.querySelector('.insp__lag')!
+    expect(lagBlock).not.toBeNull()
+    const political = initialSnapshot().projection.stages.find((s) => s.field === 'political_pressure')!
+    // The declared lag and lifecycle come from the projection, not from a literal in the view.
+    expect(lagBlock.textContent).toContain(`${political.lag_ticks} tick(s)`)
+    expect(lagBlock.textContent).toContain(political.lifecycle)
+    for (const f of political.source_fields) {
+      expect(lagBlock.textContent).toContain(f.replace('chain.', '').replace(/_/g, ' '))
+    }
+  })
+
+  it('keeps the full semantic metric name available despite the short visible label', () => {
+    const root = render()
+    const labels = Array.from(root.querySelectorAll('.krow__label'))
+    expect(labels.length).toBe(4)
+    for (const el of labels) {
+      const full = el.getAttribute('title') ?? ''
+      expect(full.length).toBeGreaterThan((el.textContent ?? '').length - 1)
+      expect(full.trim()).toBeTruthy()
+    }
+    // And the row's accessible name still carries the projection's own label.
+    const rows = Array.from(root.querySelectorAll('.krow'))
+    for (const r of rows) expect(r.getAttribute('aria-label')).toBeTruthy()
+  })
+
+  it('does not describe the lag as a prediction', () => {
+    // Scoped to the lag content: the global disclosure legitimately contains the word
+    // "prediction" (it denies making one), so a whole-document match would be meaningless.
+    const root = render(withTrajectory(rising(20), falling(20)))
+    const scoped = [
+      ...Array.from(root.querySelectorAll('.lagnote')),
+      ...Array.from(root.querySelectorAll('.insp__lag')),
+    ]
+      .map((el) => el.textContent ?? '')
+      .join(' ')
+      .toLowerCase()
+    expect(scoped.length).toBeGreaterThan(80)
+    expect(scoped).not.toMatch(/will (rise|continue|peak|fall)|expected to|forecast|projected|predict/)
   })
 })

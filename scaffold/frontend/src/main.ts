@@ -17,7 +17,7 @@ import { initialSnapshot, runDemonstration, stageByField } from './engine/client
 import type { RunResult } from './engine/client.ts'
 import { escapeHtml } from './components/epistemic.ts'
 
-import { commandCentre, decisionRail, transitionStrip } from './screens/command-centre.ts'
+import { commandCentre, decisionRail, laggedResponse, transitionStrip } from './screens/command-centre.ts'
 
 export const FICTION_DISCLOSURE = 'FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION'
 export const MIXED_DISCLOSURE =
@@ -126,6 +126,10 @@ function wireInspector(root: HTMLElement, run: RunResult): void {
    */
   const plain = (f: string): string => (f.replace('chain.', '').replace(/_/g, ' '))
 
+  // Derived from the SAME gate the panel uses, so the inspector can never explain a lag the
+  // screen is not currently showing.
+  const lag = laggedResponse(p, run.trajectory)
+
   for (const s of p.stages) {
     const sources = s.source_fields.map(plain)
     index.set(s.field, {
@@ -138,6 +142,34 @@ function wireInspector(root: HTMLElement, run: RunResult): void {
           <li>${escapeHtml(s.lifecycle)}</li>
           <li>Updated at tick ${s.last_updated_tick}${s.lag_ticks ? `, ${s.lag_ticks} tick(s) behind its cause` : ''}.</li>
         </ul>
+        ${
+          lag && s.field === 'political_pressure'
+            ? `<div class="insp__lag">
+                 <h4 class="insp__lag-h">${
+                   lag.kind === 'rising'
+                     ? 'Why this is rising while upstream indicators ease'
+                     : 'Why this peaked after its upstream causes'
+                 }</h4>
+                 <ul class="insp__sum">
+                   <li>${
+                     lag.kind === 'rising'
+                       ? 'This value is <strong>still rising</strong>'
+                       : `This value <strong>peaked at tick ${lag.peakTick}</strong>, ${lag.ticksBehind} tick(s) after the last upstream indicator peaked (tick ${lag.upstreamPeakTick})`
+                   }, while ${escapeHtml(lag.easing.length.toString())} upstream indicator(s) are easing:
+                       ${escapeHtml(lag.easing.map((f) => f.replace(/_/g, ' ')).join(', '))}.</li>
+                   <li>It is computed from ${escapeHtml(lag.sources.join(' and '))}, so it responds
+                       to society's reaction rather than to the disruption directly.</li>
+                   <li>It carries a declared lag of ${lag.lagTicks} tick(s), so its inputs reach it
+                       after they have already moved.</li>
+                   <li>${escapeHtml(lag.lifecycle)} — which is why it ${
+                     lag.kind === 'rising' ? 'keeps climbing' : 'peaks later and falls more slowly'
+                   } after the upstream cause has begun to fade.</li>
+                 </ul>
+                 <p class="insp__lag-note">Derived from this run's trajectory and the mechanism's
+                 declared metadata. It is not shown when the values do not support it.</p>
+               </div>`
+            : ''
+        }
         <details class="insp__tech">
           <summary>Technical detail</summary>
           <dl class="provgrid">

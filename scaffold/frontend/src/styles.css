@@ -113,7 +113,7 @@ body {
  * which reports ~0 min-content and would collapse the auto rows to 89px. The auto rows below size
  * to their real content; row 1 takes the remainder and the map absorbs it.
  */
-  grid-template-rows: minmax(192px, 1fr) auto auto auto;
+  grid-template-rows: minmax(244px, 1fr) auto auto auto;
   grid-template-areas:
     "map      crisis   options"
     "map      metrics  options"
@@ -167,7 +167,7 @@ body {
  * the panel shows, so it must never be the thing that scrolls out of sight.
  */
 .panel > .panel__foot {
-  flex: 0 0 auto; margin: 0; padding: 5px var(--sp-3);
+  flex: 0 0 auto; margin: 0; line-height: 1.35; padding: 4px var(--sp-3);
   border-top: 1px solid var(--line); background: var(--s-inset);
 }
 .panel__body--flush { padding: 0; gap: 0; }
@@ -246,7 +246,7 @@ body {
 /* ── Charts ────────────────────────────────────────────────────────────── */
 .chart { display: flex; flex-direction: column; gap: 3px; padding-bottom: 2px; }
 /* overflow:visible so the stroke at the baseline and the final point are never clipped. */
-.chart__svg { width: 100%; height: 40px; overflow: visible; }
+.chart__svg { width: 100%; height: 30px; overflow: visible; }
 .chart__grid line { stroke: var(--line); stroke-width: 0.5; }
 .chart__line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .chart__line--political { stroke: var(--d-political); }
@@ -255,14 +255,14 @@ body {
 .chart__line--social { stroke: var(--d-social); }
 .chart__line--narrative { stroke: var(--d-narrative); }
 .chart__line--crisis { stroke: var(--d-crisis); }
-.chart__axis { display: flex; justify-content: space-between; font-size: var(--fs-micro); color: var(--t-faint); font-family: var(--f-num); }
+.chart__axis { display: flex; line-height: 1.2; justify-content: space-between; font-size: var(--fs-micro); color: var(--t-faint); font-family: var(--f-num); }
 .chart__legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); font-size: var(--fs-micro); color: var(--t-low); }
 .chart__legend li { display: flex; align-items: center; gap: 4px; }
 .chart__swatch { width: 10px; height: 2px; background: currentColor; }
 .chart__swatch--political { color: var(--d-political); }
 .chart__empty { font-size: var(--fs-meta); color: var(--t-faint); margin: 0; }
 
-.spark { width: 56px; height: 20px; flex: 0 0 auto; }
+.spark { width: 56px; height: 18px; flex: 0 0 auto; }
 .spark--empty { display: inline-block; }
 .spark__line { fill: none; stroke-width: 1.3; vector-effect: non-scaling-stroke; }
 .spark__line--logistics { stroke: var(--d-logistics); }
@@ -277,7 +277,7 @@ body {
 .krows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .krow {
   display: grid; column-gap: 6px; grid-template-columns: minmax(0, 1fr) 56px 62px 46px; align-items: center;
-  gap: var(--sp-2); padding: 1px 0; border-bottom: 1px solid var(--line); cursor: pointer;
+  gap: var(--sp-2); padding: 0; border-bottom: 1px solid var(--line); cursor: pointer;
 }
 .krow:last-child { border-bottom: none; }
 .krow__label { font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -311,7 +311,7 @@ body {
 .incident__row { display: flex; justify-content: space-between; align-items: baseline; }
 .incident__label { font-size: var(--fs-sm); color: var(--t-mid); }
 .incident__val { font-family: var(--f-num); font-size: var(--fs-h3); font-weight: 700; color: var(--d-crisis); }
-.bar { display: block; height: 7px; background: var(--s-inset); border-radius: 3px; overflow: hidden; }
+.bar { display: block; height: 6px; background: var(--s-inset); border-radius: 3px; overflow: hidden; }
 .bar__fill { display: block; height: 100%; border-radius: 3px; }
 .bar__fill--crisis { background: var(--d-crisis); }
 .bar__fill--social { background: var(--d-social); }
@@ -322,7 +322,7 @@ body {
 /* Name and value on one line, bar full width beneath: no name wrapping, room for a thicker bar. */
 .cohort {
   display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name val" "bar bar";
-  align-items: baseline; gap: 1px var(--sp-2); padding: 2px 0; cursor: pointer;
+  align-items: baseline; gap: 0 var(--sp-2); padding: 1px 0; cursor: pointer;
 }
 .cohort__name { grid-area: name; }
 .cohort__val { grid-area: val; }
@@ -346,7 +346,7 @@ body {
 .rail {
   background: var(--s-base); border-left: 1px solid var(--line);
   display: flex; flex-direction: column; overflow: hidden;
-}
+ overflow-y: auto; }
 .rail__decisions { border-bottom: 1px solid var(--line-strong); flex: 0 0 auto; }
 .rail__inspector { flex: 1 1 auto; overflow: auto; min-height: 0; }
 .rail__head {
@@ -359,7 +359,7 @@ body {
   background: var(--d-political); color: var(--s-void); border-radius: 10px;
   font-size: var(--fs-meta); font-weight: 800; font-family: var(--f-num);
 }
-.rail__body { padding: var(--sp-3); }
+.rail__body { overflow: visible; padding: var(--sp-3); }
 .rail__foot { margin: 0; padding: 0 var(--sp-3) var(--sp-3); font-size: var(--fs-micro); color: var(--t-faint); }
 .dlist { list-style: none; margin: 0; padding: var(--sp-2) var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
 .ditem {
@@ -469,7 +469,7 @@ body {
 .cohort__share { font-size: var(--fs-micro); color: var(--t-faint); margin-left: 6px; font-weight: 400; }
 /* The aggregate is a different KIND of number from a cohort value; it must not read as one more row. */
 .cohorts__agg {
-  margin-top: auto; padding-top: var(--sp-2); border-top: 2px solid var(--line-strong);
+  margin-top: auto; padding-top: 5px; border-top: 2px solid var(--line-strong);
   display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
   cursor: pointer;
 }
@@ -477,7 +477,7 @@ body {
   font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em; color: var(--t-low);
 }
 .cohorts__agg-val {
-  font-family: var(--f-num); font-size: var(--fs-h3); font-weight: 700; color: var(--d-social);
+  font-family: var(--f-num); font-size: var(--fs-lead); font-weight: 700; color: var(--d-social);
   font-variant-numeric: tabular-nums;
 }
 
@@ -544,3 +544,28 @@ body {
 
 /* Separation between the application header and the panel grid. */
 .layout { border-top: 1px solid var(--line); }
+
+/* ── Lagged-response explanation: derived state, never decoration ─────────── */
+.lagnote {
+  margin: 3px 0 0; padding: 4px 7px; border-left: 2px solid var(--d-narrative);
+  background: rgba(185, 140, 240, 0.07); border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-micro); color: var(--t-mid); line-height: 1.4;
+}
+.lagnote__chip {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.11em; color: var(--d-narrative);
+  margin-right: 6px; white-space: nowrap;
+}
+.lagnote__txt { margin: 0; font-size: var(--fs-micro); color: var(--t-mid); line-height: 1.35; }
+.lagnote__plain { margin: 4px 0 0; font-size: var(--fs-micro); color: var(--t-low); }
+.bignum__dir {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.09em; color: var(--d-political);
+  border: 1px solid currentColor; border-radius: 2px; padding: 1px 4px; align-self: center;
+}
+/* Two-line direction so "UPSTREAM EASING" is unambiguous without widening the column. */
+.krow__dir-q { display: block; line-height: 1.1; font-size: 8.5px; letter-spacing: 0.08em; color: var(--t-faint); }
+.insp__lag { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); }
+.insp__lag-h {
+  margin: 0 0 5px; font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--d-narrative); font-weight: 700;
+}
+.insp__lag-note { margin: 5px 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.4; }

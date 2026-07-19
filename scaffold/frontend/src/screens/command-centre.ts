@@ -89,6 +89,101 @@ function direction(series: number[]): { word: string; tone: string } | null {
   return delta > 0 ? { word: 'RISING', tone: 'up' } : { word: 'EASING', tone: 'down' }
 }
 
+/**
+ * LAGGED RESPONSE — derived, never narrated.
+ *
+ * The Kestral run shows upstream indicators easing while political pressure still rises. That is
+ * correct model behaviour, not a defect: political pressure lags its inputs and decays more slowly.
+ * A viewer who is not told this reasonably reads the screen as self-contradictory.
+ *
+ * This is gated on three facts checked against THIS projection, every render:
+ *   1. political pressure is actually RISING on the run's own trajectory;
+ *   2. a majority of upstream indicators are actually EASING on that trajectory;
+ *   3. the political stage declares a lag (lag_ticks >= 1) in its mechanism metadata.
+ *
+ * If any fails - a different scenario, an earlier tick, a changed rule pack - the explanation does
+ * not render. Nothing here is hard-coded for the Kestral screenshot.
+ */
+export interface LaggedResponse {
+  /**
+   * 'rising'   — political pressure is still climbing while upstream indicators ease.
+   * 'peak-lag' — political pressure has already turned over, but peaked LATER than every upstream
+   *              indicator, and remains nearer its own peak than they are to theirs.
+   */
+  kind: 'rising' | 'peak-lag'
+  easing: string[]
+  lagTicks: number
+  lifecycle: string
+  sources: string[]
+  peakTick: number
+  upstreamPeakTick: number
+  ticksBehind: number
+}
+
+/** Tick at which a field reached its maximum on this run. */
+function peakTick(traj: RunResult['trajectory'], field: string): { tick: number; value: number } {
+  let best = { tick: 0, value: -Infinity }
+  for (const row of traj) {
+    const v = Number(row[field] ?? 0)
+    if (v > best.value) best = { tick: Number(row['tick'] ?? 0), value: v }
+  }
+  return best
+}
+
+export function laggedResponse(p: Projection, traj: RunResult['trajectory']): LaggedResponse | null {
+  const politicalStage = stageByField(p, 'political_pressure')
+  if (!politicalStage) return null
+
+  // Condition on declared metadata first: the claim is about lag, so the mechanism must declare one.
+  if (politicalStage.lag_ticks < 1) return null
+  if (traj.length < 6) return null
+
+  const easing = KEY_METRICS.filter(
+    (f) => direction(traj.map((t) => Number(t[f] ?? 0)))?.word === 'EASING',
+  )
+  if (easing.length * 2 <= KEY_METRICS.length) return null
+
+  const pPeak = peakTick(traj, 'political_pressure')
+  const upstreamPeak = Math.max(...KEY_METRICS.map((f) => peakTick(traj, f).tick))
+  const base = {
+    easing,
+    lagTicks: politicalStage.lag_ticks,
+    lifecycle: politicalStage.lifecycle,
+    sources: politicalStage.source_fields.map((f) => f.replace('chain.', '').replace(/_/g, ' ')),
+    peakTick: pPeak.tick,
+    upstreamPeakTick: upstreamPeak,
+    ticksBehind: pPeak.tick - upstreamPeak,
+  }
+
+  // Variant A: still climbing while upstream falls.
+  const politicalDir = direction(traj.map((t) => Number(t['political_pressure'] ?? 0)))
+  if (politicalDir?.word === 'RISING') return { ...base, kind: 'rising' }
+
+  /*
+   * Variant B: political pressure has already turned over, but it peaked LATER than every upstream
+   * indicator and has given up less of its peak than they have. On the Kestral run the peaks land
+   * in strict order - incident t1, insurer t6, rerouting t7, employment t9, households t10,
+   * narrative t13, collective t16, political t17 - which demonstrates the same propagation delay
+   * more strongly than the rising case, and is what the run actually shows at tick 20.
+   */
+  if (pPeak.tick <= upstreamPeak) return null
+  const retention = (f: string): number => {
+    const pk = peakTick(traj, f).value
+    const last = Number(traj[traj.length - 1]?.[f] ?? 0)
+    return pk > 0 ? last / pk : 0
+  }
+  const politicalRetention = retention('political_pressure')
+  const upstreamRetention = Math.max(...KEY_METRICS.map(retention))
+  if (politicalRetention <= upstreamRetention) return null
+
+  return { ...base, kind: 'peak-lag' }
+}
+
+/** True when this field is an upstream indicator that is currently easing. */
+function isUpstreamEasing(field: string, lag: LaggedResponse | null): boolean {
+  return !!lag && lag.easing.includes(field)
+}
+
 function severityWord(v: number): string {
   if (v >= 0.5) return 'SEVERE'
   if (v >= 0.25) return 'ELEVATED'
@@ -107,7 +202,12 @@ function optionRow(o: OptionEntry): string {
   </li>`
 }
 
-function metricRow(p: Projection, traj: RunResult['trajectory'], field: string): string {
+function metricRow(
+  p: Projection,
+  traj: RunResult['trajectory'],
+  field: string,
+  lag: LaggedResponse | null,
+): string {
   const s = stageByField(p, field)
   if (!s) return ''
   const tone = TONE[field] ?? 'neutral'
@@ -115,10 +215,16 @@ function metricRow(p: Projection, traj: RunResult['trajectory'], field: string):
   const dir = direction(series)
   return `<li class="krow" data-card-id="${escapeHtml(field)}" tabindex="0" role="button"
       aria-label="${escapeHtml(s.label)} ${s.value.toFixed(4)}${dir ? `, ${dir.word.toLowerCase()} over the last five ticks` : ''}. Select to inspect provenance.">
-    <span class="krow__label">${escapeHtml(SHORT_LABEL[field] ?? s.label)}</span>
+    <span class="krow__label" title="${escapeHtml(s.label)}">${escapeHtml(SHORT_LABEL[field] ?? s.label)}</span>
     ${sparkline(series, tone)}
     <span class="krow__val krow__val--${tone}">${s.value.toFixed(4)}</span>
-    ${dir ? `<span class="krow__dir krow__dir--${dir.tone}">${dir.word}</span>` : '<span class="krow__dir krow__dir--none">—</span>'}
+    ${
+      dir
+        ? `<span class="krow__dir krow__dir--${dir.tone}">${
+            isUpstreamEasing(field, lag) ? '<span class="krow__dir-q">UPSTREAM</span>EASING' : dir.word
+          }</span>`
+        : '<span class="krow__dir krow__dir--none">—</span>'
+    }
   </li>`
 }
 
@@ -130,6 +236,8 @@ export function commandCentre(run: RunResult): string {
   const rerouting = stageByField(p, 'rerouting_level')?.value ?? 0
   const household = stageByField(p, 'household_expectation_pressure')?.value ?? 0
   const engineOrigin = run.connection === 'unavailable' ? 'unavailable' : 'engine'
+  const lag = laggedResponse(p, traj)
+  const politicalDir = direction(traj.map((t) => Number(t['political_pressure'] ?? 0)))
 
   return `
   <div class="scc">
@@ -151,11 +259,26 @@ export function commandCentre(run: RunResult): string {
       ${panelHead('Crisis status', 'Political pressure', engineOrigin, { id: 'p-crisis' })}
       <div class="panel__body">
         <div class="bignum" data-card-id="political_pressure" tabindex="0" role="button"
-             aria-label="Political pressure ${political.toFixed(4)} of 1.000, ${severityWord(political)}. Select to inspect.">
+             aria-label="Political pressure ${political.toFixed(4)} of 1.000, ${severityWord(political)}${lag ? (lag.kind === 'rising' ? ', still rising while upstream indicators ease' : `, peaked at tick ${lag.peakTick}, later than every upstream indicator`) : ''}. Select to inspect.">
           <span class="bignum__value">${political.toFixed(4)}</span>
           <span class="bignum__scale">/ 1.000</span>
+          ${lag ? `<span class="bignum__dir">${lag.kind === 'rising' ? 'STILL RISING' : `PEAKED t${lag.peakTick} · LAGGED`}</span>` : ''}
           <span class="bignum__word bignum__word--${severityWord(political).toLowerCase().replace(' ', '-')}">${severityWord(political)}</span>
         </div>
+        ${
+          lag
+            ? `<p class="lagnote"><span class="lagnote__chip">LAGGED RESPONSE</span>${
+                 lag.kind === 'rising'
+                   ? `Upstream disruption is easing, but political pressure is still rising —
+                      narrative and collective effects persist longer.`
+                   : `Upstream disruption is easing. Political pressure peaked ${lag.ticksBehind}
+                      ticks later, at tick ${lag.peakTick}, and is holding nearer its peak —
+                      narrative and collective effects persist longer.`
+               }</p>`
+            : politicalDir
+              ? `<p class="lagnote__plain">Political pressure is ${politicalDir.word.toLowerCase()}.</p>`
+              : ''
+        }
         ${trajectoryChart(traj, [{ field: 'political_pressure', label: 'Political pressure', tone: 'political' }], 66)}
       </div>
     </section>
@@ -185,7 +308,7 @@ export function commandCentre(run: RunResult): string {
     <section class="panel panel--metrics" aria-labelledby="p-metrics">
       ${panelHead(`Key metrics`, 'Engine indicators', engineOrigin, { id: 'p-metrics' })}
       <div class="panel__body">
-        <ul class="krows">${KEY_METRICS.map((f) => metricRow(p, traj, f)).join('')}</ul>
+        <ul class="krows">${KEY_METRICS.map((f) => metricRow(p, traj, f, lag)).join('')}</ul>
       </div>
     </section>
 
