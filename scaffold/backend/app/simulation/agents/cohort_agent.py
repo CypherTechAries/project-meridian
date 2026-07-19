@@ -36,12 +36,15 @@ class CohortAgent(mesa.Agent):
         Grievance-driven drift: cohorts with active grievances lose a little belief in government
         competence each tick. A deterministic/stochastic rule — NOT an LLM call.
 
-        Note the draw is conditional on `grievances` being non-empty. That conditionality is
-        exactly the RNG-contamination vector A3 demonstrated: changing how many cohorts have
-        grievances changes how many draws are consumed, shifting every later draw in the shared
-        stream and moving macro numbers for reasons unrelated to any modelled cause. P0.4A
-        (ADR-010) is what fixes this; P0.4 deliberately does not change the draw pattern, because
-        changing it would alter existing tested numeric outputs.
+        The draw is conditional on `grievances` being non-empty. Under the old shared stream that
+        conditionality was the RNG-contamination vector A3 demonstrated: changing how many cohorts
+        had grievances changed how many draws were consumed, shifting every later draw and moving
+        macro numbers for reasons unrelated to any modelled cause.
+
+        P0.4A (19 July 2026) removes that coupling. The draw is now keyed on this cohort's id and
+        the tick, so it is a pure function of (run seed, cohort, tick). A cohort that draws nothing
+        consumes nothing, and no other cohort's or subsystem's value moves as a result. The
+        conditional is now a harmless modelling choice rather than a hidden global dependency.
         """
         if not self.cohort.grievances:
             return
@@ -49,7 +52,14 @@ class CohortAgent(mesa.Agent):
         # Imported here rather than at module scope to avoid a circular import.
         from ..transitions import Transition, TransitionOrigin, TransitionType
 
-        drift = 0.005 + self.model.rng.uniform(0.0, 0.005)
+        drift = 0.005 + self.model.draws.uniform(
+            0.0,
+            0.005,
+            subsystem="cohort",
+            purpose="grievance_drift",
+            entity=self.cohort.cohort_id,
+            context=str(self.model.tick),
+        )
         cid = self.cohort.cohort_id
         current = self.model.state.cohorts[cid].beliefs["government_competence"]
         self.model.submit(
