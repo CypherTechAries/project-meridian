@@ -85,6 +85,8 @@ class DemoRunResponse(BaseModel):
     ticks: int
     seed: int
     projection: dict[str, Any]
+    # Per-tick values the run produced. Derived presentation data, not a stored history.
+    trajectory: list[dict[str, Any]]
     # Restated in the response so a consumer cannot infer capabilities from the payload's shape.
     limitations: list[str]
 
@@ -129,7 +131,25 @@ def run_demonstration(req: DemoRunRequest) -> DemoRunResponse:
         enabled = [m.id for m in CHAIN if m.id != disabled]
 
     model = MeridianModel(scenario=scenario, seed=DEMO_SEED, enabled_mechanisms=enabled)
-    model.run(req.ticks)
+
+    # Per-tick trajectory, recorded as the run executes. This is DERIVED PRESENTATION DATA - the
+    # values the run actually produced at each tick - not a new engine capability and not a
+    # stored history. It exists so a chart can show a trajectory instead of a single number.
+    trajectory: list[dict[str, Any]] = []
+    for _ in range(req.ticks):
+        model.step()
+        c = model.state.chain
+        trajectory.append({
+            "tick": model.tick,
+            "incident_severity": round(c.incident_severity, 6),
+            "insurer_risk": round(c.insurer_risk, 6),
+            "rerouting_level": round(c.rerouting_level, 6),
+            "employment_pressure": round(c.employment_pressure, 6),
+            "household_expectation_pressure": round(c.household_expectation_pressure, 6),
+            "narrative_attention": round(c.narrative_attention, 6),
+            "collective_activity": round(c.collective_activity, 6),
+            "political_pressure": round(c.political_pressure, 6),
+        })
 
     return DemoRunResponse(
         contract_version=CONTRACT_VERSION,
@@ -138,6 +158,7 @@ def run_demonstration(req: DemoRunRequest) -> DemoRunResponse:
         ticks=req.ticks,
         seed=DEMO_SEED,
         projection=project_causal_slice(model.state, model.transition_log),
+        trajectory=trajectory,
         limitations=list(_LIMITATIONS),
     )
 

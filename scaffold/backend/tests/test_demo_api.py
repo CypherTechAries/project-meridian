@@ -178,3 +178,20 @@ def test_mechanisms_endpoint_lists_the_declared_chain() -> None:
     assert {"M-INSURER-RISK", "M-CARRIER-REROUTE", "M-HOUSEHOLD-EXPECT"} <= ids
     for m in body["mechanisms"]:
         assert m["lifecycle"] and m["version"]
+
+
+def test_trajectory_records_every_tick_of_the_run() -> None:
+    """Derived presentation data — the values the run actually produced, not a stored history."""
+    body = post("incident", ticks=20)
+    traj = body["trajectory"]
+    assert len(traj) == 20
+    assert [t["tick"] for t in traj] == list(range(1, 21))
+    # The final trajectory point must agree with the projection's final state.
+    final = {s["field"]: s["value"] for s in body["projection"]["stages"]}
+    assert traj[-1]["political_pressure"] == pytest.approx(final["political_pressure"], abs=1e-6)
+
+
+def test_baseline_trajectory_is_flat_zero() -> None:
+    for point in post("baseline", ticks=20)["trajectory"]:
+        assert point["political_pressure"] == 0.0
+        assert point["insurer_risk"] == 0.0

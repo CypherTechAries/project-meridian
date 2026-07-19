@@ -1,91 +1,97 @@
 /*
- * MERIDIAN design tokens — C0.
+ * MERIDIAN design tokens.
  *
- * Original visual language. No trade dress from any named product or game is used: the palette is
- * a neutral graphite ramp with a single restrained accent, and the epistemic encodings are
- * MERIDIAN's own.
+ * Original visual language. No trade dress from any product, game or defence company.
  *
- * ACCESSIBILITY STATUS: this is a DARK-ONLY theme and NO conformance claim is made. Research
- * finding C3 records that dark-only cannot be shipped and called accessible; light and
- * high-contrast themes are required before any such claim. They do not exist yet.
+ * The palette moved from flat charcoal to a DEEP BLUE-BLACK ramp with thin cyan datum lines —
+ * the navigation motif the project is named for. Depth comes from a real elevation ramp rather
+ * than from borders alone, which is what made the previous build read as an admin tool.
  *
- * Colour is never the only carrier of meaning. Every epistemic status also has a text token and a
- * distinct glyph, so the encoding survives greyscale, forced-colors mode and colour-blind viewing.
+ * ACCESSIBILITY STATUS: dark-only. NO conformance is claimed — light and high-contrast themes do
+ * not exist. Colour never carries meaning alone: every status has a glyph or letter and a label.
  */
 
 :root {
-  /* Surfaces — graphite ramp */
-  --bg-0: #0b0e12;
-  --bg-1: #12161c;
-  --bg-2: #171d25;
-  --bg-3: #1e262f;
-  --bg-inset: #0d1116;
+  /* Surfaces — deep blue-black, five levels of elevation */
+  --s-void: #05080d;
+  --s-base: #070b12;
+  --s-panel: #0b1119;
+  --s-raised: #0f1722;
+  --s-inset: #060a10;
+  --s-hover: #14202e;
 
-  /* Lines */
-  --line-1: #232c37;
-  --line-2: #2f3a47;
-  --line-strong: #3d4a5a;
+  /* Lines: hairline structure, not heavy boxes */
+  --line: #16202e;
+  --line-strong: #1f2d3f;
+  --line-datum: #17394a;
 
   /* Text */
-  --fg-0: #e6ecf3;
-  --fg-1: #b8c4d2;
-  --fg-2: #8b98a8;
-  --fg-3: #64707e;
+  --t-hi: #eaf2fb;
+  --t-mid: #a9bacd;
+  --t-low: #6f8298;
+  --t-faint: #4a5a6d;
 
-  /* Single accent — used for interaction affordance only, never for meaning */
-  --accent: #4fb8c4;
-  --accent-dim: #2b6a72;
+  /* The MERIDIAN cyan — structure and interaction, never status */
+  --cyan: #35c8e0;
+  --cyan-dim: #1d6b7d;
+  --cyan-glow: rgba(53, 200, 224, 0.16);
 
-  /* Epistemic status — paired with glyph + text token, never colour alone */
-  --ep-authoritative: #6fcf97;
-  --ep-assessed: #6aa9e0;
-  --ep-disputed: #e0a34a;
-  --ep-unknown: #8b98a8;
-  --ep-presentation: #a98bd0;
+  /* Semantic domain accents. Used ONLY where they carry meaning. */
+  --d-crisis: #ff5f6d;      /* incident severity */
+  --d-logistics: #48b8ea;   /* maritime / insurer / rerouting */
+  --d-economic: #f0a742;    /* port + employment exposure */
+  --d-social: #37c9ad;      /* household / cohort concern */
+  --d-narrative: #b98cf0;   /* narrative + collective activity */
+  --d-political: #ff6b57;   /* political pressure */
+  --d-enabled: #4fd18b;     /* option enabled */
+  --d-constrained: #f0a742; /* option constrained */
+  --d-muted: #61748a;       /* available / unknown */
 
-  /* Disclosure bands — deliberately high-visibility, non-decorative */
-  --disclose-fiction-bg: #3a2a12;
-  --disclose-fiction-fg: #ffd79a;
-  --disclose-fiction-line: #7a5a24;
-  --disclose-fixture-bg: #37202a;
-  --disclose-fixture-fg: #ffb3c6;
-  --disclose-fixture-line: #7d3f55;
+  /* Origin markers */
+  --o-engine: #4fd18b;
+  --o-fixture: #f0a742;
+  --o-unknown: #7c8ea3;
+  --o-unavailable: #61748a;
 
-  /* Typography */
-  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+  /* Disclosure strip */
+  --disc-bg: #12202c;
+  --disc-fg: #9fd8e8;
+  --disc-line: #1d4457;
 
-  --fs-xs: 11px;
+  /* Type — a real hierarchy, not six sizes of the same thing */
+  --f-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-num: "SF Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --fs-micro: 10px;
+  --fs-meta: 11px;
   --fs-sm: 12px;
-  --fs-md: 13px;
-  --fs-lg: 15px;
-  --fs-xl: 19px;
-  --fs-2xl: 24px;
+  --fs-body: 13px;
+  --fs-lead: 15px;
+  --fs-h3: 17px;
+  --fs-h2: 21px;
+  --fs-display: 44px;
 
-  --lh-tight: 1.25;
-  --lh-normal: 1.5;
+  --lh-tight: 1.2;
+  --lh-body: 1.5;
 
   /* Spacing */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
   --sp-4: 16px;
-  --sp-5: 24px;
-  --sp-6: 32px;
+  --sp-5: 22px;
+  --sp-6: 30px;
 
-  --radius: 3px;
+  --r-sm: 3px;
+  --r-md: 5px;
 
-  /* The crop-invariant provenance carrier: a full-height gutter rule on every card.
-     A tinted box reads as advertising and is skipped; a structural rule survives cropping. */
-  --gutter-w: 3px;
-
-  --focus-ring: 2px solid var(--accent);
+  --focus: 2px solid var(--cyan);
 }
 
-/* Forced-colors: gradients, glows and shadows are void, so the encoding must be structural. */
 @media (forced-colors: active) {
   :root {
-    --gutter-w: 4px;
+    --line: CanvasText;
+    --line-strong: CanvasText;
   }
 }
 

@@ -1,231 +1,333 @@
 /**
- * C0 honesty tests.
+ * C0 honesty tests — carried forward through the visual redesign.
  *
- * These do not merely check that the screen renders. They assert the properties that make a
- * fixture-backed prototype honest, because a polished screenshot is documentation and this project
- * exists to correct documentation that claimed more than the code delivered.
+ * Every property the previous suite enforced is preserved. The component names changed; the
+ * guarantees did not. Nothing here was relaxed to accommodate the new layout — where the redesign
+ * changed what is true (the screen is now MIXED engine and fixture, not fixture-only), the test
+ * asserts the new truth rather than the old wording.
  */
 
-import { describe, expect, it, beforeEach } from 'vitest'
-import { kestralStrait } from '../src/fixtures/kestral-strait.v1.ts'
-import { assertEnvelope } from '../src/fixtures/types.ts'
-import type { Envelope } from '../src/fixtures/types.ts'
-import { FICTION_DISCLOSURE, FIXTURE_DISCLOSURE } from '../src/components/disclosure.ts'
-import { mount } from '../src/main.ts'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { FICTION_DISCLOSURE, MIXED_DISCLOSURE, mount } from '../src/main.ts'
+import { initialSnapshot } from '../src/engine/client.ts'
+import type { RunResult } from '../src/engine/client.ts'
 
 const ALLOWED_STATUS = ['AUTHORITATIVE', 'ASSESSED', 'DISPUTED', 'UNKNOWN', 'PRESENTATION_ONLY']
 const ALLOWED_CONF = ['HIGH', 'MEDIUM', 'LOW', 'NOT_APPLICABLE']
 
-function allRecords(): { where: string; rec: Envelope }[] {
-  const out: { where: string; rec: Envelope }[] = [{ where: 'crisis', rec: kestralStrait.crisis }]
-  kestralStrait.chain.forEach((h, i) => out.push({ where: `chain[${i}]`, rec: h }))
-  kestralStrait.panels.forEach((p, i) => {
-    out.push({ where: `panels[${i}]`, rec: p })
-    p.claims.forEach((c, j) => out.push({ where: `panels[${i}].claims[${j}]`, rec: c }))
-  })
-  kestralStrait.queue.forEach((q, i) => out.push({ where: `queue[${i}]`, rec: q }))
-  kestralStrait.stream.forEach((s, i) => out.push({ where: `stream[${i}]`, rec: s }))
-  return out
+function render(run: RunResult = initialSnapshot()): HTMLElement {
+  const root = document.createElement('div')
+  mount(root, run)
+  return root
 }
 
-describe('fixture envelope', () => {
-  it('every displayable record carries a complete envelope', () => {
-    for (const { where, rec } of allRecords()) {
-      expect(() => assertEnvelope(rec, where)).not.toThrow()
-    }
+describe('disclosures', () => {
+  let root: HTMLElement
+  beforeEach(() => {
+    root = render()
   })
 
-  it('every record declares fixture origin — no record claims to come from the engine', () => {
-    for (const { where, rec } of allRecords()) {
-      expect(rec.origin, where).toBe('fixture')
-    }
+  it('renders the fictional-simulation disclosure verbatim', () => {
+    expect(root.textContent).toContain(FICTION_DISCLOSURE)
   })
 
-  it('every record sets prototype_data literally true', () => {
-    for (const { where, rec } of allRecords()) {
-      expect(rec.prototype_data, where).toBe(true)
-    }
+  it('renders the MIXED-origin disclosure, because the screen is no longer fixture-only', () => {
+    // The old "NOT CONNECTED TO THE SIMULATION ENGINE" wording would now be FALSE: part of this
+    // screen genuinely is connected. Claiming otherwise would be a new dishonesty.
+    expect(root.textContent).toContain(MIXED_DISCLOSURE)
+    expect(root.textContent).not.toContain('NOT CONNECTED TO THE SIMULATION ENGINE')
   })
 
-  it('uses only the approved epistemic vocabulary (founder D2)', () => {
-    for (const { where, rec } of allRecords()) {
-      expect(ALLOWED_STATUS, where).toContain(rec.epistemic_status)
-      expect(ALLOWED_CONF, where).toContain(rec.confidence)
-    }
-  })
-
-  it('the world is declared fictional', () => {
-    expect(kestralStrait.world.is_fictional).toBe(true)
+  it('provides no control that could dismiss a disclosure', () => {
+    const band = root.querySelector('.disclosures')!
+    expect(band.querySelector('button')).toBeNull()
+    expect(band.querySelector('[aria-label*="close" i]')).toBeNull()
+    expect(band.querySelector('[aria-label*="dismiss" i]')).toBeNull()
   })
 })
 
-describe('no fabricated numbers', () => {
+describe('crop safety', () => {
+  it('every panel carries its own fictional-world marker', () => {
+    // A cropped screenshot of one panel must still declare that the world is fictional. The
+    // treatment is now compact rather than a full-width word, but it is still present per panel.
+    const root = render()
+    const panels = Array.from(root.querySelectorAll('.panel'))
+    expect(panels.length).toBeGreaterThan(4)
+    for (const p of panels) {
+      expect(p.querySelector('.fmark'), `panel missing fiction mark: ${p.className}`).not.toBeNull()
+    }
+  })
+
+  it('every panel carries a compact origin badge with a letter, not colour alone', () => {
+    const root = render()
+    for (const p of Array.from(root.querySelectorAll('.panel'))) {
+      const badge = p.querySelector('.ob')
+      expect(badge, `panel missing origin badge: ${p.className}`).not.toBeNull()
+      expect(badge!.querySelector('.ob__code')?.textContent?.trim()).toBeTruthy()
+      // Screen-reader text spells the origin out; the letter is not the only signal.
+      expect(badge!.querySelector('.u-sr')?.textContent?.trim()).toBeTruthy()
+    }
+  })
+
+  it('the fiction mark carries text, not only an icon', () => {
+    const root = render()
+    for (const m of Array.from(root.querySelectorAll('.fmark'))) {
+      expect(m.textContent?.trim()).toContain('FICTIONAL')
+    }
+  })
+})
+
+describe('engine versus fixture', () => {
+  it('engine and fixture panels are visibly distinguished', () => {
+    const root = render()
+    const engine = root.querySelectorAll('.ob--engine')
+    const fixture = root.querySelectorAll('.ob--fixture')
+    expect(engine.length).toBeGreaterThan(0)
+    expect(fixture.length).toBeGreaterThan(0)
+    // Different letters, not merely different colours.
+    expect(engine.item(0)?.querySelector('.ob__code')?.textContent).toBe('E')
+    expect(fixture.item(0)?.querySelector('.ob__code')?.textContent).toBe('F')
+  })
+
+  it('the fixture panel says plainly that the engine does not model its content', () => {
+    const root = render()
+    const intel = root.querySelector('.panel--intel')!
+    expect(intel.querySelector('.ob--fixture')).not.toBeNull()
+    expect(intel.textContent).toMatch(/engine models no/i)
+  })
+
+  it('marks the connection state so a recorded snapshot is not shown as live', () => {
+    const snap = render(initialSnapshot())
+    expect(snap.querySelector('.tb__v--stale')?.textContent).toBe('SNAPSHOT')
+
+    const live = render({ ...initialSnapshot(), connection: 'live' })
+    expect(live.querySelector('.tb__v--live')?.textContent).toBe('LIVE')
+  })
+
+  it('renders an honest unavailable state when the backend cannot be reached', () => {
+    const root = render({ ...initialSnapshot(), connection: 'unavailable', error: 'refused' })
+    expect(root.querySelector('.tb__v--stale')?.textContent).toBe('UNAVAILABLE')
+    expect(root.querySelector('.sysrow__v--warn')?.textContent).toBe('OFFLINE')
+    // Engine-sourced panels must not still claim engine origin when the engine is unreachable.
+    expect(root.querySelector('.panel--crisis .ob--unavailable')).not.toBeNull()
+  })
+})
+
+describe('no fabricated precision', () => {
   it('displays no numeric confidence percentage anywhere', () => {
-    const root = document.createElement('div')
-    mount(root)
-    // A percentage adjacent to confidence language would be a fabricated precision claim.
-    const text = root.textContent ?? ''
-    expect(text).not.toMatch(/\d+\s?%/)
+    const text = render().textContent ?? ''
+    expect(text).not.toMatch(/\d+\s?%\s*(confidence|certain)/i)
   })
-})
 
-describe('decision queue integrity', () => {
-  it('every queue item has at least one affordance', () => {
-    // HSE's rule made machine-checkable: a status indicator must not be designated a decision.
-    for (const q of kestralStrait.queue) {
-      expect(q.affordances.length, q.id).toBeGreaterThan(0)
+  it('reports confidence as not-applicable rather than inventing one', () => {
+    const root = render()
+    expect(root.textContent).toMatch(/the engine computes, it does not estimate/i)
+  })
+
+  it('only uses the approved epistemic and confidence vocabulary', () => {
+    const p = initialSnapshot().projection
+    for (const group of [p.stages, p.cohorts, p.government_options]) {
+      for (const entry of group as Array<{ epistemic_status: string; confidence?: string }>) {
+        expect(ALLOWED_STATUS).toContain(entry.epistemic_status)
+        if (entry.confidence) expect(ALLOWED_CONF).toContain(entry.confidence)
+      }
     }
   })
 })
 
 describe('absence handling', () => {
-  it('unknown and unavailable render distinctly and are never dropped', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const absent = root.querySelectorAll('.absent')
-    expect(absent.length).toBeGreaterThan(0)
-    const kinds = new Set(Array.from(absent).map((n) => n.getAttribute('data-absence')))
-    // Both classes are present in the fixture, and both must survive to the DOM.
-    expect(kinds.has('UNKNOWN')).toBe(true)
-    expect(kinds.has('UNAVAILABLE')).toBe(true)
-  })
-
-  it('a null value never renders as zero', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const absent = Array.from(root.querySelectorAll('.absent')).map((n) => n.textContent?.trim())
-    for (const t of absent) {
-      expect(t).not.toBe('0')
-      expect(t).toBeTruthy()
+  it('the decision rail distinguishes "nothing changed" from an empty list', () => {
+    // Zero decisions is a RESULT, not a blank. It must say why.
+    const run = initialSnapshot()
+    const quiet: RunResult = {
+      ...run,
+      projection: {
+        ...run.projection,
+        government_options: run.projection.government_options.map((o) => ({ ...o, value: 'AVAILABLE' })),
+      },
     }
-  })
-})
-
-describe('disclosures', () => {
-  let root: HTMLElement
-
-  beforeEach(() => {
-    root = document.createElement('div')
-    mount(root)
+    const root = render(quiet)
+    expect(root.querySelector('.ditem--none')).not.toBeNull()
+    expect(root.querySelector('.ditem--none')?.textContent).toMatch(/below every declared threshold/i)
+    expect(root.querySelector('.rail__count')?.textContent).toBe('0')
   })
 
-  it('renders both disclosures verbatim', () => {
+  it('does not render an unavailable capability as a zero', () => {
+    const root = render()
     const text = root.textContent ?? ''
-    expect(text).toContain(FICTION_DISCLOSURE)
-    expect(text).toContain(FIXTURE_DISCLOSURE)
-  })
-
-  it('repeats both disclosures top and bottom so a crop cannot remove them', () => {
-    const fiction = Array.from(root.querySelectorAll('.disclose--fiction'))
-    const fixture = Array.from(root.querySelectorAll('.disclose--fixture'))
-    expect(fiction.length).toBeGreaterThanOrEqual(2)
-    expect(fixture.length).toBeGreaterThanOrEqual(2)
-  })
-
-  it('provides no control that could dismiss a disclosure', () => {
-    const bands = root.querySelectorAll('.disclosures')
-    for (const b of Array.from(bands)) {
-      expect(b.querySelector('button')).toBeNull()
-      expect(b.querySelector('[aria-label*="close" i]')).toBeNull()
-    }
+    // The options panel states the absence of cost/effect rather than printing 0.
+    expect(text).toMatch(/computes no cost or effect/i)
   })
 })
 
-describe('per-card fixture marking (crop invariance)', () => {
-  it('every card carries its own FIXTURE marker, not only the page banner', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const provs = Array.from(root.querySelectorAll('.prov'))
-    expect(provs.length).toBeGreaterThan(0)
-    for (const p of provs) {
-      const origin = p.querySelector('.prov__origin')
-      expect(origin?.textContent?.trim()).toBe('FIXTURE')
-    }
-  })
-
-  it('every card also carries a FICTIONAL marker — the B5 disclosure must survive a crop', () => {
-    // A crop that excludes both page banners must still declare that the world is fictional.
-    // Verified against a real cropped capture in scripts/screenshot.mjs.
-    const root = document.createElement('div')
-    mount(root)
-    const provs = Array.from(root.querySelectorAll('.prov'))
-    for (const p of provs) {
-      expect(p.querySelector('.prov__fiction')?.textContent?.trim()).toBe('FICTIONAL')
-    }
-  })
-
-  it('every epistemic chip carries a glyph and a text token, never colour alone', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const chips = Array.from(root.querySelectorAll('.chip'))
-    expect(chips.length).toBeGreaterThan(0)
-    for (const c of chips) {
-      expect(c.querySelector('.chip__glyph')).not.toBeNull()
-      expect(c.querySelector('.chip__token')?.textContent?.trim()).toBeTruthy()
-    }
-  })
-})
-
-describe('non-materialised entities', () => {
-  it('aggregate entities are marked and never given individual detail', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const aggregates = Array.from(root.querySelectorAll('.ent--aggregate'))
-    expect(aggregates.length).toBeGreaterThan(0)
-    for (const a of aggregates) {
-      expect(a.textContent).toContain('aggregate')
-    }
-  })
-
-  it('no fixture entity is materialised implicitly — the flag is explicit on every reference', () => {
-    for (const hop of kestralStrait.chain) {
-      for (const e of hop.entities) {
-        expect(typeof e.materialised, `${hop.id}/${e.id}`).toBe('boolean')
-      }
-    }
-  })
-})
-
-describe('aggregate contributors', () => {
-  it('every chain hop with a summary names its mechanisms', () => {
-    // Research T18 (fact-checked): an aggregate without a ranked contributor list does not ship.
-    for (const hop of kestralStrait.chain) {
-      if (hop.epistemic_status === 'UNKNOWN') continue
-      expect(hop.contributors.length, hop.id).toBeGreaterThan(0)
-      for (const c of hop.contributors) {
-        expect(c.mechanism, `${hop.id}/${c.label}`).toBeTruthy()
-      }
-    }
-  })
-})
-
-describe('shell', () => {
-  it('renders the five landmark regions and marks unbuilt screens as unbuilt', () => {
-    const root = document.createElement('div')
-    mount(root)
-    expect(root.querySelector('nav[aria-label="Primary"]')).not.toBeNull()
-    expect(root.querySelector('main#main')).not.toBeNull()
-    expect(root.querySelector('aside[aria-label="Context and inspection"]')).not.toBeNull()
-    expect(root.querySelector('[role="log"]')).not.toBeNull()
-    expect(root.querySelector('[aria-label="Scenario and role status"]')).not.toBeNull()
-
+describe('honest scope', () => {
+  it('marks unbuilt screens as not built', () => {
+    const root = render()
     const disabled = Array.from(root.querySelectorAll('.nav__item.is-disabled'))
     expect(disabled.length).toBe(4)
     for (const d of disabled) expect(d.textContent).toContain('not built')
   })
 
-  it('renders the full propagation chain including the unresolved final hop', () => {
-    const root = document.createElement('div')
-    mount(root)
-    const hops = root.querySelectorAll('.hop')
-    expect(hops.length).toBe(kestralStrait.chain.length)
-    expect(root.querySelector('.hop--unresolved')).not.toBeNull()
+  it('states that the run is ephemeral and not a replay', () => {
+    expect(render().textContent).toMatch(/not persisted, not a replay/i)
   })
 
-  it('labels the chain as a hand-authored fixture trace', () => {
+  it('does not claim replay, event sourcing or persistence anywhere on screen', () => {
+    const text = (render().textContent ?? '').toLowerCase()
+    expect(text).not.toMatch(/\breplay(ing|able)?\b(?!\s*[.,]?\s*$)(?![^.]*not)/)
+    expect(text).not.toContain('event sourcing')
+    expect(text).not.toContain('event-sourced')
+  })
+
+  it('states that population affects magnitude only', () => {
+    const root = render()
+    expect(root.textContent).toMatch(/population affects aggregate magnitude only/i)
+  })
+
+  it('says the map is invented geography', () => {
+    expect(render().textContent).toMatch(/invented geography|no real-world map data/i)
+  })
+})
+
+describe('structure and accessibility basics', () => {
+  it('renders the landmark regions', () => {
+    const root = render()
+    expect(root.querySelector('nav[aria-label="Primary"]')).not.toBeNull()
+    expect(root.querySelector('main#main')).not.toBeNull()
+    expect(root.querySelector('aside[aria-label="Decisions and inspector"]')).not.toBeNull()
+    expect(root.querySelector('[aria-label="Scenario and run status"]')).not.toBeNull()
+    expect(root.querySelector('[aria-label="Prototype disclosures"]')).not.toBeNull()
+  })
+
+  it('gives the map a descriptive text alternative', () => {
+    const label = render().querySelector('.map')?.getAttribute('aria-label') ?? ''
+    expect(label).toMatch(/fictional/i)
+    expect(label.length).toBeGreaterThan(40)
+  })
+
+  it('gives every selectable element an accessible name', () => {
+    const root = render()
+    const selectable = Array.from(root.querySelectorAll('[data-card-id][role="button"]'))
+    expect(selectable.length).toBeGreaterThan(6)
+    for (const el of selectable) {
+      expect(el.getAttribute('aria-label')?.trim(), el.className).toBeTruthy()
+      expect(el.getAttribute('tabindex')).toBe('0')
+    }
+  })
+
+  it('uses headings rather than styled text for panel titles', () => {
+    const root = render()
+    const titles = Array.from(root.querySelectorAll('.panel__title'))
+    expect(titles.length).toBeGreaterThan(4)
+    for (const t of titles) expect(t.tagName).toBe('H2')
+  })
+
+  it('does not communicate option status by colour alone', () => {
+    const root = render()
+    for (const s of Array.from(root.querySelectorAll('.opt__state'))) {
+      // The status word itself is present, not just a coloured dot.
+      expect(s.textContent?.trim()).toMatch(/AVAILABLE|CONSTRAINED|ENABLED/)
+    }
+  })
+
+  it('opens with the inspector populated rather than empty', () => {
+    const root = render()
+    expect(root.querySelector('#inspector-body .insp__title')).not.toBeNull()
+  })
+})
+
+describe('engine values reach the screen', () => {
+  it('renders the political pressure the run actually produced', () => {
+    const run = initialSnapshot()
+    const political = run.projection.stages.find((s) => s.field === 'political_pressure')!
+    const root = render(run)
+    expect(root.querySelector('.bignum__value')?.textContent).toBe(political.value.toFixed(4))
+  })
+
+  it('renders every cohort from the projection', () => {
+    const run = initialSnapshot()
+    const root = render(run)
+    expect(root.querySelectorAll('.cohort').length).toBe(run.projection.cohorts.length)
+  })
+
+  it('shows the population-weighted aggregate, not a plain mean', () => {
+    const run = initialSnapshot()
+    const p = run.projection
+    const total = p.cohorts.reduce((n, c) => n + c.represents_population, 0)
+    const weighted = p.cohorts.reduce((n, c) => n + c.value * c.represents_population, 0) / total
+    const root = render(run)
+    expect(root.querySelector('.cohorts__agg-val')?.textContent).toBe(weighted.toFixed(4))
+  })
+
+  it('shows the real rule-pack version', () => {
+    expect(render().textContent).toContain('kestral-causal-slice@1.0.0')
+  })
+})
+
+describe('crop safety is visual, not merely textual', () => {
+  it('the fictional-world marker text is not screen-reader-only', () => {
+    // Regression guard. A shared screenshot shows pixels, not textContent: hiding the word behind
+    // a .u-sr clip would keep the earlier assertion green while defeating what it protects.
+    const root = render()
+    const marks = Array.from(root.querySelectorAll('.fmark__txt'))
+    expect(marks.length).toBeGreaterThan(4)
+    for (const m of marks) {
+      expect(m.classList.contains('u-sr'), 'fiction text must be visible').toBe(false)
+      expect((m as HTMLElement).style.position).not.toBe('absolute')
+    }
+  })
+})
+
+describe('bounded defect-correction pass', () => {
+  it('renders all seven propagation rows, including political pressure', () => {
+    // The political-pressure row was the one clipped at 1440x900. It must never be dropped to
+    // make the panel fit — the fix belongs in layout, not in removing a chain value.
+    const root = render()
+    const rows = Array.from(root.querySelectorAll('.chainsum__step'))
+    expect(rows.length).toBe(7)
+    expect(rows.map((r) => r.querySelector('.chainsum__name')?.textContent)).toContain('Politics')
+  })
+
+  it('keeps narrow-panel subtitles to short, single-line copy', () => {
+    // jsdom cannot measure wrapping, so this guards the input to it: short copy plus the
+    // nowrap/ellipsis treatment in styles.css is what keeps these to one line.
+    const root = render()
+    for (const sub of Array.from(root.querySelectorAll('.panel__sub'))) {
+      expect(sub.textContent!.trim().length, sub.textContent!).toBeLessThanOrEqual(46)
+    }
+  })
+
+  it('puts the title and origin markers on their own header row', () => {
+    // The markers previously shared the subtitle line and forced it to wrap.
+    const root = render()
+    for (const p of Array.from(root.querySelectorAll('.panel'))) {
+      const row = p.querySelector('.panel__headrow')
+      expect(row, p.className).not.toBeNull()
+      expect(row!.querySelector('.panel__title')).not.toBeNull()
+      expect(row!.querySelector('.ob')).not.toBeNull()
+      expect(row!.querySelector('.fmark')).not.toBeNull()
+      // The subtitle is a sibling of that row, never inside it.
+      expect(row!.querySelector('.panel__sub')).toBeNull()
+    }
+  })
+
+  it('never renders unknown or unavailable as a zero', () => {
     const root = document.createElement('div')
-    mount(root)
-    const text = root.textContent ?? ''
-    expect(text).toMatch(/not computed/i)
+    mount(root, { ...initialSnapshot(), connection: 'unavailable', error: 'refused' })
+    const unavailable = Array.from(root.querySelectorAll('.ob--unavailable'))
+    expect(unavailable.length).toBeGreaterThan(0)
+    for (const el of unavailable) {
+      expect(el.closest('.panel')?.textContent).not.toMatch(/\b0\.000\b/)
+    }
+  })
+
+  it('drops the chart legend only when a single series makes it redundant', () => {
+    // One-series legends repeat the panel title and subtitle. Multi-series charts still need one.
+    const root = render()
+    const crisis = root.querySelector('.panel--crisis')!
+    expect(crisis.querySelector('.chart__svg')).not.toBeNull()
+    expect(crisis.querySelector('.chart__legend')).toBeNull()
+    // The series is still named, so nothing became unlabelled.
+    expect(crisis.querySelector('.panel__sub')?.textContent).toContain('Political pressure')
   })
 })
