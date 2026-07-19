@@ -255,3 +255,54 @@ two corrections both moved toward the audit's existing position rather than away
 remaining work is editorial amendment plus Phase 0.
 
 Do not launch another unrestricted multi-agent audit.
+
+---
+
+## Amendment of 19 July 2026 — the B5 row and the closing line above are SUPERSEDED
+
+**This amendment is appended rather than applied in place, deliberately.** Nothing above this
+heading has been altered, and no line number above has moved, because a dozen other records cite
+this file by `path:line` — including citations to the superseded text *as* superseded text. The
+record of what A3 concluded on 18 July 2026 stays intact; what follows states what is no longer
+true. Read the two together.
+
+**What changed.** On 18 July 2026, after this record was written, the founder settled the dual-use
+position that blocker B5 was waiting on.
+
+**Two statements above are now wrong.**
+
+| Where | What it says | Status |
+|---|---|---|
+| `:245` (blockers table, B5 row) | B5 "Clears by: Owner decision (P0.8)" | **Superseded.** The owner decision was taken and **B5 did not clear with it.** |
+| `:247` (closing line) | "Four of five clear by telling the truth. Only B5 needs a decision." | **First sentence still holds for B1–B4. Second sentence is wrong.** |
+
+**What B5 now clears by.** The decision names **eight controls** governing the influence-operations
+model for the public MVP, and its eighth control states that disclosure and any future
+acceptable-use language are **supplementary** while **technical enforcement is mandatory**. B5
+therefore clears only when the eight controls are **implemented and verified** — not by a text
+correction, and not by a policy statement either. **None of the eight exists in code.**
+
+**The direction of the change matters.** Settling B5 did not shrink the publication gate; it
+**enlarged** it. B5 was the cheapest-looking of the five blockers and is now the most expensive: it
+is the only one that cannot be closed by writing, and the only one now blocked on implementation
+work that no Phase 0 item currently owns. A reader who takes `:247` at face value will conclude the
+project is one signature from publishable. It is not.
+
+**Nothing in this amendment reopens the broad audit, changes any verdict in the table at `:40-50`,
+or alters the critical count.** The blocker count remains five. Only B5's clearance route changed.
+
+**Where the authoritative statements live**
+
+| Record | What it holds |
+|---|---|
+| `RAID-REGISTER.md` DEC6 | The decision itself, in the founder's own terms, not reworded into a summary |
+| `PUBLICATION-EXIT-CRITERIA.md` C6 | The eight controls as criteria B5-1 to B5-8, each with a verifiable test form and its status in the code today |
+| `CORRECTIVE-BACKLOG.md` CB-40 to CB-47 | One backlog entry per control, with an evidence requirement each |
+| `PHASE-0-REMEDIATION-PLAN.md` §P0.8 | The rewritten Phase 0 item, and the open questions the decision raises |
+| `../safety/IDENTITY-AND-BIAS-GUIDELINES.md` §9 | The identity permitted / not-permitted distinction the decision states, and how each control would be tested |
+
+**Also settled by the same decision, and not visible anywhere above:** the identity distinction —
+identity may affect lived experience, relationships, discrimination, institutional access, media
+exposure and cultural interpretation, but must never act as an inherent competence, morality,
+loyalty, violence or manipulability coefficient. That list is **wider** than the source record's
+"competence, morality or intelligence": it adds loyalty, violence and manipulability.
