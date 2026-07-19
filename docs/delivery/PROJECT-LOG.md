@@ -935,3 +935,47 @@ Stated explicitly, because the project's failure mode is claiming more than is k
 - Its point-in-time observations about untracked files and directory contents are labelled as such
   and were already overtaken by sibling Phase B records drafted in the same session. They are not
   standing properties of the tree.
+
+---
+
+## 2026-07-19 — privacy-only history rewrite
+
+**Reason.** Removal of private local-path information. The baseline commit and two derived records
+contained an absolute local filesystem path exposing an account name and a personal directory
+structure. Redacting the working tree did not remove it from git history, which is durable, so the
+history itself was rewritten while the repository was still private, `main` still held a single
+commit and only one development branch existed.
+
+**Scope — deliberately narrow.** Exact-text replacement only, via `git filter-repo --replace-text`:
+
+| Replaced | With |
+|---|---|
+| the absolute repository path | `[REPOSITORY ROOT]` |
+| its parent directory | `[REPOSITORY PARENT]` |
+| the user home prefix | `[LOCAL USER HOME]` |
+| the bare account name | `[LOCAL USER]` |
+
+**Affected refs.** `main`, `phase-0-foundation`. All 12 commits rewritten (identities change; order,
+messages, authorship dates and content are otherwise preserved).
+
+**What changed.** 6 files, 10 lines — every one a path substitution:
+`docs/delivery/CURRENT-STATE-AUDIT.md`, `CORRECTIVE-BACKLOG.md`, `RAID-REGISTER.md`, and the four
+evidence scripts under `docs/delivery/evidence/`.
+
+**Confirmation that nothing substantive was altered.** No finding, no claim, no evidence, no
+numeric result, no implementation and no test was changed. Verified by diffing the pre-rewrite
+backup against the rewritten history and inspecting every changed line individually.
+
+**Verification after the rewrite.** Zero blobs, refs, commit messages or author fields contain the
+path or the account name. 62 backend tests pass, 21 frontend tests pass, `tsc` clean, production
+build succeeds, CI smoke OK, packaging exception still exactly bounded. Logo and both screenshots
+intact and byte-identical. `CORPUS.json` and the unfinished P0.5 work remain absent from all history.
+
+**Root and head SHAs.**
+
+| | Before | After |
+|---|---|---|
+| Root (baseline) | `71fa329` | `db35211` |
+| `phase-0-foundation` head | `6a931f7` | `33e9d6c` |
+
+A full pre-rewrite bundle is retained locally until the public-release review completes.
