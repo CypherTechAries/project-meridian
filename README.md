@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/brand/meridian-logo.png" alt="MERIDIAN" width="280">
+</p>
+
 # Project MERIDIAN
 
 **A simulated-society crisis simulation engine — a fictional world governed by real-world
