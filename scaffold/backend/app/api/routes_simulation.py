@@ -79,26 +79,57 @@ def get_state(run_id: str) -> dict:
 
 @router.post("/runs/{run_id}/decision")
 def submit_decision(run_id: str, intervention: Intervention) -> dict:
-    """Submit a player decision. The engine records it; validation/pricing happens on tick.
+    """Submit a player decision. The engine RECORDS it only — nothing validates or prices it.
 
-    In this stub we simply log the intervention as an event. A full build would route it
-    through the same validate-and-price gate that micro-agent proposals pass through.
+    P0.1 correction (19 July 2026): this docstring previously said "validation/pricing happens
+    on tick". That is false and was publication blocker B1. No validation or pricing happens on
+    this call or on any later tick: the submission is appended to an in-memory event list with
+    an empty `effects` array, `accepted: true` is returned unconditionally, and the tick loop
+    never reads the event list. The endpoint accepts any actor role, any action type and any
+    resource cost, and stores the client's own `legal_check` value unexamined. It is a logging
+    endpoint.
+
+    Routing this through the same validate-and-price gate that micro-agent proposals pass
+    through is a target, not current behaviour — and note that gate performs no legality or
+    feasibility check either (`engine.py:121-130`).
     """
     try:
         model = runs.get_run(run_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="run not found")
-    model.event_log.append(
-        {
-            "event_id": f"decision-{model.tick}-{intervention.action_id}",
-            "tick": model.tick,
-            "type": "player_decision",
-            "actors_involved": [intervention.actor_role],
-            "effects": [],
-            "intervention": intervention.model_dump(),
-        }
+    # P0.4: this route previously appended directly to `model.event_log` — a presentation route
+    # writing engine state. It now goes through the single mutation boundary, which records it in
+    # `AuthoritativeState.pending_actions` with `applied=False`.
+    from ..simulation.transitions import Transition, TransitionOrigin, TransitionType
+
+    record = model.submit(
+        Transition(
+            type=TransitionType.RECORD_PLAYER_DECISION,
+            origin=TransitionOrigin.PLAYER_DECISION,
+            payload={
+                "action_id": intervention.action_id,
+                "actor_role": intervention.actor_role,
+                "action_type": intervention.action_type,
+                "client_supplied": intervention.model_dump(),
+            },
+            actor=intervention.actor_role,
+            mechanism="recorded only — no validation, pricing or application exists (blocker B1)",
+        )
     )
-    return {"run_id": run_id, "accepted": True, "tick": model.tick}
+
+    return {
+        "run_id": run_id,
+        # "recorded", not "accepted": nothing validates, prices or applies this. The previous
+        # unconditional `accepted: true` overstated what the endpoint does.
+        "recorded": record.applied,
+        "transition_id": record.transition_id,
+        "tick": model.tick,
+        "applied": False,
+        "note": (
+            "Recorded only. No legality, authority, resource or feasibility validation exists, "
+            "and the tick loop does not read pending actions. This decision will have no effect."
+        ),
+    }
 
 
 @router.get("/runs/{run_id}/events")

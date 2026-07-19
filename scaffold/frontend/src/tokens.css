@@ -1,0 +1,99 @@
+/*
+ * MERIDIAN design tokens — C0.
+ *
+ * Original visual language. No trade dress from any named product or game is used: the palette is
+ * a neutral graphite ramp with a single restrained accent, and the epistemic encodings are
+ * MERIDIAN's own.
+ *
+ * ACCESSIBILITY STATUS: this is a DARK-ONLY theme and NO conformance claim is made. Research
+ * finding C3 records that dark-only cannot be shipped and called accessible; light and
+ * high-contrast themes are required before any such claim. They do not exist yet.
+ *
+ * Colour is never the only carrier of meaning. Every epistemic status also has a text token and a
+ * distinct glyph, so the encoding survives greyscale, forced-colors mode and colour-blind viewing.
+ */
+
+:root {
+  /* Surfaces — graphite ramp */
+  --bg-0: #0b0e12;
+  --bg-1: #12161c;
+  --bg-2: #171d25;
+  --bg-3: #1e262f;
+  --bg-inset: #0d1116;
+
+  /* Lines */
+  --line-1: #232c37;
+  --line-2: #2f3a47;
+  --line-strong: #3d4a5a;
+
+  /* Text */
+  --fg-0: #e6ecf3;
+  --fg-1: #b8c4d2;
+  --fg-2: #8b98a8;
+  --fg-3: #64707e;
+
+  /* Single accent — used for interaction affordance only, never for meaning */
+  --accent: #4fb8c4;
+  --accent-dim: #2b6a72;
+
+  /* Epistemic status — paired with glyph + text token, never colour alone */
+  --ep-authoritative: #6fcf97;
+  --ep-assessed: #6aa9e0;
+  --ep-disputed: #e0a34a;
+  --ep-unknown: #8b98a8;
+  --ep-presentation: #a98bd0;
+
+  /* Disclosure bands — deliberately high-visibility, non-decorative */
+  --disclose-fiction-bg: #3a2a12;
+  --disclose-fiction-fg: #ffd79a;
+  --disclose-fiction-line: #7a5a24;
+  --disclose-fixture-bg: #37202a;
+  --disclose-fixture-fg: #ffb3c6;
+  --disclose-fixture-line: #7d3f55;
+
+  /* Typography */
+  --font-ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 19px;
+  --fs-2xl: 24px;
+
+  --lh-tight: 1.25;
+  --lh-normal: 1.5;
+
+  /* Spacing */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --radius: 3px;
+
+  /* The crop-invariant provenance carrier: a full-height gutter rule on every card.
+     A tinted box reads as advertising and is skipped; a structural rule survives cropping. */
+  --gutter-w: 3px;
+
+  --focus-ring: 2px solid var(--accent);
+}
+
+/* Forced-colors: gradients, glows and shadows are void, so the encoding must be structural. */
+@media (forced-colors: active) {
+  :root {
+    --gutter-w: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

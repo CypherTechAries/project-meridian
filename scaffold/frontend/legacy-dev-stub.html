@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MERIDIAN — dev stub</title>
+  <style>
+    body { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin: 2rem; max-width: 720px; }
+    h1 { font-size: 1.1rem; }
+    button { padding: .4rem .8rem; margin-right: .5rem; }
+    pre { background: #111; color: #0f0; padding: 1rem; overflow: auto; height: 300px; }
+    .row { margin: .6rem 0; }
+  </style>
+</head>
+<body>
+  <h1>MERIDIAN — frontend stub</h1>
+  <p>Minimal dev harness. Full UI (scenario selector, role dashboards, decision composer) is
+     specified in <code>design_ux_screens.md</code> and left for a later build.</p>
+
+  <div class="row">
+    <label>API base <input id="api" value="http://localhost:8000" size="28" /></label>
+  </div>
+  <div class="row">
+    <button onclick="createRun()">1. Create run</button>
+    <button onclick="connectWs()">2. Connect WS + stream ticks</button>
+    <button onclick="advance()">Advance 1 tick (WS)</button>
+  </div>
+  <div class="row">run_id: <code id="runId">—</code></div>
+  <pre id="log"></pre>
+
+  <script>
+    let runId = null, ws = null;
+    const log = (m) => {
+      const el = document.getElementById("log");
+      el.textContent += (typeof m === "string" ? m : JSON.stringify(m)) + "\n";
+      el.scrollTop = el.scrollHeight;
+    };
+    const api = () => document.getElementById("api").value.replace(/\/$/, "");
+
+    async function createRun() {
+      const r = await fetch(api() + "/api/simulation/runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ scenario_id: "kestral-strait" }),
+      });
+      const j = await r.json();
+      runId = j.run_id;
+      document.getElementById("runId").textContent = runId;
+      log({ created: j });
+    }
+
+    function connectWs() {
+      if (!runId) return log("create a run first");
+      const wsUrl = api().replace(/^http/, "ws") + "/ws/runs/" + runId;
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => log("ws open");
+      ws.onmessage = (e) => log(JSON.parse(e.data));
+      ws.onclose = () => log("ws closed");
+    }
+
+    function advance() {
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({ ticks: 1 }));
+      else log("connect ws first");
+    }
+  </script>
+</body>
+</html>

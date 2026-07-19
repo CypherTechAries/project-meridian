@@ -46,3 +46,19 @@ desktop.ini
 *.sqlite3
 *.db
 pgdata/
+
+# Frontend prototype (C0) — dependencies and build output
+scaffold/frontend/node_modules/
+scaffold/frontend/dist/
+scaffold/frontend/.vite/
+scaffold/frontend/test-results/
+scaffold/frontend/playwright-report/
+
+# Throwaway verification environments created during P0.2/P0.3/P0.4 checks
+.venv-*/
+scaffold/backend/.venv-*/
+
+# Agent-runtime artefacts. Workflow journals and per-agent transcripts live outside the
+# repository by design and must never be committed — they are private working material.
+.claude/
+*.jsonl

@@ -240,7 +240,14 @@ class Intervention(BaseModel):
         default_factory=dict, description="Resource costs keyed by resource name."
     )
     legal_check: Optional[str] = Field(
-        default=None, description="Legal-check outcome set by the engine (null until validated)."
+        default=None,
+        description=(
+            "INTENDED to hold a legal-check outcome set by the engine. P0.1 correction "
+            "(19 July 2026): no engine legality check exists, so nothing ever sets this. On the "
+            "player-decision path the client supplies this value and the endpoint stores and "
+            "echoes it unexamined — it is client-controlled, not engine-owned. Treat as a "
+            "target field; do not rely on it as an authority."
+        ),
     )
     timeline_days: int = Field(
         default=0, ge=0, description="Days until the action takes effect."

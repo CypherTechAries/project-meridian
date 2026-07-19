@@ -1,26 +1,36 @@
 """MeridianModel — the Mesa ABM core and tick loop.
 
-This module is the **single writer of numeric state**. The LLM gateway proposes; the engine
-here validates legality and computes/applies effects. That separation is the determinism
-boundary (see docs/ARCHITECTURE_DECISIONS.md ADR-006).
+P0.4 (19 July 2026): the engine no longer writes authoritative state directly. All authoritative
+changes are routed through `TransitionService` (`transitions.py`), which owns the single mutation
+path. `state.py` holds the authoritative structure.
 
-Reproducibility: a `seed` is threaded through the constructor into `self.rng`
-(`random.Random`). Same seed + scenario + decisions ⇒ identical macro/meso numbers. All
-stochastic draws in the engine, agents, and diffusion use this RNG — never the global
-`random` module.
+P0.4A (19 July 2026): authoritative randomness is KEYED, not sequential. `self.draws` is a
+`DeterministicDrawService` (ADR-010, accepted) in which every value is a pure function of
+(run seed, canonical key). There is no shared stream, nothing accumulates, and nothing advances —
+so adding, removing or reordering a draw in one subsystem cannot shift results in another. This
+replaces the previous single `random.Random`, whose call-order sensitivity was the mechanism
+behind A3's finding that apparent meso→macro coupling was stream displacement rather than
+causality. See `docs/adr/ADR-010-deterministic-randomness-architecture.md`.
+
+Reproducibility, stated precisely: the existing stubbed execution path reproduces the same tested
+numeric outputs when the seed, scenario and stubbed agent outputs remain identical. Determinism is
+verified on the tested CPython implementation, including across a subprocess with a different
+`PYTHONHASHSEED`. Cross-language reproducibility is **not** claimed and has not been measured.
+
+The engine still contains no cost, cooldown, decay, budget, prerequisite or revert mechanism, and
+no legality or feasibility validation. P0.4 did not add any of those.
 """
 
 from __future__ import annotations
 
-import random
 from typing import Any, Optional
 
 import mesa
 
 from .agents.cohort_agent import CohortAgent
 from .agents.institutional_agent import InstitutionalAgent
-from .agents.macro_state import MacroStateHolder
 from .diffusion import build_cohort_graph, linear_threshold_step
+from .draws import DeterministicDrawService
 from .schemas.agent_schema import ActionProposal, Cohort, MicroAgent
 from .schemas.macro_schema import (
     AllianceConfidence,
@@ -29,9 +39,11 @@ from .schemas.macro_schema import (
     MacroState,
     PublicFinances,
 )
+from .state import RULE_PACK_VERSION, AuthoritativeState, build_initial_state, canonical_json
+from .transitions import Transition, TransitionOrigin, TransitionRecord, TransitionService, TransitionType
 
-# How the engine scales/validates each proposed action into a macro delta.
-# The LLM cannot bypass this table — it only names an action_type; the engine owns magnitude.
+# The engine's entire action vocabulary and every magnitude, hardcoded here. This is not a rule
+# pack, is not data-driven, and is not extensible without editing code — see CAPABILITY-CLAIMS C13.
 ACTION_EFFECTS: dict[str, dict[str, float]] = {
     "request_procurement_acceleration": {"military_readiness": 0.01, "government_approval": -0.002},
     "block_unfunded_spending": {"government_approval": -0.003},
@@ -80,73 +92,156 @@ class MeridianModel(mesa.Model):
     def __init__(self, scenario: dict, seed: Optional[int] = None) -> None:
         resolved_seed = seed if seed is not None else scenario.get("default_seed", 0)
         super().__init__(seed=resolved_seed)
-        self.rng = random.Random(resolved_seed)  # the ONLY source of engine randomness
+        # P0.4A: authoritative randomness is KEYED, not sequential. There is no shared stream and
+        # no `self.rng`. Every draw is a pure function of (run seed, canonical key), so no draw
+        # can displace another. mesa's own `Model.random` is seeded by `super().__init__` above;
+        # MERIDIAN never uses it for authoritative values.
+        self.draws = DeterministicDrawService(
+            seed=resolved_seed,
+            scenario=scenario["scenario_id"],
+            rule_pack=RULE_PACK_VERSION,
+        )
 
         self.scenario = scenario
         self.scenario_id: str = scenario["scenario_id"]
         self.seed: int = resolved_seed
-        self.tick: int = 0
 
-        # --- MACRO ---
         macro = _macro_from_scenario(scenario)
         macro.seed = resolved_seed
-        self.macro = MacroStateHolder(macro)
 
         # --- MESO (cohorts) ---
         self.cohorts: list[CohortAgent] = []
+        cohort_specs: list[Cohort] = []
         cohort_dicts: list[dict] = []
         for c in scenario.get("cohorts", []):
             cohort = Cohort(**c)
+            cohort_specs.append(cohort)
             self.cohorts.append(CohortAgent(cohort.cohort_id, self, cohort))
             cohort_dicts.append(cohort.model_dump())
         self.cohort_graph = build_cohort_graph(cohort_dicts)
 
         # --- MICRO (institutional agents) ---
         self.institutions: list[InstitutionalAgent] = []
+        inst_specs: list[MicroAgent] = []
         for a in scenario.get("institutional_agents", []):
             spec = MicroAgent(**a)
+            inst_specs.append(spec)
             self.institutions.append(InstitutionalAgent(spec.agent_id, self, spec))
 
-        # --- Information environment ---
-        self.campaign: Optional[dict] = scenario.get("hidden_campaign")
-        self.narrative_adoption: dict[str, float] = {c.cohort.cohort_id: 0.0 for c in self.cohorts}
+        # --- AUTHORITATIVE STATE + the single mutation boundary (P0.4) ---
+        initial = build_initial_state(
+            scenario=scenario,
+            macro=macro,
+            cohorts=cohort_specs,
+            institutions=inst_specs,
+            seed=resolved_seed,
+        )
+        self._transitions = TransitionService(initial)
 
-        # --- Logs ---
+        # --- Logs (NOT authoritative state; see the P0.6 note below) ---
+        # `transition_log` holds returned TransitionRecords. It is an in-memory diagnostic list,
+        # not an event store: nothing persists, nothing is replayed from it, and no state can be
+        # rebuilt from it. Event sourcing, snapshots and replay are P0.6.
+        self.transition_log: list[TransitionRecord] = []
         self.event_log: list[dict] = []
-        self.snapshots: list[dict] = [self.macro.snapshot()]
+        self.snapshots: list[dict] = [self.macro_snapshot()]
+
+    # ------------------------------------------------------------------ #
+    # Authoritative state access.
+    # ------------------------------------------------------------------ #
+    @property
+    def state(self) -> AuthoritativeState:
+        """Read-only view of authoritative state. Do not mutate — use `submit`."""
+        return self._transitions.state
+
+    @property
+    def tick(self) -> int:
+        """Derived from authoritative state. Kept as a property so `model.tick` still reads."""
+        return self.state.tick
+
+    @property
+    def narrative_adoption(self) -> dict[str, float]:
+        return self.state.narrative_adoption
+
+    @property
+    def campaign(self) -> Optional[dict]:
+        return self.state.campaign
+
+    def submit(self, transition: Transition) -> TransitionRecord:
+        """Route a transition through the boundary and record the outcome."""
+        record = self._transitions.apply(transition)
+        self.transition_log.append(record)
+        return record
+
+    def canonical_state(self) -> str:
+        """Deterministic serialisation of authoritative state.
+
+        Serialisation groundwork only — NOT a state hash, NOT replay. See `state.canonical_json`.
+        """
+        return canonical_json(self.state)
 
     # ------------------------------------------------------------------ #
     # Determinism boundary: proposals in, validated deltas out.
     # ------------------------------------------------------------------ #
-    def _validate_and_price(self, proposal: ActionProposal) -> dict[str, float]:
-        """Turn an LLM `ActionProposal` into a legal, engine-owned macro delta.
+    def _price(self, proposal: ActionProposal) -> dict[str, float]:
+        """Look the proposed action type up in the engine-owned effects table.
 
-        This is the gate. The LLM chose an `action_type`; the engine decides the magnitude
-        (and could reject it entirely). The proposal's own `parameters`/`confidence` are
-        advisory and are deliberately NOT trusted as state.
+        Named `_price` rather than `_validate_and_price` since P0.4: this performs NO validation.
+        It is a dict lookup returning constant deltas. The proposal's own `parameters` and
+        `confidence` are advisory and deliberately not trusted. Structural validation now happens
+        in `TransitionService.validate`; legality and feasibility validation still do not exist
+        anywhere (blocker B1).
         """
-        base = ACTION_EFFECTS.get(proposal.action_type, {})
-        # Engine-owned scaling; intentionally ignores proposal.parameters as authority.
-        return dict(base)
+        return dict(ACTION_EFFECTS.get(proposal.action_type, {}))
 
     def _step_macro_rules(self) -> None:
-        """Deterministic + seeded-stochastic macro drift applied every tick."""
-        # Small seeded macro noise, e.g. shipping variance around the crisis baseline.
-        noise = self.rng.uniform(-0.002, 0.002)
-        self.macro.apply_deltas({"shipping_throughput_pct_of_baseline": noise})
+        """Seeded macro drift applied every tick, via the transition boundary."""
+        noise = self.draws.jitter(
+            0.002, subsystem="macro", purpose="shipping_noise", context=str(self.tick)
+        )
+        self.submit(
+            Transition(
+                type=TransitionType.APPLY_MACRO_DELTAS,
+                origin=TransitionOrigin.ENGINE_RULE,
+                payload={"deltas": {"shipping_throughput_pct_of_baseline": noise}},
+                mechanism="macro_noise_rule (seeded uniform drift on one indicator)",
+            )
+        )
 
     def _step_diffusion(self) -> None:
-        """Advance narrative adoption across cohorts via the diffusion model."""
+        """Advance narrative adoption across cohorts, via the transition boundary.
+
+        The result reaches no cohort belief and no macro indicator — it is read only by the API
+        response. Wiring diffusion to belief is P0.5.
+        """
         if not self.cohorts:
             return
         susceptibility = {c.cohort.cohort_id: c.susceptibility for c in self.cohorts}
-        self.narrative_adoption = linear_threshold_step(
-            self.cohort_graph, self.narrative_adoption, susceptibility, self.rng
+        updated = linear_threshold_step(
+            self.cohort_graph,
+            self.state.narrative_adoption,
+            susceptibility,
+            self.draws,
+            context=self.tick,
+        )
+        self.submit(
+            Transition(
+                type=TransitionType.SET_NARRATIVE_ADOPTION,
+                origin=TransitionOrigin.ENGINE_RULE,
+                payload={"adoption": updated},
+                mechanism="linear_threshold_diffusion (not wired to beliefs or macro — P0.5)",
+            )
         )
 
     def step(self) -> None:
         """Advance the simulation by one tick, in a fixed deterministic order."""
-        self.tick += 1
+        self.submit(
+            Transition(
+                type=TransitionType.ADVANCE_TICK,
+                origin=TransitionOrigin.ENGINE_RULE,
+                mechanism="tick_advance",
+            )
+        )
 
         # 1. Meso agents drift (fixed order for reproducibility).
         for cohort in self.cohorts:
@@ -155,13 +250,25 @@ class MeridianModel(mesa.Model):
         # 2. Narrative diffusion over the cohort graph.
         self._step_diffusion()
 
-        # 3. Micro agents produce proposals; engine validates + applies. Fixed order.
+        # 3. Micro agents propose; the engine prices and applies. Fixed order.
         for inst in self.institutions:
             inst.step()
             if inst.last_proposal is not None:
-                deltas = self._validate_and_price(inst.last_proposal)
+                deltas = self._price(inst.last_proposal)
                 if deltas:
-                    self.macro.apply_deltas(deltas)
+                    self.submit(
+                        Transition(
+                            type=TransitionType.APPLY_MACRO_DELTAS,
+                            origin=TransitionOrigin.LLM_PROPOSAL,
+                            payload={"deltas": deltas},
+                            actor=inst.spec.agent_id,
+                            mechanism=(
+                                f"ACTION_EFFECTS table lookup for "
+                                f"{inst.last_proposal.action_type!r} (constant deltas; no "
+                                f"legality, cost or feasibility check)"
+                            ),
+                        )
+                    )
                     self.event_log.append(
                         {
                             "event_id": f"evt-{self.tick}-{inst.spec.agent_id}",
@@ -175,9 +282,8 @@ class MeridianModel(mesa.Model):
         # 4. Deterministic macro rules/noise.
         self._step_macro_rules()
 
-        # 5. Snapshot.
-        self.macro.state.tick = self.tick
-        self.snapshots.append(self.macro.snapshot())
+        # 5. Snapshot (in-memory only; not persistence, not P0.6 snapshots).
+        self.snapshots.append(self.macro_snapshot())
 
     def run(self, ticks: int) -> None:
         """Run `ticks` steps."""
@@ -185,5 +291,5 @@ class MeridianModel(mesa.Model):
             self.step()
 
     def macro_snapshot(self) -> dict[str, Any]:
-        """Return the current macro state as a serializable dict."""
-        return self.macro.snapshot()
+        """Return the current macro state as a serializable dict. A DERIVED read."""
+        return self.state.macro.model_dump()

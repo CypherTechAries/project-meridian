@@ -1,51 +1,49 @@
-"""Macro state container.
+"""Macro state container — RETIRED by P0.4.
 
-This is a plain state object, NOT a Mesa Agent — the macro tier is national aggregate state
-updated once per tick by deterministic rules (see `engine.py`), never stepped like an agent
-and never written by the LLM.
+This class previously owned the live `MacroState` and applied deltas to it via `apply_deltas`,
+which wrote indicator values with `setattr`. It was one of several scattered mutation paths.
+
+Since P0.4, authoritative macro state lives in `AuthoritativeState.macro`
+(`app/simulation/state.py`), and the ONLY way to change it is a validated transition through
+`TransitionService` (`app/simulation/transitions.py`).
+
+Nothing in the codebase constructs this class any more. It is kept as a **tripwire** rather than
+deleted: a live-but-unused mutation method is a bypass waiting to be reintroduced by a future
+change, and a loud failure is better than a silent second write path. Every method raises.
+
+Two behaviours of the old implementation are worth recording, because the replacement changed them:
+
+  * `apply_deltas` SILENTLY IGNORED unrecognised keys (`if not hasattr(ind, key): continue`).
+    A misspelled or nested indicator name produced no error, no warning and no effect, so a rule
+    pack could author an effect that never applied and nothing would report it. The transition
+    boundary now REJECTS unknown keys.
+  * Nested state such as `public_finances` was unreachable by the only delta path, so no engine
+    action could touch fiscal state. That remains true — no fiscal path exists — but it is now an
+    explicit rejection rather than a silent skip.
+
+Remove this file once no documentation references `MacroStateHolder`. Tracked as compatibility
+debt in `docs/delivery/P0-4-STATE-CONTRACT.md`.
 """
 
 from __future__ import annotations
 
-from ..schemas.macro_schema import MacroState
+from typing import Any, NoReturn
+
+_RETIRED = (
+    "MacroStateHolder was retired by Phase 0 item P0.4. Authoritative macro state lives in "
+    "AuthoritativeState.macro and may only be changed by submitting a Transition to "
+    "TransitionService. See app/simulation/transitions.py."
+)
 
 
 class MacroStateHolder:
-    """Owns the live `MacroState` and applies validated deltas.
+    """Retired. Constructing or using this raises — a deliberate tripwire, not a shim."""
 
-    Only `engine.py` calls `apply_deltas`. The LLM has no reference to this object — that is
-    the determinism boundary enforced structurally.
-    """
+    def __init__(self, initial: Any) -> None:  # noqa: ARG002 - signature preserved deliberately
+        raise NotImplementedError(_RETIRED)
 
-    def __init__(self, initial: MacroState) -> None:
-        self.state: MacroState = initial
+    def apply_deltas(self, deltas: dict[str, float]) -> NoReturn:  # noqa: ARG002
+        raise NotImplementedError(_RETIRED)
 
-    def apply_deltas(self, deltas: dict[str, float]) -> None:
-        """Apply additive changes to top-level scalar indicators, clamping bounded ones.
-
-        Keys are indicator names on `MacroIndicators`. Nested blocks (e.g. institutional
-        trust) are handled explicitly by the engine, not here.
-        """
-        ind = self.state.indicators
-        bounded = {
-            "government_approval",
-            "military_readiness",
-            "social_stability_index",
-            "shipping_throughput_pct_of_baseline",
-        }
-        for key, delta in deltas.items():
-            if not hasattr(ind, key):
-                continue
-            current = getattr(ind, key)
-            if not isinstance(current, (int, float)):
-                continue
-            updated = current + delta
-            if key in bounded:
-                updated = max(0.0, min(1.0, updated))
-            elif key == "fuel_reserve_days":
-                updated = max(0.0, updated)
-            setattr(ind, key, updated)
-
-    def snapshot(self) -> dict:
-        """Return an immutable serializable snapshot of the current macro state."""
-        return self.state.model_dump()
+    def snapshot(self) -> NoReturn:
+        raise NotImplementedError(_RETIRED)
