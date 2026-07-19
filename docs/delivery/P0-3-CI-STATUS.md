@@ -8,16 +8,21 @@
 
 ## The one-line status
 
-**CI CONFIGURATION PREPARED AND LOCALLY REPRODUCED.**
-**HOSTED CI HAS NOT RUN AND HAS NOT PASSED.**
+**HOSTED CI PASSES ON GITHUB ACTIONS `windows-latest` WITH CPYTHON 3.12.10.**
 
-These are different claims and must not be conflated. The workflow file has never executed on
-GitHub Actions, because committing and pushing it requires separate founder authorisation.
-Until a hosted run succeeds, **no document may state that MERIDIAN "has CI", that any check is
-"guarded in CI", or that P0.3 is complete.** `docs/delivery/CAPABILITY-CLAIMS.md` C9 stands
-unchanged: *"There is no continuous integration."*
+*(Updated 19 July 2026. The previous status line read "CI configuration prepared and locally
+reproduced. Hosted CI has not run and has not passed." That is now superseded — see the hosted-run
+record at the end of this document. The claim above is deliberately narrow: it says nothing about
+any other operating system or Python version, because nothing else has been tested.)*
 
-P0.3 closes only when a hosted run passes on the repository.
+"Prepared", "locally reproduced" and "hosted and passing" are three different claims and must not
+be conflated. All three are now true, in that order, and the evidence for the third is the run
+record at the end of this document.
+
+What this still does **not** license: no document may state that any check is "guarded in CI" in
+the sense of the determinism boundary being protected. CI runs the tests that exist, and
+`test_llm_gateway_cannot_write_state` remains the shallow attribute check `CAPABILITY-CLAIMS` C3
+describes. Running a weak test on a hosted runner does not make it a strong test.
 
 ---
 
@@ -140,7 +145,7 @@ nothing to smoke-test. An optional job may be added when a real gateway is imple
 1. **The environment is not dependency-consistent by pip's metadata rules.** Four mesa packages are deliberately absent. Tracked as an accepted exception with a named review trigger.
 2. **Whether mesa is retained at all is an open owner decision** (current-state audit §8, item 3). Mesa contributes three symbols. Dropping it would remove this exception entirely.
 3. **No lockfile, no pinned `requires-python`, no `pyproject.toml`.** Every requirement is an open-ended range, so two runs on different dates can resolve to different versions. Adopting `pyproject.toml`/`uv` is an open owner decision (audit §8, item 5). This is why `pip freeze` runs on every CI run.
-4. **Single platform, single Python version.** Only Windows 10 / CPython 3.12.10 has been verified. Linux, macOS and every other Python version are **untested** — and `windows-latest` on GitHub is Windows *Server*, not Windows 10, so even the hosted run is a different environment whose long-path behaviour may differ.
+4. **Single platform, single Python version.** Verified on Windows 10 (local) and Windows Server 2025 (hosted), both CPython 3.12.10. Linux, macOS and every other Python version remain **untested** and unclaimed.
 5. **No linting, formatting, typing or coverage checks.** Deliberate. Adding them is a separate decision, and `ruff`/`mypy` have never been run against this codebase, so their current pass/fail state is unknown.
 
 ---
@@ -155,3 +160,62 @@ nothing to smoke-test. An optional job may be added when a real gateway is imple
 - [ ] Branch protection / required status check — a separate decision, not assumed by this file
 
 Until every box is ticked, the honest status line remains the one at the top of this document.
+
+
+---
+
+## Hosted CI run record — first execution
+
+**The workflow executed on GitHub Actions for the first time on 19 July 2026 and passed.**
+
+| | |
+|---|---|
+| Workflow | `CI` |
+| Run ID | `29699943680` |
+| URL | https://github.com/CypherTechAries/project-meridian/actions/runs/29699943680 |
+| Commit SHA | `5d37100cbc4798bfd9229927e860ef0feaca7fa9` |
+| Trigger | `pull_request` (draft PR #1, `phase-0-foundation` → `main`) |
+| Conclusion | **success** |
+| Duration | 1m 15s |
+
+### Environment actually used
+
+| | |
+|---|---|
+| Runner OS | **Microsoft Windows Server 2025** (image `windows-2025-vs2026`) |
+| Python | **CPython 3.12.10** (pinned; resolved exactly) |
+| mesa | 2.4.0 |
+
+Note the runner is Windows **Server 2025**, not the Windows 10 machine used for local
+verification. That difference was flagged in advance as the reason a local pass was not evidence
+for a hosted pass. Both now pass — which is a stronger result than either alone, because the
+`--no-deps` mesa install works around a Windows long-path limit whose configuration differs
+between the two environments.
+
+### Step results
+
+| Step | Result |
+|---|---|
+| Install core requirements | **pass** |
+| Install mesa (`--no-deps`, recorded exception) | **pass** |
+| Packaging check | **pass with recorded exception** — 4 missing mesa visualisation packages, exactly the allowlisted set |
+| Import smoke test | **`SMOKE OK`** — all third-party and MERIDIAN modules, plus the three mesa APIs verified by name |
+| Run tests | **62 passed in 3.45s** |
+
+### What this does and does not license
+
+**Permitted wording, verbatim:**
+
+> "Hosted CI passes on GitHub Actions `windows-latest` with CPython 3.12.10."
+
+**Not permitted.** Anything broader. Specifically: no claim of cross-platform support, no claim
+about Linux or macOS, no claim about any other Python version, and no claim that CI *guards* the
+determinism boundary — it runs the tests that exist, and `test_llm_gateway_cannot_write_state`
+remains the shallow attribute check that `CAPABILITY-CLAIMS` C3 describes. Running a weak test on
+a hosted runner does not make it a strong test.
+
+### One non-blocking annotation
+
+GitHub reports that `actions/checkout@v4` and `actions/setup-python@v5` target Node.js 20, which
+is deprecated, and were forced onto Node.js 24. The run passed. Recorded rather than fixed: pinning
+newer action majors is a change to make deliberately, not reflexively inside a status update.
