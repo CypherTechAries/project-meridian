@@ -2,7 +2,7 @@
 
 **Date:** 18 July 2026
 **Status:** draft for owner review
-**Scope:** the complete local tree at `[REPOSITORY ROOT]`, including `scaffold/backend`, `scaffold/schemas`, `scaffold/scenarios`, `scaffold/frontend`, `scaffold/docs`, and the root governance documents.
+**Scope:** the complete local tree at the repository root *(absolute local path redacted 19 July 2026 — see the redaction note at the end of this file)*, including `scaffold/backend`, `scaffold/schemas`, `scaffold/scenarios`, `scaffold/frontend`, `scaffold/docs`, and the root governance documents.
 
 ---
 
@@ -594,3 +594,37 @@ Eleven candidate findings were raised during analysis and refuted on verificatio
 Roughly two thirds of the candidate findings were confirmed on the facts but downgraded, because the original grading counted honestly-labelled scaffold omissions as defects. That was corrected consistently: the test applied throughout is whether a document claims a property the code lacks, or whether a design choice actively blocks the stated architecture. Absence alone, when disclosed, is not a defect.
 
 Final counts, after merging items that appeared under more than one analytical dimension: **2 critical, 15 major, approximately 50 minor and 45 informational, with 11 refuted**. The two critical findings are behavioural and were surfaced last, by asking what the system actually does when you run it rather than what the code says. That ordering is worth noting: the documentation defects are numerous and embarrassing, but they are cheap to fix. The two critical findings are the ones that determine whether this becomes a simulation.
+
+---
+
+## Amendment of 19 July 2026 — §8 decision 6 has been settled
+
+**Appended, not applied in place.** Nothing above this heading has been altered and no line number above has moved, because many records cite this audit by `path:line` — including `:397-413`, `:405`, `:409`, `:411` and `:413`. This audit is a closed record and stays as written.
+
+**§8 decision 6 — "Dual-use and responsible-use policy for the influence-operations model" (`:411`) — was settled by founder decision on 18 July 2026.** Three consequences a reader of §8 should carry:
+
+1. **The option list at `:411` is no longer the live menu.** It offered an acceptable-use or field-of-use restriction in the licence, an enforced `fictional: true` assertion plus a real-entity check at load, surfacing `fiction_disclaimer` everywhere, or staying private, and noted they were not mutually exclusive. The decision is broader than any of them and **reorders their standing**: it names eight controls, and the eighth makes the licence-side and disclosure-side measures **supplementary** while **technical enforcement is mandatory**. The audit's closing sentence at `:411` — "the technical enforcement is worth building whichever way the policy goes" — has in effect been adopted as the policy.
+
+2. **Settling it did not clear publication blocker B5.** The same question is B5 (`A3-VERIFICATION-RESULTS.md:245`). It now clears only when the eight controls are **implemented and verified**, and **none of the eight exists in code**. The gate is larger after the decision than before it.
+
+3. **Of §8's seven items, four are now settled** — 8.1 licence, 8.2 visibility, 8.4 reproducibility wording, and 8.6 — **leaving 8.3 (ABM substrate), 8.5 (packaging tooling) and 8.7 (canonical plan format) open.** Any record that counts four §8 items as open is quoting the pre-decision position.
+
+Where the settled position is recorded: `RAID-REGISTER.md` DEC6 (the decision in the founder's own terms), `PUBLICATION-EXIT-CRITERIA.md` C6 (the eight controls as criteria B5-1 to B5-8, each with a verifiable test form), `CORRECTIVE-BACKLOG.md` CB-40 to CB-47, `PHASE-0-REMEDIATION-PLAN.md` §P0.8, and `../safety/IDENTITY-AND-BIAS-GUIDELINES.md` §9.
+
+**Nothing in this amendment reopens the audit, changes any finding, or alters any count in Appendix B.**
+
+---
+
+## Redaction note — 19 July 2026
+
+**One redaction has been made to this document, recorded here rather than made silently.**
+
+The `**Scope:**` line at the top originally named the auditor's absolute local filesystem path.
+That path exposed a personal account name and local directory structure, and is incidental to the
+audit rather than evidence for any finding: the scope it describes is the repository root, which is
+unambiguous without it. It has been replaced with "the repository root".
+
+**Nothing else in this document has been altered by this redaction.** No finding, no evidence, no
+numeric result and no citation was changed, and no other absolute path appears in the file. The
+redaction was made in preparation for the repository's first push, under the standing rule that
+historical records are amended in the open and never quietly rewritten.
