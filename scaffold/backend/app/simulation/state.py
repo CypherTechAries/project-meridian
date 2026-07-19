@@ -37,8 +37,9 @@ from .schemas.macro_schema import MacroState
 # counts accepted transitions within a single run.
 STATE_SCHEMA_VERSION = "0.4.0"
 
-# The engine's behavioural rules are not yet packaged or versioned independently of the code.
-# Recorded honestly as a placeholder so the field exists for the first real rule pack.
+# The engine's ACTION_EFFECTS table is still unversioned inline code. The P0.5 causal slice, by
+# contrast, has a real versioned rule pack, and a run carrying that slice must report it - a
+# version field that misreports the rules actually running is worse than no field at all.
 RULE_PACK_VERSION = "unversioned-inline-0"
 
 
@@ -71,15 +72,78 @@ class RunMetadata(BaseModel):
 
 
 class CohortRuntimeState(BaseModel):
-    """The MUTABLE belief values for one cohort.
+    """The MUTABLE runtime values for one cohort, plus the weights aggregation needs.
 
-    The cohort's static configuration (demographics, media exposure, susceptibility, grievances,
-    `represents_population`) stays in the scenario-derived `Cohort` spec and is NOT authoritative
-    runtime state — nothing mutates it. Only the beliefs below change during a run.
+    The cohort's static configuration (demographics, media exposure, susceptibility, grievances)
+    stays in the scenario-derived `Cohort` spec. Two scenario values are copied here because
+    authoritative aggregation must read them: `represents_population` and
+    `income_sensitivity_to_shipping_disruption`.
+
+    `represents_population` being read at all is new in P0.5. The audit recorded it as declared
+    but read by NO code, with the demo data wrong by 63x and nothing detecting it. It now weights
+    every society-wide aggregate.
     """
 
     cohort_id: str
     beliefs: dict[str, float] = Field(default_factory=dict)
+    # Population this cohort stands for. Affects AGGREGATE MAGNITUDE ONLY — never truth,
+    # morality, or what an individual does.
+    represents_population: int = 0
+    # This cohort's own declared exposure to shipping disruption, from the scenario. Why the
+    # fishing cohort and the urban professional cohort respond differently to the same shock.
+    income_sensitivity: float = 0.0
+    # Stage 5 output: this cohort's economic concern, 0..1.
+    economic_concern: float = 0.0
+
+
+class ScenarioTiming(BaseModel):
+    """What a tick MEANS in this scenario.
+
+    Scenario-scoped by design (founder decision, 19 July 2026). Kestral Strait uses six-hour
+    ticks; another scenario may use any duration. Nothing in the engine assumes six hours, and no
+    document may imply every MERIDIAN scenario does.
+    """
+
+    tick_duration_minutes: int = 360  # 6 simulated hours
+    demonstration_horizon_ticks: int = 20  # 5 simulated days
+
+    def simulated_hours(self, ticks: int) -> float:
+        return ticks * self.tick_duration_minutes / 60.0
+
+
+class ChainState(BaseModel):
+    """The Kestral Strait causal slice — Phase 0 item P0.5.
+
+    One narrow cross-tier channel, not a society model. Every scalar is bounded 0..1 by its
+    mechanism, so repeated shocks converge instead of accumulating.
+
+    `previous` holds last tick's values for the fields whose mechanisms declare a lag, so a lag is
+    an explicit read of a recorded prior value rather than an accident of stage ordering.
+    """
+
+    # Stage 1 — external input. Never spontaneously arises.
+    incident_severity: float = 0.0
+    incident_active: bool = False
+    # Stage 2
+    insurer_risk: float = 0.0
+    # Stage 3
+    premium_pressure: float = 0.0
+    rerouting_level: float = 0.0
+    rerouting_ticks_committed: int = 0
+    # Stage 4
+    port_activity_deficit: float = 0.0
+    employment_pressure: float = 0.0
+    # Stage 5 — population-weighted aggregate over per-cohort concern
+    household_expectation_pressure: float = 0.0
+    # Stage 6 — attention-like; the only quantities permitted to decay on "no new stimulus"
+    narrative_attention: float = 0.0
+    collective_activity: float = 0.0
+    # Stage 7
+    political_pressure: float = 0.0
+    government_options: dict[str, str] = Field(default_factory=dict)
+
+    # Recorded prior-tick values for lagged reads.
+    previous: dict[str, float] = Field(default_factory=dict)
 
 
 class InstitutionRecord(BaseModel):
@@ -129,6 +193,10 @@ class AuthoritativeState(BaseModel):
 
     # --- clock ---
     tick: int = 0
+    timing: ScenarioTiming = Field(default_factory=ScenarioTiming)
+
+    # --- the P0.5 causal slice ---
+    chain: ChainState = Field(default_factory=ChainState)
 
     # --- tiers ---
     macro: MacroState
@@ -191,7 +259,10 @@ def build_initial_state(
     seed: int,
 ) -> AuthoritativeState:
     """Assemble the authoritative state for a new run from scenario configuration."""
+    from .rules.kestral_v1 import RULE_PACK
+
     return AuthoritativeState(
+        rule_pack_version=RULE_PACK,
         scenario=ScenarioIdentity(
             scenario_id=scenario["scenario_id"],
             scenario_version=str(scenario.get("scenario_version", "unversioned")),
@@ -199,9 +270,17 @@ def build_initial_state(
         run=RunMetadata(seed=seed),
         tick=0,
         macro=macro,
+        timing=ScenarioTiming(**scenario.get("timing", {})),
         cohorts={
             c.cohort_id: CohortRuntimeState(
-                cohort_id=c.cohort_id, beliefs=c.beliefs.model_dump()
+                cohort_id=c.cohort_id,
+                beliefs=c.beliefs.model_dump(),
+                # P0.5: copied into authoritative state because aggregation must read them.
+                # `represents_population` was declared but read by NO code before this.
+                represents_population=c.represents_population,
+                income_sensitivity=float(
+                    c.economic_profile.income_sensitivity_to_shipping_disruption
+                ),
             )
             for c in cohorts
         },
