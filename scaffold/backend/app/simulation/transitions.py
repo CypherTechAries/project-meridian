@@ -29,6 +29,28 @@ from pydantic import BaseModel, Field
 
 from .state import AcceptedAction, AuthoritativeState
 
+# The P0.5 chain scalars the boundary will accept, and their declared bounds. Listing them here
+# rather than deriving them by reflection means a new field cannot become writable by accident.
+_CHAIN_BOUNDED_01: frozenset[str] = frozenset({
+    "incident_severity",
+    "insurer_risk",
+    "premium_pressure",
+    "rerouting_level",
+    "port_activity_deficit",
+    "employment_pressure",
+    "household_expectation_pressure",
+    "narrative_attention",
+    "collective_activity",
+    "political_pressure",
+})
+_CHAIN_NON_NEGATIVE_INT: frozenset[str] = frozenset({"rerouting_ticks_committed"})
+_CHAIN_SCALARS: frozenset[str] = _CHAIN_BOUNDED_01 | _CHAIN_NON_NEGATIVE_INT
+
+# Fields whose prior-tick value a lagged mechanism may read.
+_CHAIN_LAGGED_FIELDS: tuple[str, ...] = tuple(sorted(_CHAIN_BOUNDED_01))
+
+_OPTION_STATUSES: frozenset[str] = frozenset({"AVAILABLE", "CONSTRAINED", "ENABLED"})
+
 # Policy validation that deliberately does NOT exist after P0.4. Enumerated in code so it cannot
 # be quietly forgotten, and so a reader of this module is told what it does not do.
 UNIMPLEMENTED_VALIDATION: tuple[str, ...] = (
@@ -53,6 +75,12 @@ class TransitionType(str, Enum):
     SET_COHORT_BELIEF = "set_cohort_belief"
     SET_NARRATIVE_ADOPTION = "set_narrative_adoption"
     RECORD_PLAYER_DECISION = "record_player_decision"
+    # --- P0.5 causal slice ---
+    APPLY_INCIDENT = "apply_incident"
+    SET_CHAIN_SCALAR = "set_chain_scalar"
+    SET_COHORT_CONCERN = "set_cohort_concern"
+    SET_OPTION_STATUS = "set_option_status"
+    SNAPSHOT_CHAIN_PREVIOUS = "snapshot_chain_previous"
 
 
 class TransitionOrigin(str, Enum):
@@ -68,6 +96,9 @@ class TransitionOrigin(str, Enum):
     LLM_PROPOSAL = "llm_proposal"
     PLAYER_DECISION = "player_decision"
     PRESENTATION = "presentation"
+    # An input arriving from outside the simulation, e.g. a scenario-authored incident. Recorded
+    # distinctly so that "the world did this to us" is never confused with "a rule did this".
+    EXTERNAL_INPUT = "external_input"
 
 
 class Transition(BaseModel):
@@ -82,9 +113,15 @@ class Transition(BaseModel):
     # modelled mechanism — recorded as whatever is true.
     mechanism: Optional[str] = None
     actor: Optional[str] = None
-    # P0.4A hook. Deterministic draw references are not available: there are no named substreams,
-    # so a draw cannot yet be identified or reproduced independently of global stream position.
+    # Keyed draw references (P0.4A). Each identifies a draw precisely enough to reproduce it.
     draw_refs: list[str] = Field(default_factory=list)
+    # Mechanism version, so a transition records WHICH version of a rule produced it.
+    mechanism_version: Optional[str] = None
+    # P0.6 groundwork: the transition ids this one causally follows from. Recording a parent is
+    # NOT causal reconstruction and NOT event sourcing - nothing replays from these.
+    causal_parents: list[str] = Field(default_factory=list)
+    # Which authoritative fields this transition read to decide its effect.
+    source_fields: list[str] = Field(default_factory=list)
 
 
 class ValidationResult(BaseModel):
@@ -109,7 +146,11 @@ class TransitionRecord(BaseModel):
     # Field-level before/after for what actually changed. Empty when nothing changed.
     delta: dict[str, Any] = Field(default_factory=dict)
     mechanism: Optional[str] = None
+    mechanism_version: Optional[str] = None
     actor: Optional[str] = None
+    draw_refs: list[str] = Field(default_factory=list)
+    causal_parents: list[str] = Field(default_factory=list)
+    source_fields: list[str] = Field(default_factory=list)
 
 
 class TransitionService:
@@ -207,6 +248,50 @@ class TransitionService:
             if p and "to" in p and p["to"] != s.tick + 1:
                 errors.append("advance_tick may only advance by exactly one tick")
 
+        # ------------------------------------------------------------------ #
+        # P0.5 causal slice. Every chain scalar is bounded 0..1 by construction, so an
+        # out-of-range value is a rule-pack bug and is rejected rather than clamped silently.
+        # ------------------------------------------------------------------ #
+        elif t is TransitionType.APPLY_INCIDENT:
+            sev = p.get("severity")
+            if not isinstance(sev, (int, float)):
+                errors.append("apply_incident requires a numeric 'severity'")
+            elif not (0.0 <= sev <= 1.0):
+                errors.append(f"incident severity out of bounds [0,1]: {sev}")
+            if transition.origin is not TransitionOrigin.EXTERNAL_INPUT:
+                errors.append("an incident may only arrive as EXTERNAL_INPUT")
+
+        elif t is TransitionType.SET_CHAIN_SCALAR:
+            field = p.get("field")
+            value = p.get("value")
+            if field not in _CHAIN_SCALARS:
+                errors.append(f"unknown chain scalar: {field!r}")
+            elif not isinstance(value, (int, float)):
+                errors.append(f"chain scalar {field!r} requires a numeric value")
+            elif field in _CHAIN_BOUNDED_01 and not (0.0 <= value <= 1.0):
+                errors.append(f"chain scalar {field!r} out of declared bounds [0,1]: {value}")
+            elif field in _CHAIN_NON_NEGATIVE_INT and (value < 0 or int(value) != value):
+                errors.append(f"chain scalar {field!r} must be a non-negative integer: {value}")
+
+        elif t is TransitionType.SET_COHORT_CONCERN:
+            cid = p.get("cohort_id")
+            value = p.get("value")
+            if cid not in s.cohorts:
+                errors.append(f"unknown cohort: {cid!r}")
+            if not isinstance(value, (int, float)):
+                errors.append("set_cohort_concern requires a numeric 'value'")
+            elif not (0.0 <= value <= 1.0):
+                errors.append(f"cohort concern out of bounds [0,1]: {value}")
+
+        elif t is TransitionType.SET_OPTION_STATUS:
+            if not p.get("option_id"):
+                errors.append("set_option_status requires 'option_id'")
+            if p.get("status") not in _OPTION_STATUSES:
+                errors.append(f"unknown option status: {p.get('status')!r}")
+
+        elif t is TransitionType.SNAPSHOT_CHAIN_PREVIOUS:
+            pass  # bookkeeping; no payload
+
         return ValidationResult(ok=not errors, errors=errors)
 
     # ------------------------------------------------------------------ #
@@ -229,7 +314,11 @@ class TransitionService:
                 state_revision_before=before_version,
                 state_revision_after=before_version,
                 mechanism=transition.mechanism,
+                mechanism_version=transition.mechanism_version,
                 actor=transition.actor,
+                draw_refs=list(transition.draw_refs),
+                causal_parents=list(transition.causal_parents),
+                source_fields=list(transition.source_fields),
             )
 
         delta = self._apply_validated(transition)
@@ -246,7 +335,11 @@ class TransitionService:
             state_revision_after=s.state_revision,
             delta=delta,
             mechanism=transition.mechanism,
+            mechanism_version=transition.mechanism_version,
             actor=transition.actor,
+            draw_refs=list(transition.draw_refs),
+            causal_parents=list(transition.causal_parents),
+            source_fields=list(transition.source_fields),
         )
 
     def _apply_validated(self, transition: Transition) -> dict[str, Any]:
@@ -312,5 +405,42 @@ class TransitionService:
                 "added": action.action_id,
                 "count_after": len(s.pending_actions),
             }
+
+        # ------------------------------------------------------------------ #
+        # P0.5 causal slice
+        # ------------------------------------------------------------------ #
+        elif t is TransitionType.APPLY_INCIDENT:
+            before_sev = s.chain.incident_severity
+            before_act = s.chain.incident_active
+            # An incident REINFORCES rather than replaces: a second incident while one is live
+            # raises severity toward the new level rather than resetting it.
+            s.chain.incident_severity = max(before_sev, float(p["severity"]))
+            s.chain.incident_active = True
+            delta["chain.incident_severity"] = {"before": before_sev, "after": s.chain.incident_severity}
+            delta["chain.incident_active"] = {"before": before_act, "after": True}
+
+        elif t is TransitionType.SET_CHAIN_SCALAR:
+            field, value = p["field"], p["value"]
+            before = getattr(s.chain, field)
+            setattr(s.chain, field, type(before)(value) if isinstance(before, int) and not isinstance(before, bool) else float(value))
+            delta[f"chain.{field}"] = {"before": before, "after": getattr(s.chain, field)}
+
+        elif t is TransitionType.SET_COHORT_CONCERN:
+            cid, value = p["cohort_id"], float(p["value"])
+            before = s.cohorts[cid].economic_concern
+            s.cohorts[cid].economic_concern = value
+            delta[f"cohorts.{cid}.economic_concern"] = {"before": before, "after": value}
+
+        elif t is TransitionType.SET_OPTION_STATUS:
+            oid, status = p["option_id"], p["status"]
+            before = s.chain.government_options.get(oid)
+            s.chain.government_options[oid] = status
+            delta[f"chain.government_options.{oid}"] = {"before": before, "after": status}
+
+        elif t is TransitionType.SNAPSHOT_CHAIN_PREVIOUS:
+            # Record this tick's values so next tick's lagged mechanisms read a recorded prior
+            # value rather than depending on stage ordering.
+            s.chain.previous = {f: float(getattr(s.chain, f)) for f in _CHAIN_LAGGED_FIELDS}
+            delta["chain.previous"] = {"snapshot_at_tick": s.tick}
 
         return delta

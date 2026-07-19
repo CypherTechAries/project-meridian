@@ -39,7 +39,9 @@ from .schemas.macro_schema import (
     MacroState,
     PublicFinances,
 )
-from .state import RULE_PACK_VERSION, AuthoritativeState, build_initial_state, canonical_json
+from .pipeline import ChainRunner
+from .rules.kestral_v1 import RULE_PACK
+from .state import AuthoritativeState, build_initial_state, canonical_json
 from .transitions import Transition, TransitionOrigin, TransitionRecord, TransitionService, TransitionType
 
 # The engine's entire action vocabulary and every magnitude, hardcoded here. This is not a rule
@@ -89,7 +91,12 @@ class MeridianModel(mesa.Model):
         seed: Deterministic RNG seed. If ``None``, falls back to the scenario default.
     """
 
-    def __init__(self, scenario: dict, seed: Optional[int] = None) -> None:
+    def __init__(
+        self,
+        scenario: dict,
+        seed: Optional[int] = None,
+        enabled_mechanisms: Optional[list[str]] = None,
+    ) -> None:
         resolved_seed = seed if seed is not None else scenario.get("default_seed", 0)
         super().__init__(seed=resolved_seed)
         # P0.4A: authoritative randomness is KEYED, not sequential. There is no shared stream and
@@ -99,7 +106,7 @@ class MeridianModel(mesa.Model):
         self.draws = DeterministicDrawService(
             seed=resolved_seed,
             scenario=scenario["scenario_id"],
-            rule_pack=RULE_PACK_VERSION,
+            rule_pack=RULE_PACK,
         )
 
         self.scenario = scenario
@@ -137,6 +144,14 @@ class MeridianModel(mesa.Model):
             seed=resolved_seed,
         )
         self._transitions = TransitionService(initial)
+
+        # --- P0.5 causal slice ---
+        # `enabled_mechanisms=None` runs the whole declared chain. Passing a subset is the
+        # counterfactual switch used to prove a given link actually matters.
+        self.chain = ChainRunner(self, enabled=enabled_mechanisms)
+        # Incidents are EXTERNAL scenario input, scheduled by tick. Not hard-coded in the tick
+        # loop, so a run with no incident is a genuine baseline.
+        self._scheduled_incidents: list[dict] = list(scenario.get("incidents", []))
 
         # --- Logs (NOT authoritative state; see the P0.6 note below) ---
         # `transition_log` holds returned TransitionRecords. It is an in-memory diagnostic list,
@@ -282,7 +297,19 @@ class MeridianModel(mesa.Model):
         # 4. Deterministic macro rules/noise.
         self._step_macro_rules()
 
-        # 5. Snapshot (in-memory only; not persistence, not P0.6 snapshots).
+        # 5. External scenario inputs due this tick (P0.5). Applied before the chain runs so the
+        #    incident is visible to stage 1 in the same tick it arrives.
+        for incident in self._scheduled_incidents:
+            if incident.get("at_tick") == self.tick:
+                self.chain.apply_incident(
+                    severity=float(incident["severity"]),
+                    label=str(incident.get("label", "")),
+                )
+
+        # 6. The P0.5 societal-response chain, in fixed stage order.
+        self.chain.run_tick()
+
+        # 7. Snapshot (in-memory only; not persistence, not P0.6 snapshots).
         self.snapshots.append(self.macro_snapshot())
 
     def run(self, ticks: int) -> None:
