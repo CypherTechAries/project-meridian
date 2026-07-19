@@ -73,6 +73,14 @@ The scaffold runs and its five tests pass, but:
   Clean-environment command that succeeds on Windows and Linux.
 - **P0.3** Establish real CI. Only checks that genuinely exist and pass.
 - **P0.4** Define the authoritative-state contract across macro/meso/micro.
+- **P0.4A** Establish a deterministic randomness architecture. Isolate every authoritative random
+  draw by subsystem, entity, interaction, purpose and context, so that adding, removing or
+  reordering a draw in one place cannot silently shift every later draw everywhere else. Lettered
+  rather than numbered so the founder-set numbering P0.1 to P0.8 survives unchanged. *(Founder
+  decision, 18 July 2026. Architecture accepted 19 July 2026 —
+  `docs/adr/ADR-010-deterministic-randomness-architecture.md`. **Not implemented; no code exists
+  for it.** P0.5 specification may proceed in parallel, but P0.5 implementation, entity promotion
+  and world-model materialisation may not begin until P0.4A passes.)*
 - **P0.5** Design explicit cross-tier causal channels. No arbitrary coupling. `represents_population`
   must affect aggregation. *(Note: this is arguably the highest-value item, since it is the product's
   core mechanism, not a tidiness fix.)*
@@ -93,8 +101,8 @@ Do not create a public repository until all of these pass:
 - [ ] Current-state audit and known-limitations document committed
 - [ ] Secret, personal-data and repository-content review passes
 
-Five deduplicated publication blockers are listed in `A3-VERIFICATION-RESULTS.md`. Four clear by
-telling the truth; only B5 (dual-use schema) needs an owner decision.
+Five deduplicated publication blockers are listed in `A3-VERIFICATION-RESULTS.md`. B1 to B4 clear by telling the truth. **B5 (dual-use schema) is DECIDED — founder decision, 18 July 2026 — and did NOT clear with that decision.** It now clears only when the **eight controls** that decision names are **implemented and verified**; disclosure and acceptable-use wording are supplementary, technical enforcement is mandatory, and **none of the eight exists in code**. Deciding B5 therefore *enlarged* this gate.
+**The earlier wording of these two lines — "four clear by telling the truth; only B5 needs an owner decision" — is superseded in its second half and must not be carried forward.** It survives verbatim at `A3-VERIFICATION-RESULTS.md:247` (see the amendment at the end of that file). Controls and per-control criteria: `docs/delivery/PUBLICATION-EXIT-CRITERIA.md` C6. Decision record: `docs/delivery/RAID-REGISTER.md` DEC6.
 
 ## Backlog — captured, deliberately not started
 
@@ -142,3 +150,38 @@ Scripts in [`docs/delivery/evidence/`](docs/delivery/evidence/). From `scaffold/
 | `a3_direct.py` | checks 1-5: no fiscal path, constraints inert, endpoint is a no-op, saturation persists under varied actions |
 | `a3_rng_isolation.py` | meso→macro coupling is shared-RNG contamination, not causality |
 | `probe.py` | determinism regression probes; changing only the LLM's action choice moves macro numbers 0.59 → 0.39 |
+
+---
+
+## Amendment record
+
+**Amendment 1 — 19 July 2026. P0.4A inserted into the canonical Phase 0 priority order.**
+
+**Plain English.** P0.4A (deterministic randomness) was created by founder decision on 18 July 2026,
+after this document's Phase 0 list was written. Until now the list above ran P0.4 → P0.5 while every
+other record — the remediation plan, the corrective backlog, the RAID register, the publication exit
+criteria, ADR-010 and the world-model documents — ran P0.4 → P0.4A → P0.5. Several of those records
+cited this document, by line number, as the authority for a list that omitted the item. The founder
+ruled on 19 July 2026 that the canonical sequence be corrected rather than worked around. P0.4A now
+sits in its correct position above.
+
+**Technical evidence.** The item was inserted as `HANDOFF.md:76-83`, between P0.4 (`:75`) and P0.5
+(`:84-86`). Nothing else in this document was altered: lines 1 to 75 are unchanged, and every line
+formerly numbered 76 or higher moved down by exactly 8. No existing amendment, supersession notice
+or superseded wording was removed — in particular the B5 supersession note now at `:104-105` is
+carried forward verbatim. Wording of the inserted item is drawn from
+`docs/adr/ADR-010-deterministic-randomness-architecture.md` and
+`docs/delivery/PHASE-0-REMEDIATION-PLAN.md` §P0.4A.
+
+**Consequential reference migration.** Every citation of the form `HANDOFF.md:NN` elsewhere in the
+repository that pointed at line 76 or higher was re-anchored in the same pass. Where practical those
+citations were converted to stable section anchors of the form
+``` `HANDOFF.md` § Phase 0 priority order, P0.5 (`:84-86`) ``` so that a future insert does not
+invalidate them again. The migration, its verification results and any unresolved citation are
+recorded in `docs/delivery/HANDOFF-REFERENCE-MIGRATION.md`. Nothing under `scaffold/` was modified.
+
+**Stable anchors for citing documents.** Prefer these to line numbers:
+`§ Repository status`, `§ Where the work stopped`, `§ Current state of the code, stated honestly`,
+`§ Phase 0 priority order` (items P0.1 to P0.4, P0.4A, P0.5 to P0.8), `§ Publication exit criteria`,
+`§ Backlog — captured, deliberately not started`, `§ Standing constraints`,
+`§ Reproducing the evidence`.
