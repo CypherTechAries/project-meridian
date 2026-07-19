@@ -5,7 +5,18 @@ pydantic>=2.6,<3.0
 pydantic-settings>=2.1,<3.0
 
 # Simulation engine (Apache-2.0)
-mesa>=2.1,<3.0
+# P0.2 (19 July 2026): `mesa` itself is NOT listed here. It is installed separately with
+# --no-deps as a SECOND command (see ../README.md "Install" and requirements-mesa.txt), because
+# its declared dependencies pull a solara/Jupyter visualisation tree whose file paths exceed the
+# Windows 260-character limit and fail the install on any Windows machine without
+# LongPathsEnabled. MERIDIAN uses none of that tree: mesa is a vestigial base class here (no
+# scheduler, no AgentSet, plain-list iteration in engine.py).
+# The three packages below are mesa's genuine IMPORT-TIME requirements, listed explicitly
+# because --no-deps means pip will not fetch them for us. Verified by execution 19 July 2026 on
+# CPython 3.12.10: with these present, `import mesa` succeeds and the suite passes 5/5.
+tqdm>=4.66,<5.0           # required by mesa.batchrunner at import time
+numpy>=1.26,<3.0          # required by mesa
+pandas>=2.0,<3.0          # required by mesa
 networkx>=3.2,<4.0
 
 # Real-time
@@ -16,8 +27,17 @@ websockets>=12.0
 sqlalchemy>=2.0,<3.0
 psycopg2-binary>=2.9,<3.0
 
-# LLM gateway (stubbed by default; installed so the interface is real). MIT-licensed.
-litellm>=1.34,<2.0
+# LLM gateway: NOT installed by default.
+# P0.2 correction (19 July 2026): `litellm>=1.34,<2.0` was previously listed here and BROKE THE
+# DOCUMENTED INSTALL on a clean machine. pip resolves before installing, so a single
+# unsatisfiable requirement meant NOTHING installed at all. On CPython 3.13 litellm resolved to
+# 1.92.0, which publishes no cp313 wheel, fell back to an sdist, and required a Rust toolchain.
+# Nothing in this codebase imports litellm — it appears only inside the module docstring at
+# `app/simulation/llm_gateway.py:15-24`, as a sketch of how a live gateway would be wired. The
+# gateway ships in stub mode and needs no API key and no provider library.
+# To work on the live-model path later, install the optional extra:
+#     pip install -r requirements-llm.txt
+# See docs/delivery/CORRECTIVE-BACKLOG.md and HANDOFF.md item P0.2.
 
 # Tests
 pytest>=8.0,<9.0
