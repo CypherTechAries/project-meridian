@@ -26,10 +26,14 @@
   --line-datum: #17394a;
 
   /* Text */
-  --t-hi: #eaf2fb;
-  --t-mid: #a9bacd;
-  --t-low: #6f8298;
-  --t-faint: #4a5a6d;
+  /*
+   * Secondary text was losing too much contrast. --t-low and --t-faint are raised so caveats and
+   * metadata stay readable at 1440x900; they still recede clearly behind --t-hi and --t-mid.
+   */
+  --t-hi: #eef4fc;
+  --t-mid: #b6c6d8;
+  --t-low: #8b9db1;
+  --t-faint: #6b7d92;
 
   /* The MERIDIAN cyan — structure and interaction, never status */
   --cyan: #35c8e0;
@@ -47,7 +51,9 @@
   --d-constrained: #f0a742; /* option constrained */
   --d-muted: #61748a;       /* available / unknown */
 
-  /* Origin markers */
+  /* Origin markers: muted at rest, raised on hover/selection. Visible, never shouting. */
+  --o-rest: 0.62;
+
   --o-engine: #4fd18b;
   --o-fixture: #f0a742;
   --o-unknown: #7c8ea3;
@@ -62,17 +68,23 @@
   --f-ui: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-num: "SF Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
 
-  --fs-micro: 10px;
-  --fs-meta: 11px;
-  --fs-sm: 12px;
-  --fs-body: 13px;
-  --fs-lead: 15px;
-  --fs-h3: 17px;
-  --fs-h2: 21px;
-  --fs-display: 44px;
+  /*
+   * POLISH PASS: the smallest three steps were raised 1-2px and the ramp re-spaced. The previous
+   * scale bottomed out at 10px, which required leaning in to read legends, caveats and the event
+   * stream. Density is preserved by tightening spacing instead of shrinking type.
+   */
+  --fs-micro: 11px;
+  --fs-meta: 12px;
+  --fs-sm: 13px;
+  --fs-body: 14px;
+  --fs-lead: 16px;
+  --fs-h3: 18px;
+  --fs-h2: 22px;
+  --fs-display: 40px;
 
-  --lh-tight: 1.2;
-  --lh-body: 1.5;
+  --lh-tight: 1.25;
+  --lh-body: 1.55;
+  --lh-dense: 1.4;
 
   /* Spacing */
   --sp-1: 4px;

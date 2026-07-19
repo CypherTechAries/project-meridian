@@ -31,6 +31,14 @@ const NAV = [
   { id: 'composer', label: 'Command', built: false },
 ]
 
+/** Plain-language band for a 0..1 chain value. Describes, never predicts. */
+function severityPhrase(v: number): string {
+  if (v >= 0.5) return 'severe'
+  if (v >= 0.25) return 'elevated'
+  if (v > 0) return 'emerging'
+  return 'at rest'
+}
+
 function disclosures(): string {
   return `<div class="disclosures" role="region" aria-label="Prototype disclosures">
     <span class="disc"><span class="disc__glyph" aria-hidden="true">◈</span>${FICTION_DISCLOSURE}</span>
@@ -63,8 +71,8 @@ function topbar(run: RunResult): string {
     <div class="topbar__right">
       <span class="tb"><span class="tb__k">engine</span>${conn}</span>
       <span class="tb"><span class="tb__k">rule pack</span><span class="tb__v">${escapeHtml(p.rule_pack_version)}</span></span>
-      <span class="tb"><span class="tb__k">tick</span><span class="tb__v">T+${p.tick}</span></span>
-      <span class="tb"><span class="tb__k">horizon</span><span class="tb__v">${p.demonstration_horizon_ticks}t · ${(p.simulated_hours / 24).toFixed(0)}d</span></span>
+      <span class="tb"><span class="tb__k">tick</span><span class="tb__v">Tick ${p.tick}</span></span>
+      <span class="tb"><span class="tb__k">horizon</span><span class="tb__v">${p.demonstration_horizon_ticks} ticks · ${(p.simulated_hours / 24).toFixed(0)} days</span></span>
     </div>
   </div>`
 }
@@ -111,22 +119,40 @@ function wireInspector(root: HTMLElement, run: RunResult): void {
 
   const index = new Map<string, { title: string; detail: string }>()
 
+  /*
+   * TWO LAYERS. Mechanism identifiers and raw chain field names made the inspector read as a
+   * debugger. The operational summary now leads in plain language; the identifiers are unchanged
+   * and complete, one disclosure away, so a technical reviewer loses nothing.
+   */
+  const plain = (f: string): string => (f.replace('chain.', '').replace(/_/g, ' '))
+
   for (const s of p.stages) {
+    const sources = s.source_fields.map(plain)
     index.set(s.field, {
       title: s.label,
       detail: `
-        <p class="insp__mech">${escapeHtml(s.mechanism ?? '—')}@${escapeHtml(s.mechanism_version ?? '—')}</p>
-        <p class="insp__meaning">${escapeHtml(s.lifecycle)}</p>
-        <dl class="provgrid">
-          <dt>Value</dt><dd>${s.value.toFixed(6)}</dd>
-          <dt>Origin</dt><dd>${escapeHtml(s.origin)}</dd>
-          <dt>Status</dt><dd>${escapeHtml(s.epistemic_status)}</dd>
-          <dt>Confidence</dt><dd>${escapeHtml(s.confidence)}</dd>
-          <dt>Stage</dt><dd>${s.stage} — ${escapeHtml(s.stage_name)}</dd>
-          <dt>Lag</dt><dd>${s.lag_ticks} tick(s)</dd>
-          <dt>Sources</dt><dd>${escapeHtml(s.source_fields.join(', '))}</dd>
-          <dt>Updated</dt><dd>tick ${s.last_updated_tick}</dd>
-        </dl>`,
+        <ul class="insp__sum">
+          <li><strong>${escapeHtml(s.label)}</strong> is ${escapeHtml(severityPhrase(s.value))},
+              at ${s.value.toFixed(4)} of 1.000.</li>
+          ${sources.length ? `<li>Driven by ${escapeHtml(sources.join(' and '))}.</li>` : ''}
+          <li>${escapeHtml(s.lifecycle)}</li>
+          <li>Updated at tick ${s.last_updated_tick}${s.lag_ticks ? `, ${s.lag_ticks} tick(s) behind its cause` : ''}.</li>
+        </ul>
+        <details class="insp__tech">
+          <summary>Technical detail</summary>
+          <dl class="provgrid">
+            <dt>Mechanism</dt><dd>${escapeHtml(s.mechanism ?? '—')}</dd>
+            <dt>Version</dt><dd>${escapeHtml(s.mechanism_version ?? '—')}</dd>
+            <dt>Exact value</dt><dd>${s.value.toFixed(6)}</dd>
+            <dt>Origin</dt><dd>${escapeHtml(s.origin)}</dd>
+            <dt>Status</dt><dd>${escapeHtml(s.epistemic_status)}</dd>
+            <dt>Confidence</dt><dd>${escapeHtml(s.confidence)}</dd>
+            <dt>Stage</dt><dd>${s.stage} — ${escapeHtml(s.stage_name)}</dd>
+            <dt>Lag</dt><dd>${s.lag_ticks} tick(s)</dd>
+            <dt>Raw sources</dt><dd>${escapeHtml(s.source_fields.join(', '))}</dd>
+            <dt>Updated</dt><dd>tick ${s.last_updated_tick}</dd>
+          </dl>
+        </details>`,
     })
   }
   for (const c of p.cohorts) {

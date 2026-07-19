@@ -331,3 +331,42 @@ describe('bounded defect-correction pass', () => {
     expect(crisis.querySelector('.panel__sub')?.textContent).toContain('Political pressure')
   })
 })
+
+describe('polish pass keeps disclosures out of collapsed regions', () => {
+  it('shows confidence status in the default provenance view, not only inside a disclosure', () => {
+    // Moving explanatory PROSE into <details> is fine; moving the STATUS itself would hide an
+    // honesty property behind a click. The status must be visible without interaction.
+    const root = render()
+    const grid = root.querySelector('.panel--prov .provgrid')!
+    expect(grid.textContent).toContain('NOT_APPLICABLE')
+    expect(grid.closest('details')).toBeNull()
+  })
+
+  it('keeps the canonical confidence sentence verbatim', () => {
+    expect(render().textContent).toMatch(/the engine computes, it does not estimate/i)
+  })
+
+  it('states urgency without inventing a deadline the engine cannot support', () => {
+    // The engine has no clock. Any countdown, due time or expiry would be fabricated.
+    const text = (render().textContent ?? '').toLowerCase()
+    expect(text).not.toMatch(/\b\d+\s*(h|hr|hrs|hours|min|mins|minutes)\s*(left|remaining|to go)\b/)
+    expect(text).not.toMatch(/deadline|expires|due (in|by)|countdown|time remaining/)
+  })
+
+  it('derives decision domains from the option driven_by field', () => {
+    const root = render()
+    const primary = root.querySelector('.ditem--primary')!
+    expect(primary.querySelectorAll('.dom__chip').length).toBeGreaterThan(0)
+    // The affordance inspects; it must never read as execution.
+    expect(primary.querySelector('.ditem__act')?.textContent).toBe('Inspect')
+    expect(root.querySelector('.rail__foot')?.textContent).toMatch(/nothing can be\s+submitted, priced, validated or executed/i)
+  })
+
+  it('labels metric direction only as description of ticks already produced', () => {
+    const root = render()
+    const dirs = Array.from(root.querySelectorAll('.krow__dir')).map((d) => d.textContent?.trim())
+    for (const d of dirs) expect(['RISING', 'STABLE', 'EASING', '—']).toContain(d)
+    // No rate, no forecast, no per-tick extrapolation.
+    expect(root.querySelector('.panel--metrics')?.textContent).not.toMatch(/\/tick|per tick|forecast|projected/i)
+  })
+})

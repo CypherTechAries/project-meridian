@@ -22,66 +22,119 @@ import type { TrajectoryPoint } from '../engine/client.ts'
  *   prominence, so the map reads the crisis rather than decorating it.
  */
 export function situationMap(reroutingLevel: number, blockadeActive: boolean): string {
-  const rerouteOpacity = 0.25 + Math.min(1, reroutingLevel) * 0.75
-  const rerouteWidth = 1.5 + Math.min(1, reroutingLevel) * 2.5
-  const directOpacity = 1 - Math.min(1, reroutingLevel) * 0.75
+  const r = Math.min(1, Math.max(0, reroutingLevel))
+  const rerouteOpacity = 0.3 + r * 0.7
+  const rerouteWidth = 1.8 + r * 2.6
+  const directOpacity = 1 - r * 0.78
 
   return `<svg class="map" viewBox="0 0 800 560" preserveAspectRatio="xMidYMid meet" role="img"
-      aria-label="Fictional strategic map of the Kestral Strait. Northshore lies north of the strait and Southport south of it. A blockade zone sits on the northern approach; shipping is rerouted south around it.">
+      aria-label="Fictional strategic map of the Kestral Strait. Northshore lies north of the strait, Southport south of it, and the Vantaran Approaches to the east. A blockade zone closes the northern approach; commercial shipping is diverted south around it. Invented geography.">
     <defs>
-      <linearGradient id="sea" x1="0" y1="0.0" x2="0" y2="1.5">
+      <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1.5">
         <stop offset="0%" stop-color="#0a1622"/><stop offset="100%" stop-color="#071019"/>
       </linearGradient>
-      <linearGradient id="land" x1="0" y1="0.0" x2="0" y2="1.5">
-        <stop offset="0%" stop-color="#152131"/><stop offset="100%" stop-color="#101a26"/>
+      <linearGradient id="land" x1="0" y1="0" x2="0" y2="1.5">
+        <stop offset="0%" stop-color="#182531"/><stop offset="100%" stop-color="#111c28"/>
       </linearGradient>
       <radialGradient id="blockadeGlow">
         <stop offset="0%" stop-color="#ff5c6a" stop-opacity="0.30"/>
         <stop offset="100%" stop-color="#ff5c6a" stop-opacity="0"/>
       </radialGradient>
+      <marker id="flowDirect" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" class="map__arrow map__arrow--direct"/>
+      </marker>
+      <marker id="flowReroute" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
+        <path d="M0,1 L9,5 L0,9 z" class="map__arrow map__arrow--reroute"/>
+      </marker>
+      <pattern id="restricted" width="11" height="11" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <line x1="0" y1="0" x2="0" y2="11" class="map__hatch"/>
+      </pattern>
     </defs>
 
-    <rect width="800" height="560.0" fill="url(#sea)"/>
+    <rect width="800" height="560" fill="url(#sea)"/>
+
+    <!-- Bathymetric contours: depth suggestion only, invented, no survey data. -->
+    <g class="map__bathy" aria-hidden="true">
+      <path d="M0,236 C150,214 280,268 420,254 C540,242 660,286 800,268"/>
+      <path d="M0,282 C150,262 280,314 420,300 C540,288 660,330 800,312"/>
+      <path d="M0,328 C150,310 280,358 420,346 C540,334 660,372 800,356"/>
+    </g>
 
     <!-- Meridian graticule: the navigation motif the project is named for. -->
     <g class="map__graticule" aria-hidden="true">
-      ${[80, 200, 320, 440, 560, 680].map((x) => `<line x1="${x}" y1="0.0" x2="${x}" y2="560.0"/>`).join('')}
-      ${[60, 130, 200, 270, 340].map((y) => `<line x1="0" y1="${y}" x2="800" y2="${y}"/>`).join('')}
-      <line class="map__meridian" x1="400" y1="0.0" x2="400" y2="560.0"/>
+      ${[80, 200, 320, 440, 560, 680].map((x) => `<line x1="${x}" y1="0" x2="${x}" y2="560"/>`).join('')}
+      ${[60, 130, 200, 270, 340, 410, 480].map((y) => `<line x1="0" y1="${y}" x2="800" y2="${y}"/>`).join('')}
+      <line class="map__meridian" x1="400" y1="0" x2="400" y2="560"/>
     </g>
 
-    <!-- Invented landmasses. Not derived from any real coastline. -->
+    <!-- Invented landmasses with inlet detail. Not derived from any real coastline. -->
     <path class="map__land" fill="url(#land)"
-      d="M0,0.0 L800,0.0 L800,85.5 C700,97.3 640,135.6 560,141.5 C470,148.8 400,109.1 310,117.9 C220,126.7 140,85.5 60,58.9 L0,50.1 Z"/>
+      d="M0,0 L800,0 L800,86 C742,96 706,128 664,132 C620,136 596,112 556,124
+         C516,136 486,158 446,150 C404,142 386,110 344,116 C300,122 268,150 226,142
+         C176,132 132,96 84,72 C56,58 28,54 0,50 Z"/>
     <path class="map__land" fill="url(#land)"
-      d="M0,560.0 L800,560.0 L800,442.1 C720,421.5 660,450.9 580,442.1 C500,433.3 452,386.1 372,397.9 C280,411.2 190,468.6 96,486.3 L0,498.1 Z"/>
+      d="M0,560 L800,560 L800,442 C742,424 700,442 656,440 C610,438 578,410 536,414
+         C494,418 470,446 428,442 C384,438 360,404 316,412 C266,421 214,462 160,478
+         C104,494 52,498 0,500 Z"/>
+    <path class="map__coast" fill="none"
+      d="M0,50 C56,54 84,72 84,72 C132,96 176,132 226,142 C268,150 300,122 344,116
+         C386,110 404,142 446,150 C486,158 516,136 556,124 C596,112 620,136 664,132
+         C706,128 742,96 800,86"/>
+    <path class="map__coast" fill="none"
+      d="M0,500 C52,498 104,494 160,478 C214,462 266,421 316,412 C360,404 384,438 428,442
+         C470,446 494,418 536,414 C578,410 610,438 656,440 C700,442 742,424 800,442"/>
 
-    <text class="map__place" x="612" y="76.6">Northshore</text>
-    <text class="map__place" x="560" y="504.0">Southport</text>
-    <text class="map__strait" x="196" y="259.4">Kestral Strait</text>
+    <!-- Restricted waters: the closed northern approach. -->
+    ${
+      blockadeActive
+        ? `<path class="map__restricted" fill="url(#restricted)"
+             d="M338,168 C370,150 452,150 496,172 C528,188 532,240 500,258
+                C452,282 372,280 340,258 C310,238 310,184 338,168 Z"/>`
+        : ''
+    }
 
-    <!-- Direct route: fades as rerouting rises. -->
-    <path class="map__route map__route--direct" d="M40,315.4 C190,288.8 300,221.1 420,206.3 C520,194.5 640,176.8 772,153.3"
+    <!-- Commercial route, direct: fades as carriers divert. -->
+    <path class="map__route map__route--direct" marker-end="url(#flowDirect)"
+      d="M40,315 C190,289 300,221 420,206 C520,195 640,177 760,153"
       style="opacity:${directOpacity.toFixed(3)}"/>
 
-    <!-- Rerouted flow: strengthens as rerouting rises. Driven by engine output. -->
-    <path class="map__route map__route--reroute"
-      d="M40,327.2 C190,353.7 300,421.5 430,430.3 C560,439.2 660,380.2 772,303.6"
+    <!-- Commercial route, diverted south: strengthens with engine-computed rerouting. -->
+    <path class="map__route map__route--reroute" marker-end="url(#flowReroute)"
+      d="M40,327 C190,354 300,421 430,430 C560,439 660,380 760,304"
       style="opacity:${rerouteOpacity.toFixed(3)};stroke-width:${rerouteWidth.toFixed(2)}"/>
 
     ${
       blockadeActive
         ? `<g class="map__blockade">
-             <circle cx="430" cy="215.2" r="74" fill="url(#blockadeGlow)"/>
-             <circle class="map__blockade-ring" cx="430" cy="215.2" r="46"/>
-             <text class="map__blockade-label" x="430" y="221.1">BLOCKADE ZONE</text>
+             <circle cx="430" cy="215" r="76" fill="url(#blockadeGlow)"/>
+             <circle class="map__blockade-ring" cx="430" cy="215" r="47"/>
+             <text class="map__blockade-label" x="430" y="220">BLOCKADE ZONE</text>
+             <line class="map__leader" x1="430" y1="262" x2="430" y2="300"/>
+             <text class="map__annot" x="430" y="316">Northern approach closed</text>
+             <text class="map__annot map__annot--sub" x="430" y="333">Commercial traffic diverting south</text>
            </g>`
         : ''
     }
 
-    <g class="map__marker" transform="translate(430,146)">
-      <circle r="4.5"/><circle class="map__marker-halo" r="11"/>
+    <!-- Three strategic points. Commerce and transport, deliberately not military symbology. -->
+    <g class="map__points">
+      <g class="map__pt" transform="translate(196,196)">
+        <circle class="map__pt-ring" r="7"/><circle class="map__pt-dot" r="2.6"/>
+        <text class="map__pt-label" x="13" y="4">Northshore Terminal</text>
+      </g>
+      <g class="map__pt" transform="translate(232,452)">
+        <circle class="map__pt-ring" r="7"/><circle class="map__pt-dot" r="2.6"/>
+        <text class="map__pt-label" x="13" y="4">Southport Docks</text>
+      </g>
+      <g class="map__pt" transform="translate(688,368)">
+        <circle class="map__pt-ring" r="7"/><circle class="map__pt-dot" r="2.6"/>
+        <text class="map__pt-label" x="-13" y="4" text-anchor="end">Vantaran Approaches</text>
+      </g>
     </g>
+
+    <text class="map__place" x="620" y="60">NORTHSHORE</text>
+    <text class="map__place" x="568" y="520">SOUTHPORT</text>
+    <text class="map__strait" x="150" y="292">Kestral Strait</text>
   </svg>`
 }
 
@@ -90,6 +143,7 @@ export function mapLegend(): string {
     ['direct', 'Shipping route'],
     ['reroute', 'Rerouted flow'],
     ['blockade', 'Blockade zone'],
+    ['restricted', 'Restricted waters'],
   ]
   return `<ul class="maplegend">${items
     .map(([k, label]) => `<li><span class="maplegend__key maplegend__key--${k}" aria-hidden="true"></span>${label}</li>`)

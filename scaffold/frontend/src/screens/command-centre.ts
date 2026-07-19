@@ -67,11 +67,26 @@ const KEY_METRICS = [
 /** Short display names. The projection's full labels are correct but too long for a metric row. */
 const SHORT_LABEL: Record<string, string> = {
   insurer_risk: 'Insurer risk',
-  rerouting_level: 'Carrier rerouting',
-  employment_pressure: 'Employment exposure',
-  household_expectation_pressure: 'Household concern',
+  rerouting_level: 'Rerouting',
+  employment_pressure: 'Employment',
+  household_expectation_pressure: 'Households',
   narrative_attention: 'Narrative attention',
   political_pressure: 'Political pressure',
+}
+
+/**
+ * Direction over the last five ticks of the run's OWN trajectory. This is a description of values
+ * the engine already produced, not a forecast and not a rate: no extrapolation, no smoothing.
+ * Returns null when there is too little trajectory to say anything truthful.
+ */
+function direction(series: number[]): { word: string; tone: string } | null {
+  if (series.length < 6) return null
+  const now = series[series.length - 1] ?? 0
+  const then = series[series.length - 6] ?? 0
+  const delta = now - then
+  // Threshold is relative to the value's own scale, so small series are not called "rising".
+  if (Math.abs(delta) < Math.max(0.004, Math.abs(now) * 0.02)) return { word: 'STABLE', tone: 'flat' }
+  return delta > 0 ? { word: 'RISING', tone: 'up' } : { word: 'EASING', tone: 'down' }
 }
 
 function severityWord(v: number): string {
@@ -97,11 +112,13 @@ function metricRow(p: Projection, traj: RunResult['trajectory'], field: string):
   if (!s) return ''
   const tone = TONE[field] ?? 'neutral'
   const series = traj.map((t) => Number(t[field] ?? 0))
+  const dir = direction(series)
   return `<li class="krow" data-card-id="${escapeHtml(field)}" tabindex="0" role="button"
-      aria-label="${escapeHtml(s.label)} ${s.value.toFixed(4)}. Select to inspect provenance.">
+      aria-label="${escapeHtml(s.label)} ${s.value.toFixed(4)}${dir ? `, ${dir.word.toLowerCase()} over the last five ticks` : ''}. Select to inspect provenance.">
     <span class="krow__label">${escapeHtml(SHORT_LABEL[field] ?? s.label)}</span>
     ${sparkline(series, tone)}
     <span class="krow__val krow__val--${tone}">${s.value.toFixed(4)}</span>
+    ${dir ? `<span class="krow__dir krow__dir--${dir.tone}">${dir.word}</span>` : '<span class="krow__dir krow__dir--none">—</span>'}
   </li>`
 }
 
@@ -139,13 +156,13 @@ export function commandCentre(run: RunResult): string {
           <span class="bignum__scale">/ 1.000</span>
           <span class="bignum__word bignum__word--${severityWord(political).toLowerCase().replace(' ', '-')}">${severityWord(political)}</span>
         </div>
-        ${trajectoryChart(traj, [{ field: 'political_pressure', label: 'Political pressure', tone: 'political' }], 78)}
+        ${trajectoryChart(traj, [{ field: 'political_pressure', label: 'Political pressure', tone: 'political' }], 66)}
       </div>
     </section>
 
     <!-- ── Government options ──────────────────────────────────────────── -->
     <section class="panel panel--options" aria-labelledby="p-opts">
-      ${panelHead('Government options', 'Availability and constraints', engineOrigin, { id: 'p-opts' })}
+      ${panelHead('Decision options', 'Availability and constraints', engineOrigin, { id: 'p-opts' })}
       <div class="panel__body">
         <ul class="opts">${p.government_options.map(optionRow).join('')}</ul>
         <div class="chainsum">
@@ -196,16 +213,17 @@ export function commandCentre(run: RunResult): string {
           .slice()
           .sort((a, b) => b.value - a.value)
           .map(
-            (c) => `<li class="cohort" data-card-id="${escapeHtml(c.cohort_id)}" tabindex="0" role="button"
-              aria-label="${escapeHtml(c.label)} concern ${c.value.toFixed(3)}, representing ${c.represents_population.toLocaleString()} people. Select to inspect.">
+            (c, i) => `<li class="cohort${i === 0 ? ' cohort--top' : ''}" data-card-id="${escapeHtml(c.cohort_id)}" tabindex="0" role="button"
+              aria-label="${escapeHtml(c.label)} concern ${c.value.toFixed(3)}, representing ${c.represents_population.toLocaleString()} people, ${(c.population_share * 100).toFixed(1)} per cent of aggregate weight${i === 0 ? '. Most affected cohort' : ''}. Select to inspect.">
               <span class="cohort__name">${escapeHtml(c.label.replace(/-/g, ' '))}</span>
+              <span class="cohort__val">${c.value.toFixed(3)}<span class="cohort__share">${(c.population_share * 100).toFixed(0)}%</span></span>
               ${bar(c.value, 'social')}
-              <span class="cohort__val">${c.value.toFixed(3)}</span>
             </li>`,
           )
           .join('')}</ul>
-        <div class="cohorts__agg">
-          <span class="cohorts__agg-label">Aggregate — population-weighted</span>
+        <div class="cohorts__agg" data-card-id="household_expectation_pressure" tabindex="0" role="button"
+             aria-label="Population-weighted aggregate concern ${household.toFixed(4)}. Select to inspect.">
+          <span class="cohorts__agg-label">Population-weighted aggregate</span>
           <span class="cohorts__agg-val">${household.toFixed(4)}</span>
         </div>
       </div>
@@ -223,23 +241,87 @@ export function commandCentre(run: RunResult): string {
 
     <!-- ── Provenance + origin legend ──────────────────────────────────── -->
     <section class="panel panel--prov" aria-labelledby="p-prov">
-      ${panelHead('Confidence and provenance', 'Source, status and origin', 'engine', { id: 'p-prov' })}
+      ${panelHead('Provenance', 'Source, status and origin', 'engine', { id: 'p-prov' })}
       <div class="panel__body">
         <dl class="provgrid">
           <dt>Rule pack</dt><dd>${escapeHtml(p.rule_pack_version)}</dd>
           <dt>Scenario</dt><dd>${escapeHtml(p.scenario_id)}</dd>
-          <dt>Confidence</dt><dd>Not applicable — the engine computes, it does not estimate</dd>
+          <dt>Origin</dt><dd>Mixed — engine and fixture</dd>
+          <dt>Status</dt><dd>AUTHORITATIVE</dd>
+          <dt>Confidence</dt><dd>NOT_APPLICABLE</dd>
+          <dt>Updated</dt><dd>Tick ${p.tick}</dd>
         </dl>
         ${originLegend()}
+        <details class="disc-more">
+          <summary>What confidence means here</summary>
+          <p>Not applicable — the engine computes, it does not estimate. Values follow from declared
+          rules, so there is no uncertainty figure to report and a percentage here would be
+          fabricated. NOT_APPLICABLE means inapplicable, not withheld and not unknown.</p>
+        </details>
       </div>
     </section>
   </div>`
 }
 
-/** Right rail: urgent decisions, then the inspector. */
+/*
+ * Right rail: decisions, then the inspector.
+ *
+ * HONESTY NOTE ON URGENCY. The engine has no clock, no deadline and no expiry, so this rail shows
+ * NO countdown and NO due time — inventing one would be fabrication. What it shows instead is real:
+ * an option's status is computed from declared thresholds, so ENABLED outranks CONSTRAINED, which
+ * outranks AVAILABLE. The consequence domains are read from each option's actual `driven_by` chain
+ * field, not authored per option. The affordance inspects; it cannot execute, and says so.
+ */
+
+/** Maps a chain field to the domains it bears on. Derived from the field itself, never invented. */
+const DOMAIN_OF: Record<string, string[]> = {
+  political_pressure: ['political', 'legal'],
+  narrative_attention: ['political', 'social'],
+  household_expectation_pressure: ['social', 'economic'],
+  employment_pressure: ['economic', 'social'],
+  rerouting_level: ['economic', 'diplomatic'],
+  insurer_risk: ['economic', 'legal'],
+  incident_severity: ['diplomatic', 'political'],
+}
+
+const PRIORITY: Record<string, number> = { ENABLED: 0, CONSTRAINED: 1, AVAILABLE: 2 }
+
+function domainsFor(drivenBy: string): string[] {
+  return DOMAIN_OF[drivenBy.replace('chain.', '')] ?? []
+}
+
+function decisionCard(o: OptionEntry, primary: boolean): string {
+  const field = o.driven_by.replace('chain.', '')
+  const name = o.label.replace(/_/g, ' ')
+  const why =
+    o.value === 'ENABLED'
+      ? `${SHORT_LABEL[field] ?? field} has passed the threshold this option declares, so it is now open.`
+      : `${SHORT_LABEL[field] ?? field} has risen far enough to constrain this option, but not to open it.`
+  return `<li class="ditem ${primary ? 'ditem--primary' : ''} ditem--${o.value.toLowerCase()}"
+      data-card-id="${escapeHtml(o.option_id)}" tabindex="0" role="button"
+      aria-label="${escapeHtml(name)} is ${escapeHtml(o.value)}${primary ? ', highest priority' : ''}. ${escapeHtml(why)} Select to inspect.">
+    <div class="ditem__top">
+      <span class="ditem__state">${escapeHtml(o.value)}</span>
+      ${primary ? '<span class="ditem__rank">HIGHEST PRIORITY</span>' : ''}
+    </div>
+    <span class="ditem__name">${escapeHtml(name)}</span>
+    ${primary ? `<p class="ditem__why">${escapeHtml(why)}</p>` : ''}
+    <div class="ditem__meta">
+      <ul class="dom">${domainsFor(o.driven_by)
+        .map((d) => `<li class="dom__chip dom__chip--${d}">${d}</li>`)
+        .join('')}</ul>
+      <span class="ditem__act" aria-hidden="true">Inspect</span>
+    </div>
+  </li>`
+}
+
 export function decisionRail(run: RunResult): string {
   const p = run.projection
-  const enabled = p.government_options.filter((o) => o.value !== 'AVAILABLE')
+  const enabled = p.government_options
+    .filter((o) => o.value !== 'AVAILABLE')
+    .slice()
+    .sort((a, b) => (PRIORITY[a.value] ?? 9) - (PRIORITY[b.value] ?? 9))
+
   return `<section class="rail__decisions" aria-labelledby="p-dec">
     <header class="rail__head">
       <h2 class="rail__title" id="p-dec">Decisions awaiting you</h2>
@@ -248,20 +330,12 @@ export function decisionRail(run: RunResult): string {
     <ul class="dlist">
       ${
         enabled.length
-          ? enabled
-              .map(
-                (o) => `<li class="ditem ditem--${o.value.toLowerCase()}" data-card-id="${escapeHtml(o.option_id)}"
-                  tabindex="0" role="button" aria-label="${escapeHtml(o.label.replace(/_/g, ' '))} is ${escapeHtml(o.value)}. Select to inspect.">
-                  <span class="ditem__state">${escapeHtml(o.value)}</span>
-                  <span class="ditem__name">${escapeHtml(o.label.replace(/_/g, ' '))}</span>
-                  <span class="ditem__why">Driven by ${escapeHtml(o.driven_by.replace('chain.', ''))}</span>
-                </li>`,
-              )
-              .join('')
+          ? enabled.map((o, i) => decisionCard(o, i === 0)).join('')
           : `<li class="ditem ditem--none">No option has changed status. Political pressure is below every declared threshold.</li>`
       }
     </ul>
-    <p class="rail__foot">Display only — nothing can be submitted, priced or executed in this prototype.</p>
+    <p class="rail__foot">Display only. Selecting a decision opens its provenance — nothing can be
+    submitted, priced, validated or executed in this prototype.</p>
   </section>
 
   <section class="rail__inspector" aria-labelledby="p-insp">
@@ -274,7 +348,7 @@ export function decisionRail(run: RunResult): string {
 
 /** Compact bottom strip: the most recent engine transitions. Not a replay, not an event log. */
 export function transitionStrip(run: RunResult): string {
-  const recent = run.projection.recent_transitions.slice(-6).reverse()
+  const recent = run.projection.recent_transitions.slice(-4).reverse()
   return `<section class="tstrip" aria-labelledby="p-tstrip">
     <h2 class="tstrip__title" id="p-tstrip">Latest engine changes ${originBadge('engine')}</h2>
     <ul class="tstrip__list">
