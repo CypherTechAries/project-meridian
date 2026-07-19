@@ -12,18 +12,35 @@ import logging
 from fastapi import FastAPI
 
 from .api.routes_simulation import router as simulation_router
+from .api.routes_demo import router as demo_router
 from .api.routes_ws import router as ws_router
 from .config import settings
 
 logger = logging.getLogger("meridian")
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
-    title="MERIDIAN — Synthetic Society Crisis Simulator",
+    title="MERIDIAN — Simulated-Society Crisis Simulator",
     version="0.1.0",
-    description="Runnable scaffold. LLM layer stubbed; runs with no API keys.",
+    description=(
+        "Runnable scaffold. The LLM layer is a stub that calls no model and needs no API "
+        "keys. One cross-tier societal-response mechanism is implemented (P0.5); nothing "
+        "is persisted and there is no replay."
+    ),
+)
+
+# Local development only: the Vite dev server runs on a different port. This is not a
+# production CORS policy and no auth boundary exists behind it.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
 )
 
 app.include_router(simulation_router)
+app.include_router(demo_router)
 app.include_router(ws_router)
 
 

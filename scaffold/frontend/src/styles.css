@@ -1,278 +1,571 @@
-/* MERIDIAN C0 — layout and component styles. Original visual language; no trade dress. */
+/*
+ * MERIDIAN — Strategic Command Centre layout and components.
+ *
+ * The composition is a deliberate CSS Grid sized for 1440x900. Content does NOT determine the
+ * overall height: panels scroll internally where needed, so the strategic picture always fits the
+ * viewport. That is the structural fix for the previous build, which grew to 1584px and behaved
+ * like a long report.
+ */
 
 * { box-sizing: border-box; }
-
-html, body { height: 100%; }
+html, body { height: 100%; margin: 0; }
 
 body {
-  margin: 0;
-  background: var(--bg-0);
-  color: var(--fg-0);
-  font-family: var(--font-ui);
-  font-size: var(--fs-md);
-  line-height: var(--lh-normal);
+  background: var(--s-void);
+  color: var(--t-hi);
+  font-family: var(--f-ui);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-#app { display: flex; flex-direction: column; min-height: 100vh; }
+#app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-:focus-visible { outline: var(--focus-ring); outline-offset: 2px; }
-
-.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-
-/* ── Disclosures — non-dismissible, top and bottom for crop resistance ─────────────── */
-.disclosures { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line-1); }
-.disclose {
-  flex: 1 1 320px; display: flex; align-items: center; gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-4); font-size: var(--fs-sm);
-  font-weight: 700; letter-spacing: 0.04em;
-}
-.disclose__glyph { font-size: var(--fs-lg); line-height: 1; }
-.disclose--fiction {
-  background: var(--disclose-fiction-bg); color: var(--disclose-fiction-fg);
-  border-bottom: 2px solid var(--disclose-fiction-line);
-}
-.disclose--fixture {
-  background: var(--disclose-fixture-bg); color: var(--disclose-fixture-fg);
-  border-bottom: 2px solid var(--disclose-fixture-line);
-}
-.disclosures--footer .disclose { border-bottom: none; border-top: 2px solid var(--line-2); }
-
-/* ── Status bar ────────────────────────────────────────────────────────────────────── */
-.statusbar {
-  display: flex; justify-content: space-between; align-items: center; gap: var(--sp-4);
-  padding: var(--sp-2) var(--sp-4); background: var(--bg-1);
-  border-bottom: 1px solid var(--line-1); font-size: var(--fs-sm);
-}
-.statusbar__left, .statusbar__right { display: flex; align-items: center; gap: var(--sp-4); }
-.brand { font-weight: 800; letter-spacing: 0.16em; color: var(--fg-0); }
-.sb__world { color: var(--fg-1); }
-.sb__tag {
-  border: 1px solid var(--disclose-fiction-line); color: var(--disclose-fiction-fg);
-  padding: 1px var(--sp-2); border-radius: var(--radius); font-size: var(--fs-xs); font-weight: 700;
-}
-.sb__item { display: flex; gap: var(--sp-2); align-items: baseline; }
-.sb__k { color: var(--fg-3); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.08em; }
-.sb__v { color: var(--fg-1); }
-.sb__mode {
-  border: 2px solid var(--fg-2); color: var(--fg-0); padding: 1px var(--sp-3);
-  font-weight: 700; letter-spacing: 0.1em; border-radius: var(--radius);
+:focus-visible { outline: var(--focus); outline-offset: 2px; border-radius: 2px; }
+.u-sr {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-/* ── Layout ────────────────────────────────────────────────────────────────────────── */
-.layout { display: grid; grid-template-columns: 178px 1fr 360px; flex: 1; min-height: 0; }
+/* ── Disclosure strip: slim, persistent, non-dismissible ───────────────── */
+.disclosures {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 5px var(--sp-4);
+  background: var(--disc-bg); border-bottom: 1px solid var(--disc-line);
+  font-size: var(--fs-meta); letter-spacing: 0.05em; flex: 0 0 auto;
+}
+.disc { display: inline-flex; align-items: center; gap: 6px; color: var(--disc-fg); font-weight: 700; }
+.disc__glyph { color: var(--cyan); }
+.disc__sep { color: var(--line-strong); }
+.disc--mixed { color: #ffc98a; }
 
-.nav { background: var(--bg-1); border-right: 1px solid var(--line-1); padding: var(--sp-3); }
-.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-/* Label on its own line, status badge beneath: the badge must never collide with a wrapping
-   label, and "not built" must stay legible — it is the honest part of this component. */
+/* ── Top bar ───────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+  padding: var(--sp-2) var(--sp-4);
+  background: linear-gradient(180deg, var(--s-panel), var(--s-base));
+  border-bottom: 1px solid var(--line); flex: 0 0 auto;
+}
+.topbar__left { display: flex; align-items: baseline; gap: var(--sp-3); min-width: 0; }
+.scenario-title { font-size: var(--fs-h3); font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+.scenario-sub { font-size: var(--fs-meta); color: var(--t-low); text-transform: uppercase; letter-spacing: 0.09em; }
+.topbar__right { display: flex; align-items: center; gap: var(--sp-4); font-size: var(--fs-meta); }
+.tb { display: flex; align-items: baseline; gap: 5px; }
+.tb__k { color: var(--t-faint); text-transform: uppercase; letter-spacing: 0.08em; font-size: var(--fs-micro); }
+.tb__v { color: var(--t-mid); font-family: var(--f-num); }
+.tb__v--live { color: var(--o-engine); font-weight: 700; }
+.tb__v--stale { color: var(--o-fixture); font-weight: 700; }
+
+/* ── Shell grid ────────────────────────────────────────────────────────── */
+.layout {
+  flex: 1 1 auto; min-height: 0;
+  display: grid; grid-template-columns: 196px minmax(0, 1fr) 296px;
+}
+
+/* ── Left navigation ───────────────────────────────────────────────────── */
+.nav {
+  background: var(--s-base); border-right: 1px solid var(--line);
+  padding: var(--sp-3) var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-3);
+  overflow: hidden;
+}
+.brand { display: flex; align-items: center; gap: var(--sp-2); padding: 0 var(--sp-2) var(--sp-2); }
+.brand__mark { width: 26px; height: 26px; flex: 0 0 auto; }
+.brand__name { font-size: var(--fs-body); font-weight: 800; letter-spacing: 0.22em; color: var(--t-hi); }
+.nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .nav__item {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  padding: var(--sp-2) var(--sp-3); border-radius: var(--radius);
-  color: var(--fg-2); text-decoration: none; font-size: var(--fs-md); border-left: 3px solid transparent;
+  display: flex; align-items: center; justify-content: space-between; gap: 5px; white-space: nowrap;
+  padding: 6px var(--sp-2); border-radius: var(--r-sm); border-left: 2px solid transparent;
+  color: var(--t-low); text-decoration: none; font-size: var(--fs-sm);
 }
-.nav__item.is-active { background: var(--bg-3); color: var(--fg-0); border-left-color: var(--accent); font-weight: 600; }
-.nav__item.is-disabled { color: var(--fg-3); cursor: not-allowed; }
-.nav__soon {
-  font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap;
-  border: 1px solid var(--line-2); padding: 0 4px; border-radius: 2px; color: var(--fg-3);
+.nav__item.is-active { background: var(--s-raised); color: var(--t-hi); border-left-color: var(--cyan); font-weight: 600; }
+.nav__item.is-disabled { color: var(--t-faint); cursor: not-allowed; }
+.nav__tag {
+  font-size: 9px; letter-spacing: 0.06em; color: var(--t-faint);
+  border: 1px solid var(--line-strong); border-radius: 2px; padding: 0 3px; white-space: nowrap;
 }
-.nav__note { margin-top: var(--sp-4); font-size: var(--fs-xs); color: var(--fg-3); line-height: 1.45; }
+.sysblock { margin-top: auto; border-top: 1px solid var(--line); padding-top: var(--sp-3); }
+.sysblock__h {
+  font-size: var(--fs-micro); letter-spacing: 0.12em; color: var(--cyan);
+  text-transform: uppercase; margin: 0 var(--sp-2) var(--sp-2);
+}
+.sysrow { display: flex; justify-content: space-between; padding: 2px var(--sp-2); font-size: var(--fs-meta); }
+.sysrow__k { color: var(--t-faint); }
+.sysrow__v { color: var(--t-mid); font-family: var(--f-num); }
+.sysrow__v--ok { color: var(--o-engine); }
+.sysrow__v--warn { color: var(--o-fixture); }
 
-.main { padding: var(--sp-4); overflow: auto; min-width: 0; }
-.context {
-  background: var(--bg-1); border-left: 1px solid var(--line-1);
-  padding: var(--sp-3); overflow: auto; display: flex; flex-direction: column; gap: var(--sp-4);
+/* ── Centre grid: the composition ──────────────────────────────────────── */
+.main { overflow: hidden; padding: var(--sp-3); min-width: 0; display: flex; }
+.scc {
+  display: grid; gap: 10px; flex: 1; min-height: 0;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.15fr) minmax(0, 0.95fr);
+  /* Explicit rows: the composition owns the height, not the content. */
+  /*
+   * The three data rows are sized to their CONTENT (auto); the map takes whatever remains and never
+   * less than 140px. Hand-tuned fr ratios were the wrong tool — every content change re-clipped a
+   * different panel. This cannot clip: the only flexible row is the one that degrades gracefully.
+   * The intelligence snapshot keeps a real row — it is the only fixture-backed panel on screen, and
+   * hiding it while the strip declares MIXED origin would make the disclosure unverifiable.
+   */
+  /* min-content floor: row 1 can never be shorter than its tallest panel, so nothing in it clips. */
+  /*
+ * Row 1 has a FIXED floor, not min-content: .panel uses overflow:hidden for its rounded corners,
+ * which reports ~0 min-content and would collapse the auto rows to 89px. The auto rows below size
+ * to their real content; row 1 takes the remainder and the map absorbs it.
+ */
+  grid-template-rows: minmax(244px, 1fr) auto auto auto;
+  grid-template-areas:
+    "map      crisis   options"
+    "map      metrics  options"
+    "incident cohorts  prov"
+    "intel    cohorts  prov";
+}
+.panel--map { grid-area: map; }
+.panel--crisis { grid-area: crisis; }
+.panel--options { grid-area: options; }
+.panel--metrics { grid-area: metrics; }
+.panel--incident { grid-area: incident; }
+.panel--incident .panel__body { justify-content: center; }
+.panel--cohorts { grid-area: cohorts; }
+.panel--intel { grid-area: intel; }
+.panel--prov { grid-area: prov; }
+
+/* ── Panels: elevation, hairlines, cyan datum on the active edge ───────── */
+.panel {
+  background: var(--s-panel); border: 1px solid var(--line); border-radius: var(--r-md);
+  display: flex; flex-direction: column; min-width: 0; position: relative; overflow: hidden;
+}
+.panel::before {
+  content: ""; position: absolute; inset: 0 auto 0 0; width: 2px;
+  background: linear-gradient(180deg, transparent, var(--line-datum), transparent);
+}
+.panel--map::before, .panel--crisis::before { background: linear-gradient(180deg, transparent, var(--cyan-dim), transparent); }
+.panel__head {
+  padding: 4px var(--sp-3) 3px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, var(--s-raised), transparent);
 }
 
-.secthead {
-  margin: 0 0 var(--sp-3); font-size: var(--fs-xs); font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.1em; color: var(--fg-2);
-  display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap;
+.panel__title { margin: 0; font-size: var(--fs-body); font-weight: 700; letter-spacing: 0.01em; line-height: 1.25; }
+/* The fiction marker rides the SUBTITLE line: visible in any crop, without squeezing the title. */
+.panel__sub {
+  /* One line, always. Copy is short enough that ellipsis should never trigger; it is a backstop. */
+  margin: 0; font-size: var(--fs-meta); color: var(--t-low); line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.secthead__warn {
-  text-transform: none; letter-spacing: 0; font-weight: 600; font-size: var(--fs-xs);
-  color: var(--disclose-fixture-fg); border: 1px solid var(--disclose-fixture-line);
-  background: var(--disclose-fixture-bg); padding: 1px var(--sp-2); border-radius: var(--radius);
+.panel__subtxt { min-width: 0; }
+.panel__sub .fmark { flex: 0 0 auto; padding-right: 6px; border-right: 1px solid var(--line-strong); }
+.panel__headrow { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.panel__marks { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+/*
+ * NO overflow:auto here. A scroll container reports ~0 min-content, which let the auto grid rows
+ * collapse to 80px while the 1fr map row took all 497px — the real cause of the panel clipping.
+ * Without it the rows size to their true content and nothing is cut. The map row stays flexible.
+ */
+.panel__body { padding: 8px var(--sp-3); flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
+/*
+ * The footer is a SIBLING of the scrolling body, not a child. Caveat text states the limits of what
+ * the panel shows, so it must never be the thing that scrolls out of sight.
+ */
+.panel > .panel__foot {
+  flex: 0 0 auto; margin: 0; line-height: 1.35; padding: 4px var(--sp-3);
+  border-top: 1px solid var(--line); background: var(--s-inset);
 }
-.count {
-  background: var(--bg-3); color: var(--fg-0); border-radius: 10px;
-  padding: 0 var(--sp-2); font-size: var(--fs-xs);
-}
+.panel__body--flush { padding: 0; gap: 0; }
+.panel__foot { margin: auto 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.45; }
 
-/* ── Epistemic chips — glyph + text + colour, never colour alone ───────────────────── */
-.chip {
-  display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700;
-  letter-spacing: 0.06em; padding: 1px var(--sp-2); border-radius: var(--radius);
-  border: 1px solid currentColor; white-space: nowrap;
+/* ── Origin markers: compact, letter + label, never colour alone ───────── */
+.ob {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; height: 18px; padding: 0 4px; border-radius: 3px;
+  border: 1px solid currentColor; font-size: 10px; font-weight: 800; font-family: var(--f-num);
 }
-.chip__glyph { font-size: 11px; }
-.chip--authoritative { color: var(--ep-authoritative); }
-.chip--assessed { color: var(--ep-assessed); }
-.chip--disputed { color: var(--ep-disputed); }
-.chip--unknown { color: var(--ep-unknown); }
-.chip--presentation-only { color: var(--ep-presentation); }
-
-.conf {
-  display: inline-flex; align-items: center; gap: 4px; font-size: 10px;
-  color: var(--fg-3); font-weight: 600; letter-spacing: 0.04em; white-space: nowrap;
-}
-.conf__bars { font-family: var(--font-mono); letter-spacing: -1px; }
-
-.absent {
-  color: var(--fg-3); font-style: italic;
-  border-bottom: 1px dotted var(--line-strong); padding-bottom: 1px;
-}
-.absent[data-absence='UNAVAILABLE'] { color: var(--ep-unknown); }
-
-/* ── Provenance ────────────────────────────────────────────────────────────────────── */
-.prov {
-  display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: baseline;
-  font-size: 10px; color: var(--fg-3); margin-top: var(--sp-1);
-  padding-top: var(--sp-1); border-top: 1px dashed var(--line-1);
-}
-/* Both disclosures ride on every card, so ANY crop containing a card still declares that the
-   world is fictional AND that the data is fixture. A page-level banner alone does not survive a
-   crop, and the fictional-world disclosure is a B5 control. */
-.prov__fiction {
-  font-weight: 800; letter-spacing: 0.08em;
-  color: var(--disclose-fiction-fg); border: 1px solid var(--disclose-fiction-line);
-  padding: 0 4px; border-radius: 2px;
-}
-.prov__origin {
-  font-weight: 800; letter-spacing: 0.08em;
-  color: var(--disclose-fixture-fg); border: 1px solid var(--disclose-fixture-line);
-  padding: 0 4px; border-radius: 2px;
-}
-.prov__sep { color: var(--line-strong); }
-
-/* ── Cards + the crop-invariant gutter carrier ─────────────────────────────────────── */
-.card, .crisis, .hop, .qitem {
-  position: relative; display: flex; background: var(--bg-2);
-  border: 1px solid var(--line-1); border-radius: var(--radius); overflow: hidden;
-}
-.card__gutter, .crisis__gutter, .hop__gutter, .qitem__gutter, .claim__gutter {
-  width: var(--gutter-w); flex: 0 0 var(--gutter-w); background: var(--ep-unknown);
-}
-[data-epistemic='AUTHORITATIVE'] > .card__gutter,
-[data-epistemic='AUTHORITATIVE'] > .crisis__gutter,
-[data-epistemic='AUTHORITATIVE'] > .hop__gutter,
-[data-epistemic='AUTHORITATIVE'] > .qitem__gutter,
-[data-epistemic='AUTHORITATIVE'] > .claim__gutter { background: var(--ep-authoritative); }
-[data-epistemic='ASSESSED'] > .card__gutter,
-[data-epistemic='ASSESSED'] > .hop__gutter,
-[data-epistemic='ASSESSED'] > .qitem__gutter,
-[data-epistemic='ASSESSED'] > .claim__gutter { background: var(--ep-assessed); }
-[data-epistemic='DISPUTED'] > .card__gutter,
-[data-epistemic='DISPUTED'] > .hop__gutter,
-[data-epistemic='DISPUTED'] > .claim__gutter { background: var(--ep-disputed); }
-[data-epistemic='PRESENTATION_ONLY'] > .card__gutter,
-[data-epistemic='PRESENTATION_ONLY'] > .hop__gutter,
-[data-epistemic='PRESENTATION_ONLY'] > .claim__gutter { background: var(--ep-presentation); }
-
-.card__inner, .qitem__inner { padding: var(--sp-3); flex: 1; min-width: 0; }
-.crisis__inner { padding: var(--sp-3) var(--sp-4); flex: 1; min-width: 0; }
-/* Chain hops are the densest element on the screen: eight must fit without scrolling. */
-.hop__inner { padding: 5px var(--sp-3) 6px; flex: 1; min-width: 0; line-height: 1.35; }
-.card__head { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-3); }
-.card__title { margin: 0; font-size: var(--fs-md); font-weight: 700; color: var(--fg-0); }
-.card__chips { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-.card__standfirst { margin: 2px 0 var(--sp-2); font-size: var(--fs-sm); color: var(--fg-2); }
-
-.is-selected { border-color: var(--accent) !important; box-shadow: inset 0 0 0 1px var(--accent-dim); }
-
-/* ── Crisis header ─────────────────────────────────────────────────────────────────── */
-.crisis { margin-bottom: var(--sp-3); background: var(--bg-3); }
-.crisis__meta { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; margin-bottom: 2px; }
-.crisis__day {
-  font-weight: 800; letter-spacing: 0.08em; font-size: var(--fs-xs);
-  background: var(--bg-inset); border: 1px solid var(--line-2); padding: 1px var(--sp-2); border-radius: var(--radius);
-}
-.crisis__loc { color: var(--fg-2); font-size: var(--fs-sm); }
-.crisis__name { margin: 0 0 2px; font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.01em; }
-.crisis__standfirst { margin: 0; color: var(--fg-1); font-size: var(--fs-md); max-width: 82ch; }
-
-/* ── The propagation chain — the spine of the screen ───────────────────────────────── */
-/* Two columns so all eight hops are visible without scrolling. Ordinals carry the reading
-   order, which is what makes a wrapped sequence legible. */
-.scc__chainblock { margin-bottom: var(--sp-4); }
-.chain {
+.ob--engine { color: var(--o-engine); }
+.ob--fixture { color: var(--o-fixture); }
+.ob--unknown { color: var(--o-unknown); }
+.ob--unavailable { color: var(--o-unavailable); }
+.fmark { display: inline-flex; align-items: center; gap: 3px; color: var(--cyan-dim); }
+.fmark svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.2; }
+/*
+ * VISIBLE, not screen-reader-only. A cropped screenshot is the artefact that gets shared, and a bare
+ * glyph cannot be decoded out of context. Compact treatment, but the word stays on the pixels.
+ */
+.fmark__txt { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; }
+.olegend {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-flow: column; grid-template-rows: repeat(4, auto);
-  gap: 2px var(--sp-4);
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px var(--sp-2);
 }
-.hop { margin: 0; }
-.hop--unresolved { background: repeating-linear-gradient(135deg, var(--bg-2), var(--bg-2) 6px, var(--bg-inset) 6px, var(--bg-inset) 12px); }
-.hop__head { display: flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; }
-.hop__ord {
-  font-family: var(--font-mono); font-weight: 700; font-size: var(--fs-xs);
-  background: var(--bg-inset); border: 1px solid var(--line-2); border-radius: 50%;
-  width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; color: var(--fg-2);
-}
-.hop__stage { font-weight: 700; font-size: var(--fs-md); }
-.hop__actor { color: var(--fg-2); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin: 1px 0; }
-.hop__summary { margin: 0 0 3px; color: var(--fg-1); font-size: var(--fs-xs); }
-.hop__nomech { color: var(--fg-3); font-style: italic; }
-.hop__ents { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-bottom: var(--sp-1); }
-.ent {
-  font-size: var(--fs-xs); padding: 1px var(--sp-2); border-radius: var(--radius);
-  border: 1px solid var(--line-2); background: var(--bg-inset); color: var(--fg-1);
-}
-.ent--aggregate { border-style: dashed; color: var(--fg-3); }
-.ent__tag { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--fg-3); }
-.contribs {
-  list-style: none; margin: 0 0 var(--sp-1); padding: 0;
-  display: flex; flex-wrap: wrap; gap: 2px var(--sp-3);
-}
-.contribs li { display: inline-flex; gap: 5px; align-items: baseline; font-size: 10px; }
-.contrib__label { color: var(--fg-1); }
-.contrib__via { color: var(--line-strong); font-style: italic; }
-.contrib__mech { color: var(--fg-3); }
-.contrib__w {
-  color: var(--fg-2); text-transform: uppercase; letter-spacing: 0.06em; font-size: 9px;
-  border: 1px solid var(--line-2); padding: 0 3px; border-radius: 2px;
-}
-.contrib__w[data-w='contested'] { color: var(--ep-disputed); border-color: var(--ep-disputed); }
-.hop__prov .prov { margin-top: 0; }
+.olegend li { display: flex; align-items: center; gap: 5px; min-width: 0; }
+.olegend__name { font-size: 10.5px; color: var(--t-low); white-space: nowrap; }
+.olegend__fiction { grid-column: 1 / -1; }
+.olegend li { display: flex; align-items: center; gap: 5px; font-size: var(--fs-micro); color: var(--t-low); }
 
-/* ── Reaction panels ───────────────────────────────────────────────────────────────── */
-.panelgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-2) var(--sp-4); align-items: start; }
-.claims { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
-.claim { display: flex; align-items: center; gap: var(--sp-2); background: var(--bg-inset); padding: 4px var(--sp-2); border-radius: 2px; }
-.claim__main { flex: 1; display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); min-width: 0; }
-.claim__label { color: var(--fg-2); font-size: var(--fs-xs); flex-shrink: 0; }
-.claim__value { color: var(--fg-0); font-size: var(--fs-xs); font-weight: 600; text-align: right; }
-.claim__chips { display: flex; gap: var(--sp-2); flex-shrink: 0; }
-
-/* ── Decision queue ────────────────────────────────────────────────────────────────── */
-.qlist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--sp-2); }
-.qitem__head { display: flex; justify-content: space-between; gap: var(--sp-2); align-items: baseline; }
-.qitem__title { font-weight: 700; font-size: var(--fs-sm); }
-.qitem__deadline { font-size: 10px; color: var(--ep-disputed); border: 1px solid var(--ep-disputed); padding: 0 4px; border-radius: 2px; white-space: nowrap; }
-.qitem__detail { margin: var(--sp-1) 0 var(--sp-2); font-size: var(--fs-xs); color: var(--fg-2); }
-.affordances { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
-.afford { font-size: var(--fs-xs); color: var(--fg-1); background: var(--bg-inset); border: 1px solid var(--line-2); padding: 2px var(--sp-2); border-radius: 2px; }
-.qitem__note { margin: var(--sp-2) 0 0; font-size: 10px; color: var(--fg-3); font-style: italic; }
-
-/* ── Event stream — full-width bottom bar ──────────────────────────────────────────── */
-.streambar {
-  background: var(--bg-1); border-top: 1px solid var(--line-1);
-  padding: var(--sp-2) var(--sp-4) var(--sp-3);
+/* ── Map ───────────────────────────────────────────────────────────────── */
+.map { display: block; width: 100%; height: 100%; flex: 1; min-height: 0; }
+.panel--map .panel__body { padding: 0; gap: 0; }
+.map__graticule line { stroke: var(--line-datum); stroke-width: 0.5; opacity: 0.5; }
+.map__meridian { stroke: var(--cyan) !important; stroke-width: 1 !important; opacity: 0.5; stroke-dasharray: 3 5; }
+.map__land { stroke: var(--line-strong); stroke-width: 1; }
+.map__place { fill: #9db4cc; font-size: 15px; letter-spacing: 0.16em; font-weight: 700; }
+.map__strait { fill: #7f9ab4; font-size: 14px; font-style: italic; letter-spacing: 0.08em; }
+.map__route { fill: none; stroke-linecap: round; }
+.map__route--direct { stroke: var(--d-logistics); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.map__route--reroute { stroke: var(--d-economic); stroke-dasharray: 7 5; }
+.map__blockade-ring { fill: none; stroke: var(--d-crisis); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.map__blockade-label { fill: var(--d-crisis); font-size: 9px; font-weight: 700; letter-spacing: 0.11em; text-anchor: middle; }
+.map__marker circle { fill: var(--d-crisis); }
+.map__marker-halo { fill: none; stroke: var(--d-crisis); stroke-width: 1; opacity: 0.5; }
+.map__foot {
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-start;
+  padding: 6px var(--sp-3) 8px; border-top: 1px solid var(--line); flex: 0 0 auto;
 }
-.streambar .secthead { margin-bottom: var(--sp-2); }
-.secthead__hint { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--fg-3); }
-.stream { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2px var(--sp-3); }
-.sev { display: flex; align-items: center; gap: var(--sp-2); padding: 3px var(--sp-2); background: var(--bg-inset); border-radius: 2px; font-size: var(--fs-xs); }
-.sev--low { opacity: 0.55; }  /* dimmed, never filtered out */
-.sev__tick { font-family: var(--font-mono); color: var(--fg-3); font-size: var(--fs-xs); }
-.sev__text { flex: 1; color: var(--fg-1); }
+.maplegend { list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-3); flex-wrap: wrap; }
+.maplegend li { display: flex; align-items: center; gap: 5px; font-size: var(--fs-micro); color: var(--t-low); white-space: nowrap; }
+.maplegend li { display: flex; align-items: center; gap: 5px; }
+.maplegend__key { width: 14px; height: 0; border-top: 2px dashed currentColor; }
+.maplegend__key--direct { color: var(--d-logistics); }
+.maplegend__key--reroute { color: var(--d-economic); }
+.maplegend__key--blockade { color: var(--d-crisis); border-top-style: dotted; }
+.map__note { font-size: var(--fs-micro); color: var(--t-faint); white-space: nowrap; }
 
-/* ── Inspector ─────────────────────────────────────────────────────────────────────── */
-.inspector { border-top: 1px solid var(--line-1); padding-top: var(--sp-3); }
-.inspector__empty { font-size: var(--fs-xs); color: var(--fg-3); }
-.inspector__title { margin: 0 0 var(--sp-2); font-size: var(--fs-md); }
-.inspector__meaning { margin: 0 0 var(--sp-3); font-size: var(--fs-xs); color: var(--fg-2); }
-.provdetail { display: grid; grid-template-columns: 108px 1fr; gap: 2px var(--sp-2); margin: 0; font-size: var(--fs-xs); }
-.provdetail dt { color: var(--fg-3); }
-.provdetail dd { margin: 0; color: var(--fg-1); word-break: break-word; }
-.inspector__warn { margin-top: var(--sp-3); font-size: var(--fs-xs); color: var(--disclose-fixture-fg); border-left: 2px solid var(--disclose-fixture-line); padding-left: var(--sp-2); }
+/* ── Big number ────────────────────────────────────────────────────────── */
+.bignum { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; cursor: pointer; }
+.bignum__value {
+  font-family: var(--f-num); font-size: var(--fs-display); font-weight: 700; line-height: 1;
+  color: var(--d-political); letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+}
+.bignum__scale { font-size: var(--fs-sm); color: var(--t-faint); font-family: var(--f-num); }
+.bignum__word {
+  font-size: var(--fs-meta); font-weight: 800; letter-spacing: 0.12em; padding: 2px 6px;
+  border: 1px solid currentColor; border-radius: 2px; margin-left: auto;
+}
+.bignum__word--severe { color: var(--d-crisis); }
+.bignum__word--elevated { color: var(--d-economic); }
+.bignum__word--emerging { color: var(--d-social); }
+.bignum__word--at-rest { color: var(--t-faint); }
+
+/* ── Charts ────────────────────────────────────────────────────────────── */
+.chart { display: flex; flex-direction: column; gap: 3px; padding-bottom: 2px; }
+/* overflow:visible so the stroke at the baseline and the final point are never clipped. */
+.chart__svg { width: 100%; height: 30px; overflow: visible; }
+.chart__grid line { stroke: var(--line); stroke-width: 0.5; }
+.chart__line { fill: none; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.chart__line--political { stroke: var(--d-political); }
+.chart__line--logistics { stroke: var(--d-logistics); }
+.chart__line--economic { stroke: var(--d-economic); }
+.chart__line--social { stroke: var(--d-social); }
+.chart__line--narrative { stroke: var(--d-narrative); }
+.chart__line--crisis { stroke: var(--d-crisis); }
+.chart__axis { display: flex; line-height: 1.2; justify-content: space-between; font-size: var(--fs-micro); color: var(--t-faint); font-family: var(--f-num); }
+.chart__legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2); font-size: var(--fs-micro); color: var(--t-low); }
+.chart__legend li { display: flex; align-items: center; gap: 4px; }
+.chart__swatch { width: 10px; height: 2px; background: currentColor; }
+.chart__swatch--political { color: var(--d-political); }
+.chart__empty { font-size: var(--fs-meta); color: var(--t-faint); margin: 0; }
+
+.spark { width: 56px; height: 18px; flex: 0 0 auto; }
+.spark--empty { display: inline-block; }
+.spark__line { fill: none; stroke-width: 1.3; vector-effect: non-scaling-stroke; }
+.spark__line--logistics { stroke: var(--d-logistics); }
+.spark__line--economic { stroke: var(--d-economic); }
+.spark__line--social { stroke: var(--d-social); }
+.spark__line--narrative { stroke: var(--d-narrative); }
+.spark__line--political { stroke: var(--d-political); }
+.spark__line--crisis { stroke: var(--d-crisis); }
+.spark__line--neutral { stroke: var(--t-faint); }
+
+/* ── Key metric rows ───────────────────────────────────────────────────── */
+.krows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.krow {
+  display: grid; column-gap: 6px; grid-template-columns: minmax(0, 1fr) 56px 62px 46px; align-items: center;
+  gap: var(--sp-2); padding: 0; border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.krow:last-child { border-bottom: none; }
+.krow__label { font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.krow__val {
+  font-family: var(--f-num); font-size: var(--fs-lead); font-weight: 700; text-align: right;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
+}
+.krow__val--logistics { color: var(--d-logistics); }
+.krow__val--economic { color: var(--d-economic); }
+.krow__val--social { color: var(--d-social); }
+.krow__val--narrative { color: var(--d-narrative); }
+.krow__val--political { color: var(--d-political); }
+.krow__val--crisis { color: var(--d-crisis); }
+
+/* ── Options ───────────────────────────────────────────────────────────── */
+.opts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.opt {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  padding: 4px 0; border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.opt:last-child { border-bottom: none; }
+.opt__name { font-size: var(--fs-sm); color: var(--t-mid); text-transform: capitalize; }
+.opt__state { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0.06em; }
+.opt__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.opt__state--enabled { color: var(--d-enabled); }
+.opt__state--constrained { color: var(--d-constrained); }
+.opt__state--available { color: var(--d-muted); }
+
+/* ── Incident ──────────────────────────────────────────────────────────── */
+.incident { cursor: pointer; display: flex; flex-direction: column; gap: 5px; }
+.incident__row { display: flex; justify-content: space-between; align-items: baseline; }
+.incident__label { font-size: var(--fs-sm); color: var(--t-mid); }
+.incident__val { font-family: var(--f-num); font-size: var(--fs-h3); font-weight: 700; color: var(--d-crisis); }
+.bar { display: block; height: 6px; background: var(--s-inset); border-radius: 3px; overflow: hidden; }
+.bar__fill { display: block; height: 100%; border-radius: 3px; }
+.bar__fill--crisis { background: var(--d-crisis); }
+.bar__fill--social { background: var(--d-social); }
+.bar__fill--economic { background: var(--d-economic); }
+
+/* ── Cohorts ───────────────────────────────────────────────────────────── */
+.cohorts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+/* Name and value on one line, bar full width beneath: no name wrapping, room for a thicker bar. */
+.cohort {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "name val" "bar bar";
+  align-items: baseline; gap: 0 var(--sp-2); padding: 1px 0; cursor: pointer;
+}
+.cohort__name { grid-area: name; }
+.cohort__val { grid-area: val; }
+
+.cohort .bar { grid-area: bar; margin-top: 2px; }
+.cohort__name { font-size: var(--fs-sm); color: var(--t-mid); text-transform: capitalize; line-height: 1.3; }
+.cohort__val { font-family: var(--f-num); font-size: var(--fs-sm); color: var(--d-social); text-align: right; font-variant-numeric: tabular-nums; }
+.cohorts__agg {
+  display: flex; justify-content: space-between; align-items: baseline; margin-top: auto;
+  padding-top: var(--sp-2); border-top: 1px solid var(--line);
+}
+.cohorts__agg-label { font-size: var(--fs-micro); color: var(--t-low); text-transform: uppercase; letter-spacing: 0.08em; }
+.cohorts__agg-val { font-family: var(--f-num); font-size: var(--fs-h3); font-weight: 700; color: var(--d-social); }
+
+.intel__line { margin: 0; font-size: var(--fs-sm); color: var(--t-mid); }
+.provgrid { display: grid; grid-template-columns: 76px 1fr; gap: 3px 10px; margin: 0; font-size: var(--fs-meta); }
+.provgrid dt { color: var(--t-faint); }
+.provgrid dd { margin: 0; color: var(--t-mid); font-family: var(--f-num); word-break: break-word; }
+
+/* ── Right rail ────────────────────────────────────────────────────────── */
+.rail {
+  background: var(--s-base); border-left: 1px solid var(--line);
+  display: flex; flex-direction: column; overflow: hidden;
+ overflow-y: auto; }
+.rail__decisions { border-bottom: 1px solid var(--line-strong); flex: 0 0 auto; }
+.rail__inspector { flex: 1 1 auto; overflow: auto; min-height: 0; }
+.rail__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); background: var(--s-raised);
+}
+.rail__title { margin: 0; font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.rail__count {
+  min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--d-political); color: var(--s-void); border-radius: 10px;
+  font-size: var(--fs-meta); font-weight: 800; font-family: var(--f-num);
+}
+.rail__body { overflow: visible; padding: var(--sp-3); }
+.rail__foot { margin: 0; padding: 0 var(--sp-3) var(--sp-3); font-size: var(--fs-micro); color: var(--t-faint); }
+.dlist { list-style: none; margin: 0; padding: var(--sp-2) var(--sp-3); display: flex; flex-direction: column; gap: var(--sp-2); }
+.ditem {
+  border-left: 2px solid var(--d-muted); padding: 5px var(--sp-2); background: var(--s-panel);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0; cursor: pointer;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.ditem--enabled { border-left-color: var(--d-enabled); }
+.ditem--constrained { border-left-color: var(--d-constrained); }
+.ditem--none { border-left-color: var(--line-strong); font-size: var(--fs-meta); color: var(--t-faint); cursor: default; }
+.ditem__state { font-size: var(--fs-micro); font-weight: 800; letter-spacing: 0.09em; color: var(--t-low); }
+.ditem--enabled .ditem__state { color: var(--d-enabled); }
+.ditem--constrained .ditem__state { color: var(--d-constrained); }
+.ditem__name { font-size: var(--fs-sm); color: var(--t-hi); text-transform: capitalize; }
+.ditem__why { font-size: var(--fs-micro); color: var(--t-faint); }
+.insp__empty { font-size: var(--fs-meta); color: var(--t-faint); margin: 0; }
+.insp__title { margin: 0 0 2px; font-size: var(--fs-body); font-weight: 700; }
+.insp__mech { margin: 0 0 var(--sp-2); font-size: var(--fs-micro); color: var(--cyan); font-family: var(--f-num); }
+.insp__meaning { margin: 0 0 var(--sp-2); font-size: var(--fs-meta); color: var(--t-low); }
+.insp__note {
+  margin-top: var(--sp-3); padding-left: var(--sp-2); border-left: 2px solid var(--line-datum);
+  font-size: var(--fs-micro); color: var(--t-low);
+}
+
+/* ── Bottom transition strip ───────────────────────────────────────────── */
+.tstrip {
+  flex: 0 0 auto; display: flex; align-items: center; gap: var(--sp-3);
+  padding: 6px var(--sp-4); background: var(--s-base); border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+.tstrip__title {
+  margin: 0; font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--t-faint); display: flex; align-items: center; gap: 5px; flex: 0 0 auto;
+}
+.tstrip__list { overflow: hidden; list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-3); overflow: hidden; flex: 1; }
+.tstrip__item { display: flex; align-items: baseline; gap: 5px; font-size: var(--fs-micro); cursor: pointer; white-space: nowrap; }
+.tstrip__tick { color: var(--cyan-dim); font-family: var(--f-num); }
+.tstrip__mech { color: var(--t-mid); font-family: var(--f-num); }
+.tstrip__field { color: var(--t-faint); }
+.tstrip__note { font-size: var(--fs-micro); color: var(--t-faint); flex: 0 0 auto; }
+
+.is-selected { box-shadow: inset 0 0 0 1px var(--cyan); border-radius: 2px; }
+.panel.is-selected { border-color: var(--cyan); }
+
+/* ── Compact chain summary (options panel) ─────────────────────────────── */
+.chainsum { margin-top: 5px; padding-top: 5px; border-top: 1px solid var(--line); }
+.chainsum__h {
+  margin: 0 0 5px; font-size: var(--fs-micro); text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--t-faint); font-weight: 700;
+}
+.chainsum__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+.chainsum__step { display: grid; grid-template-columns: 6px minmax(0, 1fr) auto; align-items: center; gap: 4px; line-height: 1.35; }
+.chainsum__dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chainsum__dot--crisis { color: var(--d-crisis); }
+.chainsum__dot--logistics { color: var(--d-logistics); }
+.chainsum__dot--economic { color: var(--d-economic); }
+.chainsum__dot--social { color: var(--d-social); }
+.chainsum__dot--narrative { color: var(--d-narrative); }
+.chainsum__dot--political { color: var(--d-political); }
+.chainsum__name { font-size: 10.5px; color: var(--t-low); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chainsum__val { font-family: var(--f-num); font-size: 10.5px; color: var(--t-mid); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chainsum__note { margin: 3px 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.35; }
+
+/* Legend entry for the compact fictional-world glyph carried by every panel. */
+.oleg__fiction { display: inline-flex; align-items: center; gap: 5px; color: var(--t-low); font-size: var(--fs-micro); }
+.oleg__fiction .fmark { color: var(--cyan-dim); }
+
+.olegend__fiction { display: flex; align-items: center; gap: 6px; }
+.olegend__fiction .fmark svg { width: 14px; height: 14px; }
+
+/* ── Map: coastline, depth, flow direction, restricted waters, strategic points ── */
+.map__coast { stroke: #2c4258; stroke-width: 1.1; }
+.map__bathy path { fill: none; stroke: #14212e; stroke-width: 1; }
+.map__hatch { stroke: #ff5c6a; stroke-width: 1.1; stroke-opacity: 0.22; }
+.map__restricted { stroke: rgba(255, 92, 106, 0.34); stroke-width: 1; }
+.map__arrow--direct { fill: var(--d-logistics); }
+.map__arrow--reroute { fill: var(--d-economic); }
+.map__leader { stroke: rgba(255, 92, 106, 0.5); stroke-width: 1; stroke-dasharray: 2 3; }
+.map__annot {
+  fill: #ffa8b0; font-size: 12.5px; text-anchor: middle; letter-spacing: 0.06em; font-weight: 600;
+}
+.map__annot--sub { fill: #8ea3b8; font-size: 11.5px; font-weight: 400; letter-spacing: 0.03em; }
+.map__pt-ring { fill: none; stroke: var(--cyan-dim); stroke-width: 1.2; }
+.map__pt-dot { fill: var(--cyan); }
+.map__pt-label { fill: #9ab0c6; font-size: 12px; letter-spacing: 0.04em; }
+.maplegend__key--restricted {
+  background: repeating-linear-gradient(45deg, rgba(255,92,106,0.5) 0 2px, transparent 2px 5px);
+  border: 1px solid rgba(255, 92, 106, 0.4);
+}
+
+/* ── Polish pass: metric direction, cohort emphasis, decision weight ─────── */
+
+/* Direction describes ticks already produced. Never a forecast, never a rate. */
+.krow__dir {
+  font-size: var(--fs-micro); font-weight: 800; letter-spacing: 0.09em; text-align: right;
+}
+.krow__dir--up { color: var(--d-crisis); }
+.krow__dir--down { color: var(--o-engine); }
+.krow__dir--flat { color: var(--t-low); }
+.krow__dir--none { color: var(--t-faint); }
+
+.cohort__name { display: flex; align-items: baseline; gap: var(--sp-2); flex-wrap: wrap; }
+/* Most-affected emphasis without a wrapping chip: an accent edge and a stronger value. */
+.cohort--top { border-left: 2px solid var(--d-social); padding-left: 6px; margin-left: -8px; }
+.cohort--top .cohort__val { color: var(--d-social); font-weight: 700; }
+/* Population share sits beside the value, so it costs no extra line. */
+.cohort__share { font-size: var(--fs-micro); color: var(--t-faint); margin-left: 6px; font-weight: 400; }
+/* The aggregate is a different KIND of number from a cohort value; it must not read as one more row. */
+.cohorts__agg {
+  margin-top: auto; padding-top: 5px; border-top: 2px solid var(--line-strong);
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--sp-2);
+  cursor: pointer;
+}
+.cohorts__agg-label {
+  font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em; color: var(--t-low);
+}
+.cohorts__agg-val {
+  font-family: var(--f-num); font-size: var(--fs-lead); font-weight: 700; color: var(--d-social);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Decision rail: the first card carries real weight. */
+.ditem--primary {
+  background: linear-gradient(180deg, var(--s-raised), var(--s-panel));
+  border-color: var(--line-strong); padding: var(--sp-3);
+}
+.ditem__top { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2); }
+.ditem__rank {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--cyan);
+  border: 1px solid var(--cyan-dim); border-radius: 2px; padding: 1px 5px;
+}
+.ditem--primary .ditem__name { font-size: var(--fs-lead); font-weight: 700; }
+.ditem__why { margin: 4px 0 0; font-size: var(--fs-meta); color: var(--t-mid); line-height: 1.45; }
+.ditem__meta {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+.dom { list-style: none; display: flex; gap: 4px; margin: 0; padding: 0; flex-wrap: wrap; }
+.dom__chip {
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  border: 1px solid currentColor; border-radius: 2px; padding: 1px 5px; opacity: 0.85;
+}
+.dom__chip--political { color: var(--d-political); }
+.dom__chip--economic { color: var(--d-economic); }
+.dom__chip--legal { color: var(--d-logistics); }
+.dom__chip--social { color: var(--d-social); }
+.dom__chip--diplomatic { color: var(--d-narrative); }
+/* Inspect, never execute: the engine supports no submission, pricing or validation. */
+.ditem__act {
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.07em; color: var(--cyan);
+  border-bottom: 1px solid var(--cyan-dim); white-space: nowrap;
+}
+
+/* Markers recede at rest and rise on hover or selection. Visible, never shouting. */
+.panel__marks { opacity: var(--o-rest); transition: opacity 120ms ease; }
+.panel:hover .panel__marks, .panel:focus-within .panel__marks, .panel.is-selected .panel__marks { opacity: 1; }
+
+/* Selected card association with the inspector. */
+.is-selected {
+  outline: 1px solid var(--cyan-dim); outline-offset: 1px;
+  background: var(--cyan-glow); border-radius: var(--r-sm);
+}
+
+/* Expandable detail, used for prose that must remain available but not dominate. */
+.disc-more, .insp__tech { margin-top: var(--sp-2); }
+.disc-more > summary, .insp__tech > summary {
+  font-size: var(--fs-meta); color: var(--cyan); cursor: pointer; letter-spacing: 0.03em;
+  list-style: none; padding: 3px 0;
+}
+.disc-more > summary::-webkit-details-marker { display: none; }
+.disc-more > summary::before, .insp__tech > summary::before { content: "▸ "; }
+.disc-more[open] > summary::before, .insp__tech[open] > summary::before { content: "▾ "; }
+.disc-more p { margin: 4px 0 0; font-size: var(--fs-meta); color: var(--t-mid); line-height: 1.5; }
+
+/* Inspector operational summary: plain language before identifiers. */
+.insp__sum { list-style: none; margin: 0 0 var(--sp-2); padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.insp__sum li { font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.5; }
+.insp__sum strong { color: var(--t-hi); }
+
+/* Left navigation: the active item carries more presence. */
+.nav__item.is-active { box-shadow: inset 0 0 0 1px var(--line-strong); }
+
+/* Separation between the application header and the panel grid. */
+.layout { border-top: 1px solid var(--line); }
+
+/* ── Lagged-response explanation: derived state, never decoration ─────────── */
+.lagnote {
+  margin: 3px 0 0; padding: 4px 7px; border-left: 2px solid var(--d-narrative);
+  background: rgba(185, 140, 240, 0.07); border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-micro); color: var(--t-mid); line-height: 1.4;
+}
+.lagnote__chip {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.11em; color: var(--d-narrative);
+  margin-right: 6px; white-space: nowrap;
+}
+.lagnote__txt { margin: 0; font-size: var(--fs-micro); color: var(--t-mid); line-height: 1.35; }
+.lagnote__plain { margin: 4px 0 0; font-size: var(--fs-micro); color: var(--t-low); }
+.bignum__dir {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.09em; color: var(--d-political);
+  border: 1px solid currentColor; border-radius: 2px; padding: 1px 4px; align-self: center;
+}
+/* Two-line direction so "UPSTREAM EASING" is unambiguous without widening the column. */
+.krow__dir-q { display: block; line-height: 1.1; font-size: 8.5px; letter-spacing: 0.08em; color: var(--t-faint); }
+.insp__lag { margin-top: var(--sp-2); padding-top: var(--sp-2); border-top: 1px solid var(--line); }
+.insp__lag-h {
+  margin: 0 0 5px; font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--d-narrative); font-weight: 700;
+}
+.insp__lag-note { margin: 5px 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.4; }
