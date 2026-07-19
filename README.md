@@ -127,6 +127,19 @@ this — the engine's only effect-application path silently skips any key it doe
 and any value that is not a top-level number, so an effect that never applies produces no
 error and no warning.
 
+## Longer-term vision
+
+MERIDIAN's long-term direction extends beyond crisis dashboards. It explores how persistent fictional
+people — with identities, histories, relationships, memories, beliefs and bounded agency — might
+exist within evolving synthetic societies.
+
+Such entities could support information-resilience research, interactive worlds, AI-agent evaluation
+and, eventually, carefully governed digital roles. **This is a research direction, not a current
+capability, and not a commitment to a release.**
+
+Read the full [Virtual Persons and Synthetic Societies vision](docs/vision/VIRTUAL-PERSONS-AND-SYNTHETIC-SOCIETIES.md),
+or [`PROJECT-ROADMAP.md`](PROJECT-ROADMAP.md) for what is actually planned and in what order.
+
 ## Repository layout
 
 ```
