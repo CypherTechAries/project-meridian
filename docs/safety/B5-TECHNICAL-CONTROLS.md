@@ -2,13 +2,12 @@
 
 > # FOUNDER-APPROVED CONTROL BASELINE — IMPLEMENTED AND TESTED
 >
-> This is the **canonical** B5 control set for public v0.1, approved by the founder on
-> 19 July 2026. It supersedes every scattered reference to "the eight controls". No agent may
-> substitute, reorder, extend, narrow or reconstruct a different list from other documents.
+> **Canonical** B5 control set for public v0.1, approved 19 July 2026. Supersedes every scattered
+> reference to "the eight controls". No agent may substitute, reorder, extend, narrow or
+> reconstruct a different list.
 >
 > **Technical enforcement is primary.** Licence wording, acceptable-use language, documentation and
-> disclosures are **supplementary** and cannot clear B5 without code and tests. B5 is not complete
-> because this document exists.
+> disclosures are supplementary and cannot clear B5 without code and tests.
 
 **Blocker:** B5 — *dual-use influence-targeting schema with no acceptable-use terms.*
 **Decided:** 18 July 2026 (policy). **Baseline approved:** 19 July 2026 (this document).
@@ -32,8 +31,8 @@ Every runnable scenario must declare:
 Missing, unknown, malformed or non-fictional values are **rejected before scenario loading or
 simulation execution**.
 
-**No default-to-fictional behaviour is permitted.** A scenario that omits the field is invalid, not
-assumed safe. Rejection happens before any engine object is constructed.
+**No default-to-fictional behaviour.** A scenario omitting the field is invalid, not assumed safe.
+Rejection precedes construction of any engine object.
 
 ---
 
@@ -41,9 +40,8 @@ assumed safe. Rejection happens before any engine object is constructed.
 
 Public v0.1 may run **only repository-bundled, explicitly allowlisted** fictional scenario packages.
 
-Disabled: arbitrary scenario uploads · URL-based scenario loading · external scenario datasets ·
-real-world scenario import · conversion of news, documents or public datasets into runnable
-scenarios.
+Disabled: uploads · URL loading · external datasets · real-world import · conversion of news,
+documents or public datasets into runnable scenarios.
 
 A strict allowlist enforces this — **not heuristic real-world detection**, which can be talked
 around. It also closes path traversal: a non-member is rejected before any filesystem access.
@@ -55,12 +53,10 @@ around. It also closes path traversal: a non-member is rejected before any files
 Every influence, narrative, intervention or command target must use a **typed identifier that
 resolves inside the active fictional-world registry**.
 
-Rejected: free-text person targets · free-text organisation targets · free-text
-political-population targets · unresolved external identifiers · targets from another world or
-scenario · real persons, organisations, governments or political populations.
+Rejected: free-text person, organisation or political-population targets · unresolved external
+identifiers · targets from another world · real persons, organisations, governments or populations.
 
-Validation **fails closed**: an unresolvable identifier is an error, never a silently ignored or
-best-effort match.
+Validation **fails closed** — an unresolvable identifier is an error, never a best-effort match.
 
 **Typed identifier form.** `fict:<scenario_id>:<kind>:<entity_id>`. The `fict:` prefix and the
 scenario segment make a cross-world or real-world reference structurally impossible to express, not
@@ -70,27 +66,28 @@ merely disallowed.
 
 | Kind | Meaning | Resolves from |
 |---|---|---|
-| `person` | A persistent fictional individual with beliefs, attitudes, bounded emotions, stance and behaviour propensities | `scenario.people[].person_id` |
-| `organisation` | A fictional formal collective actor with membership, official position, internal position distribution, objectives, cohesion and posture. **No emotion vector** | `scenario.organisations[].organisation_id` |
+| `person` | A fictional individual with **stable identity within the active scenario and run**. Carries beliefs, attitudes, bounded emotions, stance and behaviour propensities. **Persistence across saved sessions or runs is not implemented** | `scenario.people[].person_id` |
+| `organisation` | A fictional formal collective actor: membership, official position, internal position distribution, objectives, cohesion, posture. **No emotion vector** | `scenario.organisations[].organisation_id` |
 | `cohort` | An aggregate fictional population group for population-weighted modelling. Not a person, not a list of persons | `scenario.cohorts[].cohort_id` |
-| `agent` | **Legacy and narrow.** An institutional office-holder declared by the P0.5 scenario. Retained only because the shipped causal slice references those six records. **Not a generic target type**; new work uses `person` or `organisation` | `scenario.institutional_agents[].agent_id` |
+| `agent` | **Legacy P0.5 scenario-actor type.** Resolves only to the existing `institutional_agents` registry. **Not a generic target kind and not used for belief-slice entities** | `scenario.institutional_agents[].agent_id` |
 
-`organisation` and `agent` are **not synonyms**: an agent is an individual office-holder, an
-organisation is a collective body.
+**What the six legacy `agent` records are.** Verified against scenario data, not assumed: each is
+**role-scoped — identified by office, not by person — and none carries a personal name**. Four are
+singular offices; `intelligence_lead` and `strategic_comms` denote a lead function that may be a
+post or a team. They are **heterogeneous** and deliberately not forced into `person` or
+`organisation`; the type stays isolated as legacy.
 
-**Vocabulary change, 20 July 2026** (commit `0c4f696`, hardened in the following commit), for the
-Belief Formation and Divergence Slice:
+The belief-divergence slice uses **only** `person`, `organisation` and `cohort`. No new `agent`
+entities are created.
 
-- **Added `person` and `organisation`.** That milestone models named fictional people and
-  organisations, which the previous vocabulary could not express at all.
-- **Removed `institution`.** No scenario ever declared an `institutions` collection, so the kind
-  resolved to nothing and could never appear in a valid target. A kind that cannot resolve is
-  surface area with no purpose.
+**Vocabulary change, 20 July 2026** (`0c4f696`, hardened in `5146379`): **added** `person` and
+`organisation` — the belief slice models fictional people and organisations, inexpressible before;
+**removed** `institution` — no scenario ever declared an `institutions` collection, so it resolved
+to nothing and could never appear in a valid target.
 
-Net effect: **two added, one removed.** It does not weaken fictional-only resolution — a target must
-still carry the `fict:` prefix, name the **active** world, and **resolve** in that world's registry,
-which is built solely from scenario data. No real person or organisation becomes addressable,
-whatever its kind.
+Net: **two added, one removed.** Fictional-only resolution is unweakened — a target must still carry
+the `fict:` prefix, name the **active** world, and **resolve** in that world's scenario-built
+registry. No real entity becomes addressable, whatever its kind.
 
 **Evidence.** `tests/test_b5_target_kinds.py` — 55 cases covering both new kinds directly:
 registered accept · unregistered reject · cross-world reject · identifying extra fields
@@ -104,12 +101,11 @@ for vocabulary it never exercised.
 
 ## B5-04 — Protected-trait exclusion
 
-Protected or sensitive traits, and **project-declared proxies** for those traits, must not be
-accepted as: targeting criteria · ranking criteria · optimisation variables ·
-intervention-selection variables · susceptibility weights · audience-segmentation controls.
+Protected or sensitive traits, and **declared proxies**, must never be targeting, ranking,
+optimisation, intervention-selection, susceptibility or segmentation inputs.
 
 **Identity may still affect** lived experience, relationships, discrimination, institutional access,
-media exposure and cultural interpretation. That is modelling, and it stays permitted.
+media exposure and cultural interpretation. That is modelling, and stays permitted.
 
 **Identity must never encode inherent** competence · morality · loyalty · violence · truthfulness ·
 manipulability.
@@ -122,11 +118,10 @@ never what it *is worth* or *how easily it can be moved*.
 ## B5-05 — No persuadability optimisation
 
 MERIDIAN must not calculate, expose or recommend: susceptibility scores · persuadability rankings ·
-"most influenceable" people or cohorts · optimal audiences for persuasion · optimal message
-targeting · exploitation of vulnerability · automated audience selection intended to maximise belief
-change.
+"most influenceable" people or cohorts · optimal audiences or message targeting · exploitation of
+vulnerability · automated audience selection to maximise belief change.
 
-This prohibition applies to **fictional and real audiences alike** for public v0.1.
+Applies to **fictional and real audiences alike**.
 
 **Aggregate fictional belief propagation remains permitted** (see safe harbor). The prohibition is
 on ranking or selecting audiences *in order to* move them, not on modelling that belief spreads.
@@ -135,13 +130,11 @@ on ranking or selecting audiences *in order to* move them, not on modelling that
 
 ## B5-06 — No real-population manipulation recommendations
 
-APIs, command interpretation, model prompts, model outputs and UI features must not produce
-recommendations or operational instructions for persuading or manipulating real people or
-populations.
+APIs, command interpretation, model prompts, outputs and UI must not produce recommendations or
+operational instructions for persuading or manipulating real people or populations.
 
-Requests naming real-world population targets are **rejected, not silently transformed into a
-fictional analogue**. Automatic rewriting would teach the caller that the request was acceptable and
-would obscure the refusal.
+Requests naming real-world populations are **rejected, not silently rewritten into a fictional
+analogue** — rewriting would teach the caller the request was acceptable and hide the refusal.
 
 No live model exists yet, so this is enforced at the schema and gateway boundary — which must
 preserve the restriction when a model is wired. The belief-slice schemas make real-person,
@@ -170,9 +163,8 @@ is actually shared, so per-panel marking is mandatory and a global banner alone 
 
 ## B5-08 — Per-element provenance and origin
 
-Every user-visible claim, metric, assessment or record must support: origin · epistemic status ·
-scenario identity · scenario version · last-updated tick or time where applicable · fixture/live
-distinction.
+Every user-visible claim, metric, assessment or record must carry: origin · epistemic status ·
+scenario id and version · last-updated tick where applicable · fixture/live distinction.
 
 **Approved origin vocabulary — closed set:** `ENGINE` (computed this run) · `FIXTURE`
 (hand-authored, not modelled) · `UNKNOWN` (origin not established) · `UNAVAILABLE` (could not be
@@ -205,12 +197,12 @@ permission to add the capabilities its §5 defers.
 
 ## Enforcement principle
 
-**Technical enforcement is primary.** Licence wording, acceptable-use language, documentation and
-disclosures are supplementary and cannot clear B5 without code and tests.
+**Technical enforcement is primary.** Documentation and disclosures are supplementary and cannot
+clear B5 without code and tests.
 
-Implementation preferences, in order: strict typed schemas → allowlists → registry resolution.
-**Name-detection heuristics are not an acceptable substitute** for any of the three. MERIDIAN does
-not build a general content-moderation system; it constrains what can be *expressed* to the engine.
+Implementation preference, in order: strict typed schemas → allowlists → registry resolution.
+**Name-detection heuristics are not an acceptable substitute.** MERIDIAN does not build a general
+content-moderation system; it constrains what can be *expressed* to the engine.
 
 ---
 

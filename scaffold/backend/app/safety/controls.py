@@ -32,19 +32,21 @@ TARGET_PREFIX: Final = "fict"
 
 # Entity kinds a target may name. CLOSED SET, and each kind means one specific thing.
 #
-#   person        a persistent fictional individual entity, with beliefs, attitudes, bounded
-#                 emotions, stance and behaviour propensities. Belief-slice cast.
+#   person        a fictional individual with STABLE IDENTITY WITHIN THE ACTIVE SCENARIO AND RUN,
+#                 carrying beliefs, attitudes, bounded emotions, stance and behaviour propensities.
+#                 Persistence across saved sessions or runs is NOT implemented and is not claimed.
 #   organisation  a fictional formal collective actor with membership, official position, internal
 #                 position distribution, objectives, cohesion and posture. NO emotion vector.
 #   cohort        an aggregate fictional population group used for population-weighted modelling.
 #                 Not a person and not a list of persons.
-#   agent         an institutional actor declared in the P0.5 scenario's `institutional_agents`.
-#                 LEGACY AND NARROW: it resolves only to those six records and is retained because
-#                 the shipped causal slice references them. It is NOT a generic target type and
-#                 must not be used as one; new work uses `person` or `organisation`.
+#   agent         LEGACY P0.5 scenario-actor type, resolving only to the existing
+#                 `institutional_agents` registry. NOT a generic target kind and NOT used for
+#                 belief-slice entities.
 #
-# 'organisation' and the legacy 'agent' are NOT synonyms: an agent is an individual office-holder,
-# an organisation is a collective body.
+# The six legacy agent records are role-scoped - identified by office, not by person, and none
+# carries a personal name. Four are singular offices; two (intelligence_lead, strategic_comms)
+# denote a lead function that may be a post or a team. They are heterogeneous and are deliberately
+# NOT folded into `person` or `organisation`.
 #
 # CHANGED 20 July 2026 for the Belief Formation and Divergence Slice:
 #   + person, + organisation  - that milestone models named fictional people and organisations,
