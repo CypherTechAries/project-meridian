@@ -11,6 +11,12 @@ SEPARATION OF CONCERNS. `bio` fields are descriptive fixture content for the int
 never read by the update rule; `test_belief_genericity` asserts that the update input contains no
 biography field at all.
 
+ROLE IS NOT CAPABILITY. `evidentiary_threshold` is declared from an entity's SITUATION — access,
+obligation, procedure, whether they already hold the underlying testimony — never from occupation,
+education, wealth, class or presumed intelligence. A prestigious role grants access, authority and
+constraints; it does not grant competence or rationality. Every threshold below carries the
+situational reason it was set, so the justification is auditable rather than assumed.
+
 B5: every identifier is a `fict:` typed target that must resolve in the active world's registry.
 There is no susceptibility, persuadability or ranking value anywhere in this module.
 """
@@ -52,28 +58,37 @@ PROPOSITIONS: list[dict[str, Any]] = [
 
 # ── People ───────────────────────────────────────────────────────────────────────────────────────
 #
-# Three declared situations, not three scripted outcomes. What differs between them is only:
-# evidentiary threshold, source trust, relevance, and prior state — each justified by the role.
+# Three declared SITUATIONS, not three scripted outcomes. What differs is only evidentiary
+# threshold, source trust, relevance and prior state — each justified by access, obligation or
+# procedure, never by occupation, credentials or presumed capability.
 
 PEOPLE: list[dict[str, Any]] = [
     {
         "person_id": "family-spokesperson",
         "display_name": "Spokesperson, Strait Families Group",
+        # Declared from SITUATION, not from formality or credentials: this person holds first-hand
+        # testimony from the affected families and is the originator of the claim, so the claim
+        # requires no external corroboration to be actionable FOR THEM. A low threshold here means
+        # "already holds the underlying testimony", NOT "less rigorous" or "easier to convince".
         "evidentiary_threshold": 0.20,
         "bio": "Speaks for families of crew held by the closure.",
     },
     {
         "person_id": "government-minister",
         "display_name": "Minister for Maritime Affairs",
-        # Highest threshold: holds the official account and has direct access to the record the
-        # claim disputes, so revision requires more than an assertion.
+        # Declared from ACCESS AND OBLIGATION, not from competence: holds the departmental record
+        # the claim disputes and is bound by an official verification standard before contradicting
+        # it. This says nothing about being better informed in general, or better at reasoning.
         "evidentiary_threshold": 0.75,
         "bio": "Holds the maritime brief in the governing coalition.",
     },
     {
         "person_id": "broadcast-journalist",
         "display_name": "Correspondent, Northshore Broadcast",
-        # Professional threshold: will not treat a single uncorroborated allegation as settled.
+        # Declared from PROCEDURE, not from occupation or intellect: the broadcaster's verification
+        # standard for this proposition requires a second independent source before an allegation is
+        # treated as established. The threshold belongs to the editorial process governing this
+        # claim, not to the person being more analytical than anyone else.
         "evidentiary_threshold": 0.55,
         "bio": "Covers the strait for the public broadcaster.",
     },

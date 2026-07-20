@@ -375,3 +375,69 @@ def test_b5_03_every_result_carries_provenance() -> None:
     for key in ("x", "rho", "t", "e", "r", "theta", "w", "d", "target",
                 "prior_credence", "delta_credence", "resulting_credence"):
         assert key in r.trace, f"trace missing {key}"
+
+
+# ══ ROLE AND BIOGRAPHY ARE NOT CAPABILITY ════════════════════════════════════════════════════════
+#
+# Background shapes exposure, access, obligation and relationships. It must never act as a proxy
+# for intelligence, competence, judgement or gullibility.
+
+
+def test_role_01_role_label_swap_leaves_the_result_unchanged() -> None:
+    """
+    Item 7. Swap which role a set of calculation inputs belongs to; the result must follow the
+    inputs, not the label.
+    """
+    minister_inputs = build("government-minister")
+    as_journalist = apply_update(minister_inputs)
+    as_minister = run("government-minister")
+    assert as_journalist.credence == as_minister.credence
+    assert as_journalist.trace == as_minister.trace
+
+
+def test_role_02_biography_swap_leaves_the_calculation_unchanged() -> None:
+    """
+    Item 8. Biography is interface content. Swapping every bio must not move a single number.
+    """
+    before = {e: run(e).credence for e in PEOPLE_IDS}
+    originals = [p["bio"] for p in cast.PEOPLE]
+    try:
+        for person, swapped in zip(cast.PEOPLE, reversed(originals)):
+            person["bio"] = swapped
+        after = {e: run(e).credence for e in PEOPLE_IDS}
+        assert before == after, "biography content changed the calculation"
+    finally:
+        for person, original in zip(cast.PEOPLE, originals):
+            person["bio"] = original
+
+
+def test_role_03_no_occupation_education_or_wealth_field_reaches_the_formula() -> None:
+    fields = set(UpdateInput.__dataclass_fields__)
+    for forbidden in (
+        "role", "occupation", "job", "title", "education", "credential", "qualification",
+        "wealth", "income", "class", "status", "seniority", "competence", "intelligence",
+        "capability", "judgement", "rationality",
+    ):
+        assert forbidden not in fields, f"'{forbidden}' reaches the belief update"
+
+
+def test_role_04_no_role_specific_branch_in_the_formula() -> None:
+    """A role may set a declared input. It may never select a different code path."""
+    src = executable_source(upd).lower()
+    for role_word in ("minister", "journalist", "spokesperson", "broadcaster", "union", "official"):
+        assert role_word not in src, f"update module branches on role: {role_word}"
+
+
+def test_role_05_seniority_does_not_imply_a_stronger_or_weaker_result() -> None:
+    """
+    Give all three identical inputs; identical results. Any difference would mean the role label
+    was doing work, which is the failure this suite exists to exclude.
+    """
+    common = dict(
+        prior_credence=0.4, prior_confidence=0.4, prior_salience=0.6,
+        evidentiary_threshold=0.5, source_trust=0.6, evidence_strength=0.5,
+        exposure_intensity=0.8, relay_factor=1.0, relevance=0.7,
+    )
+    results = {e: run(e, **common) for e in PEOPLE_IDS}
+    assert len({r.credence for r in results.values()}) == 1
+    assert len({r.confidence for r in results.values()}) == 1
