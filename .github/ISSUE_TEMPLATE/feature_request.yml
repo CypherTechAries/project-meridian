@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a capability or improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check PROJECT-ROADMAP.md first — the capability may already be planned, or may be a
+        deliberate non-goal.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What is difficult or unclear today?
+    validations: { required: true }
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+    validations: { required: true }
+  - type: dropdown
+    id: horizon
+    attributes:
+      label: Where do you think this belongs?
+      options:
+        - Horizon 1 — the current public release
+        - Horizon 2 — the long-term platform
+        - Not sure
+    validations: { required: true }
