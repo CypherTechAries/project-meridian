@@ -63,11 +63,6 @@ class FictionalTargetRegistry:
             if aid:
                 self._entities["agent"].add(str(aid))
 
-        for inst in scenario.get("institutions", []) or []:
-            iid = inst.get("institution_id")
-            if iid:
-                self._entities["institution"].add(str(iid))
-
         # Belief-slice entities. Same rule as every other kind: an entity is targetable only
         # because the scenario declares it.
         for person in scenario.get("people", []) or []:

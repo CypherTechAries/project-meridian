@@ -45,9 +45,8 @@ Disabled: arbitrary scenario uploads · URL-based scenario loading · external s
 real-world scenario import · conversion of news, documents or public datasets into runnable
 scenarios.
 
-A strict allowlist enforces this. **Heuristic real-world detection is not used**, because an
-allowlist enforces the boundary more reliably than name inspection. The allowlist also closes path
-traversal: an identifier that is not a member is rejected before any filesystem access.
+A strict allowlist enforces this — **not heuristic real-world detection**, which can be talked
+around. It also closes path traversal: a non-member is rejected before any filesystem access.
 
 ---
 
@@ -63,9 +62,43 @@ scenario · real persons, organisations, governments or political populations.
 Validation **fails closed**: an unresolvable identifier is an error, never a silently ignored or
 best-effort match.
 
-**Typed identifier form.** `fict:<scenario_id>:<kind>:<entity_id>`, where `kind` is a closed
-vocabulary (`cohort`, `agent`, `institution`). The `fict:` prefix and the scenario segment make a
-cross-world or real-world reference structurally impossible to express, not merely disallowed.
+**Typed identifier form.** `fict:<scenario_id>:<kind>:<entity_id>`. The `fict:` prefix and the
+scenario segment make a cross-world or real-world reference structurally impossible to express, not
+merely disallowed.
+
+**Target-kind taxonomy — closed set, each kind means one thing.**
+
+| Kind | Meaning | Resolves from |
+|---|---|---|
+| `person` | A persistent fictional individual with beliefs, attitudes, bounded emotions, stance and behaviour propensities | `scenario.people[].person_id` |
+| `organisation` | A fictional formal collective actor with membership, official position, internal position distribution, objectives, cohesion and posture. **No emotion vector** | `scenario.organisations[].organisation_id` |
+| `cohort` | An aggregate fictional population group for population-weighted modelling. Not a person, not a list of persons | `scenario.cohorts[].cohort_id` |
+| `agent` | **Legacy and narrow.** An institutional office-holder declared by the P0.5 scenario. Retained only because the shipped causal slice references those six records. **Not a generic target type**; new work uses `person` or `organisation` | `scenario.institutional_agents[].agent_id` |
+
+`organisation` and `agent` are **not synonyms**: an agent is an individual office-holder, an
+organisation is a collective body.
+
+**Vocabulary change, 20 July 2026** (commit `0c4f696`, hardened in the following commit), for the
+Belief Formation and Divergence Slice:
+
+- **Added `person` and `organisation`.** That milestone models named fictional people and
+  organisations, which the previous vocabulary could not express at all.
+- **Removed `institution`.** No scenario ever declared an `institutions` collection, so the kind
+  resolved to nothing and could never appear in a valid target. A kind that cannot resolve is
+  surface area with no purpose.
+
+Net effect: **two added, one removed.** It does not weaken fictional-only resolution — a target must
+still carry the `fict:` prefix, name the **active** world, and **resolve** in that world's registry,
+which is built solely from scenario data. No real person or organisation becomes addressable,
+whatever its kind.
+
+**Evidence.** `tests/test_b5_target_kinds.py` — 55 cases covering both new kinds directly:
+registered accept · unregistered reject · cross-world reject · identifying extra fields
+(`name`, `real_name`, `social_handle`, `external_id`) rejected by schema · free text reject ·
+unknown kind reject, including the removed `institution` · malformed identifier reject · case,
+whitespace, homoglyph and zero-width bypass reject · cross-kind collision isolation · audience
+ranking proven **absent**, not merely refused. The pre-existing suite was not treated as evidence
+for vocabulary it never exercised.
 
 ---
 
@@ -81,8 +114,8 @@ media exposure and cultural interpretation. That is modelling, and it stays perm
 **Identity must never encode inherent** competence · morality · loyalty · violence · truthfulness ·
 manipulability.
 
-The distinction is the point: identity may shape *what happens to* an entity and *what it sees*; it
-may never be a coefficient on what the entity *is worth* or *how easily it can be moved*.
+The distinction is the point: identity may shape *what happens to* an entity and *what it sees*;
+never what it *is worth* or *how easily it can be moved*.
 
 ---
 
@@ -95,9 +128,8 @@ change.
 
 This prohibition applies to **fictional and real audiences alike** for public v0.1.
 
-**Aggregate fictional belief propagation remains permitted** — see the safe-harbor statement below.
-The prohibited thing is ranking or selecting audiences *in order to* move them, not modelling that
-belief spreads.
+**Aggregate fictional belief propagation remains permitted** (see safe harbor). The prohibition is
+on ranking or selecting audiences *in order to* move them, not on modelling that belief spreads.
 
 ---
 
@@ -111,8 +143,9 @@ Requests naming real-world population targets are **rejected, not silently trans
 fictional analogue**. Automatic rewriting would teach the caller that the request was acceptable and
 would obscure the refusal.
 
-No live model integration exists today, so this control is currently enforced at the schema and
-gateway boundary. Those boundaries must preserve the restriction when a model is eventually wired.
+No live model exists yet, so this is enforced at the schema and gateway boundary — which must
+preserve the restriction when a model is wired. The belief-slice schemas make real-person,
+real-organisation and real-population targeting structurally inexpressible rather than filtered.
 
 ---
 
@@ -130,9 +163,8 @@ API responses must also carry structured fictional-world metadata.
 The disclosure must survive: normal navigation · dossier and modal views where applicable ·
 screenshots · ordinary cropping · mixed engine/fixture screens.
 
-Crop survival is a real requirement, not a stylistic one: a screenshot of a single panel is the unit
-in which this interface will actually be shared, so per-panel marking is mandatory and a global
-banner alone is insufficient.
+Crop survival is a real requirement: a single-panel screenshot is the unit in which this interface
+is actually shared, so per-panel marking is mandatory and a global banner alone is insufficient.
 
 ---
 
@@ -142,14 +174,9 @@ Every user-visible claim, metric, assessment or record must support: origin · e
 scenario identity · scenario version · last-updated tick or time where applicable · fixture/live
 distinction.
 
-**Approved origin vocabulary — closed set:**
-
-| Value | Meaning |
-|---|---|
-| `ENGINE` | computed by the deterministic engine this run |
-| `FIXTURE` | hand-authored content the engine does not model |
-| `UNKNOWN` | origin not established |
-| `UNAVAILABLE` | the value could not be obtained |
+**Approved origin vocabulary — closed set:** `ENGINE` (computed this run) · `FIXTURE`
+(hand-authored, not modelled) · `UNKNOWN` (origin not established) · `UNAVAILABLE` (could not be
+obtained).
 
 **Fixture information must never be presented as computed engine output.**
 
@@ -160,8 +187,7 @@ computed; absence is not. Collapsing them is the specific dishonesty this contro
 
 ## Safe-harbor statement
 
-Recorded explicitly, so that enforcement does not over-reach into the modelling the project exists
-to do:
+Recorded so enforcement does not over-reach into the modelling the project exists to do:
 
 > Fictional aggregate narrative propagation, adoption, belief divergence, defensive
 > counter-messaging, and comparison of pre-authored defensive interventions **are permitted** when
@@ -206,44 +232,9 @@ test, and CI is green.
 
 **Evidence, 19 July 2026:** backend `187 passed` (70 B5 + 117 pre-existing), frontend `52 passed`.
 
-### Two findings the tests produced
-
-**A real enforcement gap, found by test 11b.** Screening ran on the *parsed* Pydantic model, and
-Pydantic's default is to **drop** unknown fields — so a request carrying `world: "real_world"` was
-accepted with the control silently doing nothing. Fixed by `extra="forbid"` on the request model, so
-an unexpected field is refused rather than discarded. This is exactly the failure mode the baseline
-warns about: a control that exists but does not fire.
-
-**A vocabulary mismatch, found by test 14.** The shipped projection emits lowercase `engine` /
-`fixture`; the approved vocabulary is uppercase. Resolved by canonicalising case at the control
-boundary rather than renaming wire values across a working interface — the control governs *which*
-origins exist, not how they are spelled. Invented near-misses (`engine_derived`, `computed`, `live`)
-still fail, and a record with no origin is refused rather than defaulted.
 
 ---
 
-## Required tests
-
-1. A valid packaged fictional scenario loads.
-2. A manifest without `world_mode` is rejected.
-3. A non-fictional `world_mode` is rejected.
-4. A scenario outside the allowlist is rejected.
-5. Arbitrary file, URL and real-world import paths are unavailable or rejected.
-6. A valid fictional registry target is accepted.
-7. Free-text and unresolved targets are rejected.
-8. Cross-world target identifiers are rejected.
-9. Protected-trait targeting fields are rejected.
-10. Persuadability and susceptibility-ranking fields are rejected.
-11. Real-population manipulation requests are rejected.
-12. Fictional aggregate narrative propagation remains allowed.
-13. API responses contain fictional-world metadata.
-14. Every visible value contains or inherits origin information.
-15. Fixture values cannot be labelled `ENGINE`.
-16. `UNKNOWN` and `UNAVAILABLE` do not render as zero.
-17. Global and crop-safe fictional disclosures remain visible.
-18. Existing P0.4, P0.4A, P0.5, API and frontend tests remain passing.
-
----
 
 ## Stop condition
 
