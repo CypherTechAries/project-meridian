@@ -128,6 +128,11 @@
   .notexec{display:inline-flex;align-items:center;gap:6px;font:700 9.5px/1 sans-serif;
     letter-spacing:.14em;padding:7px 11px;border-radius:5px;background:rgba(240,167,66,.1);
     color:var(--amber);border:1px solid rgba(240,167,66,.4);margin-bottom:11px}
+  .ill{display:block;font:700 8px/1.4 sans-serif;letter-spacing:.11em;color:var(--violet);
+    background:rgba(185,140,240,.09);border:1px dashed rgba(185,140,240,.42);border-radius:3px;
+    padding:5px 8px;margin-bottom:9px}
+  .illin{font:700 7.5px/1.3 sans-serif;letter-spacing:.09em;color:var(--violet);display:block;
+    margin-bottom:3px;text-transform:none}
   .futban{padding:9px 20px;background:rgba(185,140,240,.08);color:var(--violet);
     border-bottom:1px solid rgba(185,140,240,.28);font:600 11px/1.5 sans-serif;letter-spacing:.03em}
   .assess{display:grid;grid-template-columns:120px 1fr;gap:9px 14px;font-size:13.5px}
@@ -254,8 +259,7 @@ function ctxmap(h){return `<div class="mapbox" style="height:${h}px">
             <div class="h">Security options, constraints, risks, and areas of disagreement.</div></div>
           <div class="compare"><span class="ftag">FUTURE — NOT IMPLEMENTED</span>
             <div class="q" style="font-size:14.5px;color:var(--low);margin-bottom:5px">Compare my options</div>
-            <div class="h">Compare diplomatic, economic, information, and security choices side by
-              side. All options begin NOT EXECUTED.</div></div>
+            <div class="h">Compare diplomatic, economic, information, and security choices side by side. All options begin NOT EXECUTED, and all values would be illustrative adviser judgements rather than computed consequences.</div></div>
         </div>
       </div>
       <div class="input"><div class="f">Ask anything…</div><div class="send">SEND</div></div>
@@ -425,17 +429,17 @@ function ctxmap(h){return `<div class="mapbox" style="height:${h}px">
       <div class="who"><span class="av c">IA</span><span class="nm c">INTELLIGENCE ASSESSMENT</span>
         <span class="tg sim">SIMULATED CHARACTER — NOT ENGINE TRUTH</span>
         <span class="tg fut">FUTURE — NOT IMPLEMENTED</span></div>
-      <div class="cards"><div class="p"><h5>ASSESSMENT, BROKEN INTO ITS PARTS</h5><div class="b">
+      <div class="cards"><div class="p"><h5>ASSESSMENT, BROKEN INTO ITS PARTS</h5><div class="b"><span class="ill">ILLUSTRATIVE FUTURE CONCEPT — NOT ENGINE OUTPUT</span>
         <dl class="assess">
           <dt>OBSERVED</dt><dd>A coordinated group of fictional accounts repeated the same narrative
             within a six-hour window. <span class="tg eng" style="margin-left:6px">would be ENGINE</span></dd>
-          <dt>ASSESSMENT</dt><dd>They may be linked to an external actor.</dd>
-          <dt>CONFIDENCE — EVENT</dt><dd><span class="conf hi">HIGH</span> that the coordination occurred</dd>
-          <dt>CONFIDENCE — ATTRIBUTION</dt><dd><span class="conf lo">LOW</span> as to who caused it</dd>
-          <dt>CONFIDENCE — INTENT</dt><dd><span class="conf lo">LOW</span> as to why</dd>
-          <dt>SOURCE RELIABILITY</dt><dd>Single collection method, not corroborated</dd>
-          <dt>COMPETING VIEW</dt><dd>They may also be domestic activists using shared material.</dd>
-          <dt>DISSENT</dt><dd>One analyst assesses the timing as coincidental.</dd>
+          <dt>ASSESSMENT</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span>they may be linked to an external actor.</dd>
+          <dt>CONFIDENCE — EVENT</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span><span class="conf hi">HIGH</span> confidence the event occurred</dd>
+          <dt>CONFIDENCE — ATTRIBUTION</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span><span class="conf lo">LOW</span> confidence about who caused it</dd>
+          <dt>CONFIDENCE — INTENT</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span><span class="conf lo">LOW</span> confidence about intent</dd>
+          <dt>SOURCE RELIABILITY</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span>single collection method, not corroborated</dd>
+          <dt>COMPETING VIEW</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span>they may also be domestic activists using shared material.</dd>
+          <dt>DISSENT</dt><dd><span class="illin">Illustrative fictional intelligence assessment:</span>one analyst assesses the timing as coincidental.</dd>
           <dt>MISSING</dt><dd>Account provenance · funding · prior coordination history</dd>
         </dl></div></div></div>
       <div class="cards c2">
@@ -479,7 +483,7 @@ function ctxmap(h){return `<div class="mapbox" style="height:${h}px">
     <div class="who"><span class="av m">M</span><span class="nm m">MERIDIAN</span>
       <span class="tg fut">FUTURE — NOT IMPLEMENTED</span></div>
     <div class="notexec">◈ NOT EXECUTED — nothing has changed in the simulation</div>
-    <div class="p"><div class="b" style="padding:0;overflow-x:auto">
+    <div class="p"><div class="b" style="padding:13px 13px 0"><span class="ill">ILLUSTRATIVE FUTURE CONCEPT — NOT ENGINE OUTPUT</span><div style="font-size:12px;color:var(--amber);line-height:1.5;margin-bottom:11px">◈ These values are illustrative adviser judgements. MERIDIAN does not currently calculate these consequences.</div></div><div style="padding:0;overflow-x:auto">
       <table><thead><tr>
         <th>OPTION</th><th>OBJECTIVE</th><th>PROPOSED BY</th><th>EXPECTED BENEFIT</th>
         <th>MAJOR RISK</th><th>TIME</th><th>REVERSIBLE</th><th>DIPLOMATIC COST</th>
@@ -540,15 +544,15 @@ function ctxmap(h){return `<div class="mapbox" style="height:${h}px">
       <div class="who"><span class="av c">NF</span><span class="nm c">COMMANDER, NORTHERN FLEET</span>
         <span class="tg sim">SIMULATED CHARACTER ADVICE — NOT ENGINE TRUTH</span>
         <span class="tg ne">NOT EXECUTED</span></div>
-      <p class="prose" style="font-size:15px;color:var(--mid)">Escort the next convoy. Five days of
+      <p class="prose" style="font-size:15px;color:var(--mid)"><span class="illin">Illustrative fictional commander advice — not engine output:</span>Escort the next convoy. Five days of
         closure is becoming a demonstration that the route can be closed at will.</p>
       <div class="cards c2" style="margin-bottom:18px">
-        <div class="p"><h5>THE PROPOSAL, UNPACKED</h5><div class="b">
+        <div class="p"><h5>THE PROPOSAL, UNPACKED</h5><div class="b"><span class="ill">ILLUSTRATIVE FUTURE CONCEPT — NOT ENGINE OUTPUT</span>
           <dl class="assess" style="grid-template-columns:112px 1fr">
             <dt>OBJECTIVE</dt><dd>Restore transit through the strait</dd>
             <dt>ASSUMES</dt><dd>The blockading party will yield rather than confront</dd>
             <dt>CONSTRAINTS</dt><dd>Two escorts available · 36-hour readiness</dd>
-            <dt>ESCALATION</dt><dd><span class="conf lo">HIGH RISK</span></dd>
+            <dt>ESCALATION</dt><dd><span class="illin">Illustrative adviser judgement, not computed:</span><span class="conf lo">HIGH RISK</span></dd>
             <dt>CIVILIAN RISK</dt><dd>Crews on escorted vessels</dd>
             <dt>DIPLOMATIC</dt><dd>Partners may read it as unilateral</dd>
           </dl></div></div>
@@ -561,7 +565,7 @@ function ctxmap(h){return `<div class="mapbox" style="height:${h}px">
       <div class="who"><span class="av c">LO</span><span class="nm c">LEGAL AND OPERATIONS ADVISER</span>
         <span class="tg sim">SIMULATED CHARACTER ADVICE — NOT ENGINE TRUTH</span>
         <span class="tg ne">NOT EXECUTED</span></div>
-      <p class="prose" style="font-size:15px;color:var(--mid)">I disagree, and I would record the
+      <p class="prose" style="font-size:15px;color:var(--mid)"><span class="illin">Illustrative fictional adviser advice — not engine output:</span>I disagree, and I would record the
         disagreement. We have not established who is enforcing the closure. An escort commits us
         before we know what we are meeting.</p>
       <div class="who"><span class="av m">M</span><span class="nm m">MERIDIAN</span>
