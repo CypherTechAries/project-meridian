@@ -979,3 +979,65 @@ intact and byte-identical. `CORPUS.json` and the unfinished P0.5 work remain abs
 | `phase-0-foundation` head | `6a931f7` | `33e9d6c` |
 
 A full pre-rewrite bundle is retained locally until the public-release review completes.
+
+---
+
+## 20 July 2026 — public v0.1 released, and the belief-divergence milestone begun
+
+**Published.** The repository is public at [v0.1.0](https://github.com/CypherTechAries/project-meridian/releases/tag/v0.1.0),
+tagged from `57ac4c1`, after a 17-point release review passed 17/17. Branch protection is active on
+`main`: pull request required, `CI` status check required, conversation resolution required, force
+pushes and deletion blocked, `enforce_admins` false so the owner retains maintainer access. No
+`LICENSE` file was added; the repository is source available, all rights reserved, and is described
+as **not** open-source software.
+
+**B5 technical enforcement merged** (`7f475e8`). All eight controls have code paths and tests. Two
+findings the tests produced, both fixed: request screening ran on the *parsed* Pydantic model, and
+Pydantic drops unknown fields by default, so a request carrying `world: "real_world"` was accepted
+with B5-06 silently doing nothing — a control that existed and did not fire; and the projection's
+lowercase origin vocabulary was reconciled by canonicalising case at the control boundary rather
+than renaming wire values across a working interface.
+
+**Briefing View merged** (`7dc5d8c`). Briefing is the default; the detailed dashboard is preserved
+as Analysis View behind a visible switch. Every plain-language sentence is derived from the run's
+own state through `engine/presentation.ts` — the same derivation feeds both views, so one value can
+no longer be described three ways on one screen.
+
+**Target-kind vocabulary changed, deliberately and visibly.** `person` and `organisation` were
+added because the belief slice models fictional people and organisations, which the previous
+vocabulary could not express; `institution` was **removed** because no scenario ever declared an
+`institutions` collection, so it resolved to nothing. Net: two added, one removed. 55 dedicated
+tests were written because the existing suite was not evidence for kinds it had never exercised.
+
+**Belief Update Rule v1.** Implementation order is preserved in history and is the point of the
+milestone: rule specified and frozen (`b8b0c81`) → fixtures frozen (`6320cf1`) → first untuned run
+(`16f593c`) → counterfactual evidence (`fc0fb1c`). No fixture value or coefficient was changed after
+outcomes were inspected.
+
+The first principled run produced three distinct outcomes: material movement (spokesperson,
+Δc +0.1385), limited movement (minister, +0.0219) and continued uncertainty (journalist, +0.0585
+with confidence 0.442, below the 0.5 line). The strongest evidence is not that these look plausible
+— it is that giving the minister the spokesperson's declared inputs produces the spokesperson's
+exact result. Role does not survive substitution of the numbers.
+
+**A modelling defect found by audit, and corrected.** Two of the three evidentiary thresholds were
+justified in ways that implied competence rather than situation: the spokesperson's low threshold
+carried *no stated justification at all*, which on the least formal actor reads as "informal actors
+are gullible"; and the journalist's was justified as a "professional threshold", i.e. by occupation.
+Both were rewritten to cite the actual mechanism — first-hand testimony already held, and the
+broadcaster's verification standard for this specific proposition. **No threshold value changed.**
+Five further tests now assert that role labels, biography content, occupation, education, wealth and
+seniority cannot reach or alter the calculation.
+
+**Claim boundary, to be repeated wherever these values are displayed.** Belief Update Rule v1 is a
+bounded, deterministic first-order mechanism for testing whether declared priors, source trust,
+evidence and exposure can produce inspectable divergence. **It is not a complete psychological model
+of a person.** It has no path dependence, memory, personalised information environment, changing
+trust, social interaction, stochastic choice or persistent people.
+
+**Test totals.** Backend 277 (187 pre-B5 → 242 with B5 target-kind evidence → 272 with counterfactual
+evidence → 277 with role-invariance). Frontend 64.
+
+**Outstanding in this milestone:** organisation posture and internal-position distributions, cohort
+distribution buckets, provenance and traces as first-class structured outputs, and the 20-item
+report. No UI work has begun.

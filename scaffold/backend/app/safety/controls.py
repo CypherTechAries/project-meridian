@@ -29,7 +29,37 @@ PACKAGED_SCENARIOS: Final[frozenset[str]] = frozenset({"kestral-strait"})
 # Typed target identifiers: fict:<scenario_id>:<kind>:<entity_id>. The prefix and scenario segment
 # make a cross-world or real-world reference structurally inexpressible rather than merely refused.
 TARGET_PREFIX: Final = "fict"
-TARGET_KINDS: Final[frozenset[str]] = frozenset({"cohort", "agent", "institution"})
+
+# Entity kinds a target may name. CLOSED SET, and each kind means one specific thing.
+#
+#   person        a fictional individual with STABLE IDENTITY WITHIN THE ACTIVE SCENARIO AND RUN,
+#                 carrying beliefs, attitudes, bounded emotions, stance and behaviour propensities.
+#                 Persistence across saved sessions or runs is NOT implemented and is not claimed.
+#   organisation  a fictional formal collective actor with membership, official position, internal
+#                 position distribution, objectives, cohesion and posture. NO emotion vector.
+#   cohort        an aggregate fictional population group used for population-weighted modelling.
+#                 Not a person and not a list of persons.
+#   agent         LEGACY P0.5 scenario-actor type, resolving only to the existing
+#                 `institutional_agents` registry. NOT a generic target kind and NOT used for
+#                 belief-slice entities.
+#
+# The six legacy agent records are role-scoped - identified by office, not by person, and none
+# carries a personal name. Four are singular offices; two (intelligence_lead, strategic_comms)
+# denote a lead function that may be a post or a team. They are heterogeneous and are deliberately
+# NOT folded into `person` or `organisation`.
+#
+# CHANGED 20 July 2026 for the Belief Formation and Divergence Slice:
+#   + person, + organisation  - that milestone models named fictional people and organisations,
+#                               which the previous vocabulary could not express at all.
+#   - institution             - REMOVED. No scenario declared an `institutions` collection, so the
+#                               kind resolved to nothing and could never appear in a valid target.
+#                               A kind that cannot resolve is surface area with no purpose.
+#
+# Net effect is a widening of two and a tightening of one. It does not weaken fictional-only
+# resolution: a target must still carry the 'fict:' prefix, name the ACTIVE world, and RESOLVE in
+# that world's registry, which is built solely from scenario data. No real person or organisation
+# becomes addressable, whatever its kind.
+TARGET_KINDS: Final[frozenset[str]] = frozenset({"cohort", "agent", "person", "organisation"})
 
 # ── B5-04 ────────────────────────────────────────────────────────────────────────────────────────
 # Protected/sensitive traits and project-declared proxies. Rejected as targeting, ranking,

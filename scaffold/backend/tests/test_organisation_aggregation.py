@@ -1,0 +1,388 @@
+"""
+Organisation aggregation — a collective actor, not a person with one mind.
+
+The twenty required proofs, including the one that matters most: the official position is NOT the
+weighted mean. The broadcaster is the demonstration — its mean reads as leaning supportive while
+half the body is undecided, and the governance rule correctly withholds a position.
+"""
+
+from __future__ import annotations
+
+import ast
+import inspect
+import io
+import tokenize
+
+import pytest
+
+from app.simulation.belief import cast
+from app.simulation.belief import organisations as orgmod
+from app.simulation.belief.organisations import (
+    FIRM_POSITION_COHESION,
+    ActionDirection,
+    OfficialPosition,
+    OrganisationInput,
+    OrganisationResult,
+    PositionStrength,
+    aggregate,
+)
+
+ORG_IDS = ["national-government", "public-broadcaster", "coastal-workers-union"]
+EV = cast.SHARED_EVENT
+EXPOSURE = {e["entity_id"]: e for e in cast.EXPOSURES}
+
+
+def weight(oid: str) -> float:
+    e = EXPOSURE[oid]
+    return (
+        e["intensity"] * e["relay"]
+        * cast.SOURCE_TRUST[oid][EV["source_category"]]
+        * EV["evidence_strength"] * cast.RELEVANCE[oid]
+    )
+
+
+def build(oid: str, **over) -> OrganisationInput:
+    o = next(x for x in cast.ORGANISATIONS if x["organisation_id"] == oid)
+    base = dict(
+        internal_blocs=dict(o["internal_blocs"]),
+        cohesion=o["cohesion"],
+        prior_alignment=o["official_alignment"],
+        update_weight=weight(oid),
+        target_alignment=1.0,
+        objectives=tuple(o["objectives"]),
+    )
+    base.update(over)
+    return OrganisationInput(**base)
+
+
+def run(oid: str, **over) -> OrganisationResult:
+    return aggregate(build(oid, **over))
+
+
+def executable_source(module) -> str:
+    src = inspect.getsource(module)
+    toks = [t for t in tokenize.generate_tokens(io.StringIO(src).readline)
+            if t.type != tokenize.COMMENT]
+    tree = ast.parse(tokenize.untokenize(toks))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            b = node.body
+            if (b and isinstance(b[0], ast.Expr) and isinstance(b[0].value, ast.Constant)
+                    and isinstance(b[0].value.value, str)):
+                b.pop(0)
+    return ast.unparse(tree)
+
+
+def test_01_all_three_organisations_produce_structured_results() -> None:
+    for oid in ORG_IDS:
+        r = run(oid)
+        assert r.status == "AGGREGATED"
+        assert r.official_position is not None
+        assert r.position_strength is not None
+        assert r.governance_rule
+        assert r.objectives
+        assert r.explanation["rule_version"] == "org-aggregate-v1"
+
+
+def test_02_internal_distributions_reconcile() -> None:
+    for oid in ORG_IDS:
+        assert sum(run(oid).internal_distribution.values()) == pytest.approx(1.0, abs=1e-6)
+
+
+def test_03_official_alignment_is_bounded() -> None:
+    for oid in ORG_IDS:
+        for w in (0.0, 0.5, 1.0):
+            r = run(oid, update_weight=w)
+            assert 0.0 <= r.resulting_alignment <= 1.0
+
+
+def test_04_action_intensity_is_bounded_and_non_negative() -> None:
+    for oid in ORG_IDS:
+        for w in (0.0, 0.5, 1.0):
+            assert 0.0 <= run(oid, update_weight=w).action_intensity <= 1.0
+
+
+def test_05_identical_inputs_give_identical_outputs() -> None:
+    common = dict(internal_blocs={"support": 0.6, "oppose": 0.2, "uncertain": 0.2},
+                  cohesion=0.7, prior_alignment=0.4, update_weight=0.2)
+    outs = [run(o, **common) for o in ORG_IDS]
+    assert len({r.resulting_alignment for r in outs}) == 1
+    assert len({r.official_position for r in outs}) == 1
+
+
+def test_06_07_organisation_id_and_display_name_do_not_affect_calculation() -> None:
+    """Identity reaches the calculation nowhere — OrganisationInput has no id or name field."""
+    fields = set(OrganisationInput.__dataclass_fields__)
+    for forbidden in ("organisation_id", "id", "display_name", "name", "bio", "type"):
+        assert forbidden not in fields
+    a = aggregate(build("national-government"))
+    b = aggregate(build("national-government"))
+    assert a == b
+
+
+def test_08_reordering_internal_blocs_gives_the_same_result() -> None:
+    o = next(x for x in cast.ORGANISATIONS if x["organisation_id"] == "public-broadcaster")
+    forward = run("public-broadcaster", internal_blocs=dict(o["internal_blocs"]))
+    reversed_blocs = dict(reversed(list(o["internal_blocs"].items())))
+    backward = run("public-broadcaster", internal_blocs=reversed_blocs)
+    assert forward.official_position == backward.official_position
+    assert forward.resulting_alignment == backward.resulting_alignment
+    assert forward.action_intensity == backward.action_intensity
+    assert forward.action_direction == backward.action_direction
+
+
+def test_09_10_cohesion_moves_position_strength_monotonically() -> None:
+    blocs = {"support": 0.6, "oppose": 0.2, "uncertain": 0.2}
+    intensities = [
+        run("national-government", internal_blocs=blocs, cohesion=c).action_intensity
+        for c in (0.2, 0.4, 0.6, 0.8, 1.0)
+    ]
+    assert intensities == sorted(intensities), "higher cohesion did not strengthen capacity to act"
+
+    low = run("national-government", internal_blocs=blocs, cohesion=0.3)
+    high = run("national-government", internal_blocs=blocs, cohesion=0.9)
+    assert low.position_strength is PositionStrength.qualified
+    assert high.position_strength is PositionStrength.firm
+    assert low.action_intensity < high.action_intensity
+
+
+def test_11_large_uncertain_bloc_constrains_a_firm_position() -> None:
+    """
+    The broadcaster case, reached through the generic rule with no special-casing: half the body is
+    undecided, so no position is available to assert however the rest leans.
+    """
+    r = run("public-broadcaster")
+    assert r.internal_distribution["uncertain"] == 0.50
+    assert r.cohesion == 0.55
+    assert r.official_position is OfficialPosition.uncertain
+    assert r.position_strength is PositionStrength.withheld
+    assert r.action_direction is ActionDirection.withhold
+    assert r.action_intensity == 0.0
+
+    # Shrink the uncertain bloc and a position becomes available — the constraint is the bloc,
+    # not the organisation.
+    decided = run("public-broadcaster",
+                  internal_blocs={"support": 0.6, "oppose": 0.2, "uncertain": 0.2},
+                  cohesion=0.75)
+    assert decided.official_position is OfficialPosition.support
+    assert decided.position_strength is PositionStrength.firm
+
+
+def test_12_official_position_is_derived_not_copied_from_the_mean() -> None:
+    """
+    CORRECTED. An earlier version of this test claimed the broadcaster was the decisive case,
+    because its mean of 0.55 is above 0.5 and the governance rule returns UNCERTAIN.
+
+    That comparison was inconsistent: it read the governance position through the uncertain band
+    (0.35-0.65) while reading the mean through a bare >0.5 threshold. Judged on the SAME band, a
+    mean of 0.55 also says uncertain - so the broadcaster is a case where the two AGREE, and the
+    flag correctly reports True.
+
+    Genuine divergence is demonstrated below with constructed distributions. What the broadcaster
+    actually demonstrates is different and still valuable: a large undecided bloc plus moderate
+    cohesion WITHHOLDS a firm position. That is about position STRENGTH, not about disagreeing
+    with the mean.
+    """
+    broadcaster = run("public-broadcaster")
+    assert broadcaster.explanation["weighted_mean_for_comparison"] == pytest.approx(0.55)
+    assert broadcaster.explanation["mean_implied_position"] == "uncertain"
+    assert broadcaster.explanation["official_position_equals_weighted_mean"] is True
+    assert broadcaster.position_strength is PositionStrength.withheld
+
+
+def test_12b_governance_can_diverge_from_the_mean() -> None:
+    """A plurality that clears the bar while the mean still reads as undecided, and the reverse."""
+    split = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+        cohesion=0.80, prior_alignment=0.55, update_weight=None, target_alignment=1.0))
+    assert split.official_position is OfficialPosition.support
+    assert split.explanation["mean_implied_position"] == "uncertain"
+    assert split.explanation["official_position_equals_weighted_mean"] is False
+
+    undecided = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.45, "oppose": 0.10, "uncertain": 0.45},
+        cohesion=0.80, prior_alignment=0.60, update_weight=None, target_alignment=1.0))
+    assert undecided.official_position is OfficialPosition.uncertain
+    assert undecided.explanation["mean_implied_position"] == "support"
+    assert undecided.explanation["official_position_equals_weighted_mean"] is False
+
+
+def test_12c_the_flag_is_derived_not_authored() -> None:
+    """It must be able to take BOTH values, and must not depend on which organisation it is."""
+    agrees = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.90, "oppose": 0.05, "uncertain": 0.05},
+        cohesion=0.90, prior_alignment=0.90, update_weight=None, target_alignment=1.0))
+    disagrees = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+        cohesion=0.90, prior_alignment=0.55, update_weight=None, target_alignment=1.0))
+    assert agrees.explanation["official_position_equals_weighted_mean"] is True
+    assert disagrees.explanation["official_position_equals_weighted_mean"] is False
+
+    # Identical inputs under three different organisations produce the same flag.
+    flags = {
+        run(o, internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+            cohesion=0.90, prior_alignment=0.55, update_weight=None
+            ).explanation["official_position_equals_weighted_mean"]
+        for o in ORG_IDS
+    }
+    assert flags == {False}
+
+
+def test_13_missing_internal_distribution_is_unavailable_not_zero() -> None:
+    r = run("national-government", internal_blocs=None)
+    assert r.status == "UNAVAILABLE"
+    assert r.official_position is None
+    assert r.resulting_alignment is None
+    assert r.action_intensity is None
+    assert r.action_intensity != 0.0
+    assert r.action_direction is ActionDirection.unavailable
+    assert "internal_blocs" in r.unavailable_reason
+
+
+def test_14_missing_cohesion_is_unavailable_not_defaulted() -> None:
+    r = run("national-government", cohesion=None)
+    assert r.status == "UNAVAILABLE"
+    assert r.cohesion is None
+    assert r.resulting_alignment is None
+    assert "cohesion" in r.unavailable_reason
+
+
+def test_15_16_17_no_emotion_credence_or_capability_field() -> None:
+    result_fields = set(OrganisationResult.__dataclass_fields__)
+    input_fields = set(OrganisationInput.__dataclass_fields__)
+    for banned in ("emotion", "mood", "personality", "memory", "credence", "belief",
+                   "intelligence", "competence", "susceptibility", "persuadability",
+                   "gullibility", "education", "wealth"):
+        assert not any(banned in f for f in result_fields), f"result carries '{banned}'"
+        assert not any(banned in f for f in input_fields), f"input accepts '{banned}'"
+
+    from app.simulation.belief.schemas import EmotionalState, MessageTarget
+
+    org = MessageTarget(scenario_id=cast.SCENARIO_ID, kind="organisation",
+                        entity_id="national-government")
+    with pytest.raises(Exception):
+        EmotionalState(holder=org, values={})
+
+
+def test_18_registry_order_does_not_affect_results() -> None:
+    forward = {o: run(o).resulting_alignment for o in ORG_IDS}
+    backward = {o: run(o).resulting_alignment for o in reversed(ORG_IDS)}
+    assert forward == backward
+
+
+def test_19_no_organisation_specific_branch_in_executable_code() -> None:
+    src = executable_source(orgmod).lower()
+    for oid in ORG_IDS:
+        assert oid not in src
+    for word in ("government", "broadcaster", "union", "ministry"):
+        assert word not in src, f"aggregation branches on '{word}'"
+
+
+def test_20_explanation_contains_the_required_derivations() -> None:
+    for oid in ORG_IDS:
+        e = run(oid).explanation
+        for key in ("prior_alignment", "target_alignment", "update_weight", "cohesion",
+                    "cohesion_contribution", "delta_alignment", "resulting_alignment",
+                    "internal_distribution", "governance_rule", "position_derivation",
+                    "action_direction", "action_intensity_derivation", "distance_from_neutral",
+                    "decisive_margin", "objectives"):
+            assert key in e, f"{oid} explanation missing {key}"
+        # Biography must never enter a calculation explanation.
+        flat = " ".join(str(v) for v in e.values()).lower()
+        for record in cast.DESCRIPTIVE.values():
+            for text in record.values():
+                assert text.lower() not in flat
+
+
+def test_21_unexposed_organisation_holds_its_distribution_without_moving() -> None:
+    r = run("national-government", update_weight=None)
+    assert r.delta_alignment == 0.0
+    assert r.resulting_alignment == r.prior_alignment
+    assert r.official_position is not None
+
+
+def test_22_non_reconciling_distribution_is_refused() -> None:
+    with pytest.raises(ValueError, match="sum to 1.0"):
+        run("national-government", internal_blocs={"support": 0.5, "oppose": 0.2, "uncertain": 0.1})
+
+
+# ══ DIRECTION AND INTENSITY ARE SEPARATE ═════════════════════════════════════════════════════════
+#
+# The previous single `action_propensity` field multiplied alignment directly, which made a firmly
+# opposing body score near zero purely because opposition sits at the bottom of the support axis.
+# Direction and strength are different questions.
+
+
+def _mirror(alignment: float, cohesion: float, lead: float, unc: float, side: str):
+    """Same structure, mirrored side. Alignment mirrors about neutral."""
+    other = "oppose" if side == "support" else "support"
+    blocs = {side: lead, other: round(1.0 - lead - unc, 10), "uncertain": unc}
+    return aggregate(OrganisationInput(
+        internal_blocs=blocs, cohesion=cohesion, prior_alignment=alignment,
+        update_weight=None, target_alignment=1.0, objectives=("o",)))
+
+
+def test_23_mirrored_support_and_opposition_give_equal_intensity() -> None:
+    """Item 1 and 9. Equal cohesion, equal decisive margin, equal distance from neutral."""
+    sup = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    opp = _mirror(0.20, 0.72, 0.55, 0.25, "oppose")
+    assert sup.action_intensity == pytest.approx(opp.action_intensity, abs=1e-12)
+    assert sup.action_intensity > 0.0
+
+
+def test_24_mirrored_directions_are_opposite() -> None:
+    """Item 2."""
+    sup = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    opp = _mirror(0.20, 0.72, 0.55, 0.25, "oppose")
+    assert sup.action_direction is ActionDirection.support
+    assert opp.action_direction is ActionDirection.oppose
+
+
+def test_25_firm_opposition_can_have_high_intensity() -> None:
+    """
+    Item 8 — the defect this correction fixes. Under the old formula a firm opponent scored near
+    zero. It must now be able to score as high as a mirrored supporter.
+    """
+    opp = _mirror(0.05, 0.95, 0.90, 0.05, "oppose")
+    sup = _mirror(0.95, 0.95, 0.90, 0.05, "support")
+    assert opp.action_intensity > 0.5
+    assert opp.action_intensity == pytest.approx(sup.action_intensity, abs=1e-12)
+
+
+def test_26_neutral_or_withheld_positions_do_not_act_strongly() -> None:
+    """Item 3."""
+    withheld = run("public-broadcaster")
+    assert withheld.action_direction is ActionDirection.withhold
+    assert withheld.action_intensity == 0.0
+
+    near_neutral = _mirror(0.50, 0.90, 0.60, 0.10, "support")
+    assert near_neutral.action_intensity == pytest.approx(0.0, abs=1e-12)
+
+
+def test_27_intensity_rises_with_decisive_margin() -> None:
+    """Item 5."""
+    vals = [
+        _mirror(0.80, 0.80, lead, unc, "support").action_intensity
+        for lead, unc in ((0.55, 0.40), (0.60, 0.30), (0.70, 0.20), (0.85, 0.10))
+    ]
+    assert vals == sorted(vals)
+    assert all(0.0 <= v <= 1.0 for v in vals)
+
+
+def test_28_intensity_ignores_identity_and_bloc_order() -> None:
+    """Items 6 and 7, restated for the new field."""
+    a = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    b = aggregate(OrganisationInput(
+        internal_blocs={"uncertain": 0.25, "oppose": 0.20, "support": 0.55},
+        cohesion=0.72, prior_alignment=0.80, update_weight=None,
+        target_alignment=1.0, objectives=("different objective",)))
+    assert a.action_intensity == b.action_intensity
+    assert a.action_direction == b.action_direction
+
+
+def test_29_missing_inputs_leave_intensity_unavailable() -> None:
+    """Item 10, restated for the new field."""
+    for override in ({"cohesion": None}, {"internal_blocs": None}, {"prior_alignment": None}):
+        r = run("coastal-workers-union", **override)
+        assert r.action_intensity is None
+        assert r.action_direction is ActionDirection.unavailable

@@ -51,8 +51,8 @@ The existing architecture is a foundation for that future. It does not need to b
 | 4 | Baseline, incident and counterfactual runs | **Built** | `POST /api/demo/kestral-strait/run` |
 | 5 | A polished operational interface | **Built** | Strategic Command Centre, merged `cc1cce3` |
 | 6 | Hosted CI and reproducible setup | **Built** | [`P0-3-CI-STATUS.md`](docs/delivery/P0-3-CI-STATUS.md) |
-| 7 | Fictional-world safety controls | **Implemented, in review** | [`docs/safety/B5-TECHNICAL-CONTROLS.md`](docs/safety/B5-TECHNICAL-CONTROLS.md) — all eight controls, 70 tests |
-| 8 | Clear limitations and roadmap | **Partial** | this file; README front door outstanding |
+| 7 | Fictional-world safety controls | **Built** | [`docs/safety/B5-TECHNICAL-CONTROLS.md`](docs/safety/B5-TECHNICAL-CONTROLS.md) — eight controls, merged `7f475e8` |
+| 8 | Clear limitations and roadmap | **Built** | this file; README front door merged `57ac4c1` |
 
 **Item 7 is the substantive remaining engineering, and it comes first.** Founder decision of
 19 July 2026: implement and verify the B5 controls **before** the belief milestone begins. Blocker B5 was *decided* on 18 July 2026 and
@@ -77,13 +77,13 @@ LLM execution (C2). "Replay-capable" is a standing prohibited phrase.
 | Step | Action | Status |
 |---|---|---|
 | 1 | Complete and merge the current visual work | **Done** — PR #4 merged to `main` |
-| 2 | Implement and verify the eight B5 technical controls | **In review** — `feat/b5-publication-controls`, not merged |
-| 3 | Prepare the public repository front door | Not started |
-| 4 | Prepare the licence decision pack | Not started |
-| 5 | Run one bounded release review | Not started |
-| 6 | **Stop for explicit founder approval before changing visibility** | Gate |
-| 7 | Publish v0.1 only after approval | Gate |
-| 8 | Begin the bounded Belief Formation and Divergence Slice | First post-v0.1 milestone |
+| 2 | Implement and verify the eight B5 technical controls | **Done** — merged `7f475e8` |
+| 3 | Prepare the public repository front door | **Done** — merged `57ac4c1` |
+| 4 | Licence position | **Done** — source available, all rights reserved; no LICENSE added |
+| 5 | Bounded release review | **Done** — 17/17 passed |
+| 6 | Founder approval before visibility change | **Given** 20 July 2026 |
+| 7 | Publish v0.1 | **Done** — PUBLIC, tag `v0.1.0` |
+| 8 | Belief Formation and Divergence Slice | **In progress** — `feat/belief-divergence-slice` |
 
 Step 6 is absolute. Repository visibility does not change without explicit founder approval, and no
 agent may treat any earlier approval as covering it.
@@ -140,6 +140,51 @@ evidence recorded in `docs/delivery/`.
 
 These versions are indicative, not contractual. The distinction that *is* binding is between public
 proof (v0.1) and enduring platform (v0.2 onward).
+
+### Queued: public plain-language refresh
+
+**Recorded 20 July 2026. Not started, and deliberately NOT applied during the active engine
+milestone.** MERIDIAN's strongest ideas are currently discoverable only inside design documents,
+formulas and commit messages. The public page explains the architecture before it explains the
+product.
+
+When the belief-divergence milestone is reviewed and merged, branch
+`docs/public-plain-language-refresh` will: create the canonical message bank at
+`docs/communications/PLAIN-LANGUAGE-MERIDIAN.md`; restructure the README opening so the first
+screenful is logo -> headline -> one plain sentence -> fictional disclosure -> real Briefing
+screenshot -> what you are looking at -> three or four plain-language statements; add a "What
+MERIDIAN is trying to make visible" section; and caption every screenshot with its implementation
+status and engine-versus-fixture disclosure.
+
+**The governing rule:** every important mechanism carries two descriptions - plain-language first,
+technical second - and no statement appears as current capability until its implementation is
+merged, tested and evidenced. Unmerged belief and organisation work must not be published as
+current.
+
+**The public writing rule (added 20 July 2026).** Every important public idea needs three parts: a
+short plain-English statement, a concrete everyday example directly beneath it, and a clear
+statement of what MERIDIAN does or does not know.
+
+**The ten-year-old reading test.** A ten-year-old should be able to read the paragraph and explain
+it back in one sentence. Plain English is not childish language - the idea stays serious, the words
+stay ordinary.
+
+Words to avoid near the top of the README unless immediately explained: distribution, denominator,
+aggregate, weighted, provenance, contextual, divergence, cohort, epistemic, state mass, alignment,
+propensity, mechanism. Prefer: groups, people, what they saw, what they believe, what changed, why
+it changed, where the information came from, what the system knows, what it does not know.
+
+Worked correction, kept as the calibration example. TOO ACADEMIC: "A population average cannot tell
+you how many people agree, disagree or remain uncertain." RIGHT REGISTER: "An average can hide what
+is really happening. A score of 5 out of 10 could mean everyone is unsure - or that half strongly
+agree and half strongly disagree. If MERIDIAN does not know which, it says so instead of guessing."
+
+Message-bank entries carry: heading, one-sentence explanation, concrete example, implementation
+status, supporting evidence, wording to avoid. Seven canonical statements are approved and held for
+transcription when the bank is created.
+
+The page should make a visitor notice, then understand, then care, and only then inspect how it
+works.
 
 ### Where existing planning work lands
 
