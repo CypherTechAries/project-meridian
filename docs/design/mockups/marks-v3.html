@@ -1,0 +1,258 @@
+<!doctype html>
+<meta charset="utf-8"><title>MERIDIAN — Organisation marks v3</title>
+<!-- DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE. Original vector work. No real logo referenced. -->
+<style>
+  :root{--void:#05080d;--base:#070b12;--panel:#0b1119;--inset:#060a10;--line:#16202e;
+        --line-strong:#1f2d3f;--hi:#eef4fc;--mid:#b6c6d8;--low:#8b9db1;--faint:#6b7d92;
+        --cyan:#35c8e0;--violet:#b98cf0;--amber:#f0a742;--green:#4fd18b;--silver:#c8d4e0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--void);color:var(--hi);font:400 15px/1.55 "Inter","Segoe UI",sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .screen{width:1440px;border:1px solid var(--line);background:
+    radial-gradient(1000px 500px at 25% -8%,rgba(53,200,224,.06),transparent 60%),var(--base)}
+  .fict{display:flex;gap:24px;padding:7px 26px;background:var(--inset);
+        border-bottom:1px solid var(--line);font:600 10.5px/1 sans-serif;letter-spacing:.13em}
+  .fict .a{color:var(--cyan)} .fict .b{color:var(--amber)}
+  .sect{padding:26px 26px 0}
+  .sect h2{font:700 11px/1 sans-serif;letter-spacing:.2em;color:var(--faint);padding-bottom:12px;
+    margin-bottom:18px;border-bottom:1px solid var(--line);display:flex;align-items:baseline;gap:12px}
+  .sect h2 em{font-style:normal;opacity:.55;letter-spacing:.04em;font-weight:500}
+  .sect h2 .tag{margin-left:auto;font-size:11.5px;letter-spacing:.05em;text-transform:none}
+  h1{font:600 32px/1.12 sans-serif;letter-spacing:-.02em}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .card.pick{border-color:rgba(79,209,139,.45)}
+  .stage{padding:24px;display:flex;align-items:center;justify-content:center;min-height:190px;
+    background:radial-gradient(340px 190px at 50% 40%,rgba(255,255,255,.032),transparent 70%),var(--inset);
+    border-bottom:1px solid var(--line)}
+  .meta{padding:15px}
+  .nm{font:600 15.5px/1.25 sans-serif;margin-bottom:4px}
+  .ty{font-size:12.5px;color:var(--faint);margin-bottom:11px}
+  .row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:12.5px;
+       border-top:1px solid var(--line)}
+  .row .k{color:var(--faint);font:600 9px/1.5 sans-serif;letter-spacing:.12em}
+  .row .v{color:var(--mid);text-align:right}
+  .sizes{display:flex;gap:16px;align-items:flex-end;padding:13px 15px;
+         border-top:1px solid var(--line);background:var(--inset)}
+  .sizes figure{text-align:center} .sizes figcaption{font-size:10px;color:var(--faint);margin-top:5px}
+  .mono{filter:grayscale(1) brightness(1.8)}
+  .verdict{padding:10px 15px;font:600 10.5px/1.5 sans-serif;letter-spacing:.1em}
+  .verdict.y{background:rgba(79,209,139,.1);color:var(--green);border-top:1px solid rgba(79,209,139,.3)}
+  .verdict.n{background:rgba(97,116,138,.08);color:var(--faint);border-top:1px solid var(--line)}
+  .wordmark{display:flex;align-items:center;gap:11px}
+  .wm-txt{font:700 13px/1.15 "Inter",sans-serif;letter-spacing:.15em;color:var(--silver)}
+  .wm-txt small{display:block;font:600 8.5px/1.4 sans-serif;letter-spacing:.26em;
+                color:var(--faint);margin-top:3px}
+  .cap{padding:12px 26px 22px;font-size:12.5px;color:var(--faint)}
+</style>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <!-- GOVERNMENT — approved, final -->
+  <symbol id="gov" viewBox="0 0 120 120">
+    <path d="M60 12 104 27v40c0 25-18 42-44 51-26-9-44-26-44-51V27z" fill="none" stroke="#f0a742"
+          stroke-width="2.6" opacity=".85"/>
+    <path d="M60 20 96 32v34c0 21-15 35-36 43-21-8-36-22-36-43V32z" fill="rgba(240,167,66,.06)"/>
+    <path d="M60 34 66 60 92 66 66 72 60 98 54 72 28 66 54 60z" fill="#f0a742" opacity=".92"/>
+    <circle cx="60" cy="66" r="5.5" fill="#0b0d10" stroke="#f0a742" stroke-width="2"/>
+    <path d="M32 84h56" stroke="#f0a742" stroke-width="2" opacity=".55"/></symbol>
+  <symbol id="gov-sm" viewBox="0 0 120 120">
+    <path d="M60 14 100 30v36c0 24-17 40-40 48-23-8-40-24-40-48V30z" fill="none" stroke="#f0a742"
+          stroke-width="7"/>
+    <path d="M60 34 68 58 92 66 68 74 60 98 52 74 28 66 52 58z" fill="#f0a742"/></symbol>
+
+  <!-- UNION — refined chain: links become flattened dock-cleat forms, rope seizing at the joint -->
+  <symbol id="un" viewBox="0 0 120 120">
+    <rect x="16" y="16" width="88" height="88" rx="20" fill="rgba(79,209,139,.06)" stroke="#4fd18b"
+          stroke-width="2.4" opacity=".9"/>
+    <rect x="28" y="47" width="38" height="26" rx="8" fill="none" stroke="#2f8f60" stroke-width="6.5"/>
+    <rect x="54" y="47" width="38" height="26" rx="8" fill="none" stroke="#4fd18b" stroke-width="6.5"/>
+    <path d="M54 53a12 12 0 0 0 0 14" stroke="#0b1119" stroke-width="6.5" fill="none"/>
+    <path d="M66 53a12 12 0 0 1 0 14" stroke="#4fd18b" stroke-width="6.5" fill="none"/>
+    <path d="M56 44v32M64 44v32" stroke="#0b1119" stroke-width="2.4"/>
+    <path d="M56 44v32M64 44v32" stroke="#4fd18b" stroke-width="1.4" opacity=".55"/></symbol>
+  <symbol id="un-sm" viewBox="0 0 120 120">
+    <rect x="20" y="44" width="46" height="32" rx="9" fill="none" stroke="#2f8f60" stroke-width="10"/>
+    <rect x="54" y="44" width="46" height="32" rx="9" fill="none" stroke="#4fd18b" stroke-width="10"/>
+    <path d="M54 52a14 14 0 0 0 0 16" stroke="#0b1119" stroke-width="10" fill="none"/>
+    <path d="M66 52a14 14 0 0 1 0 16" stroke="#4fd18b" stroke-width="10" fill="none"/></symbol>
+
+  <!-- BROADCASTER A — NPB monogram with asymmetric signal bars -->
+  <symbol id="bcA" viewBox="0 0 120 120">
+    <rect x="14" y="26" width="92" height="68" rx="9" fill="rgba(185,140,240,.06)" stroke="#b98cf0"
+          stroke-width="2.4"/>
+    <text x="52" y="72" font-family="Inter,Segoe UI,sans-serif" font-size="30" font-weight="700"
+          letter-spacing="1" fill="#d9c2fb" text-anchor="middle">NPB</text>
+    <rect x="80" y="58" width="5" height="12" rx="2.5" fill="#b98cf0"/>
+    <rect x="88" y="51" width="5" height="19" rx="2.5" fill="#b98cf0" opacity=".78"/>
+    <rect x="96" y="43" width="5" height="27" rx="2.5" fill="#b98cf0" opacity=".55"/></symbol>
+  <symbol id="bcA-sm" viewBox="0 0 120 120">
+    <rect x="8" y="30" width="104" height="60" rx="10" fill="none" stroke="#b98cf0" stroke-width="7"/>
+    <text x="52" y="76" font-family="Inter,Segoe UI,sans-serif" font-size="42" font-weight="700"
+          fill="#d9c2fb" text-anchor="middle">NPB</text>
+    <rect x="84" y="58" width="7" height="16" rx="3" fill="#b98cf0"/>
+    <rect x="95" y="46" width="7" height="28" rx="3" fill="#b98cf0" opacity=".7"/></symbol>
+
+  <!-- BROADCASTER B — NPB inside a restrained broadcast aperture (asymmetric opening arc) -->
+  <symbol id="bcB" viewBox="0 0 120 120">
+    <path d="M60 18a42 42 0 1 1-30 71" fill="none" stroke="#b98cf0" stroke-width="5"
+          stroke-linecap="round"/>
+    <path d="M60 32a28 28 0 1 1-20 47" fill="none" stroke="#b98cf0" stroke-width="3.4"
+          stroke-linecap="round" opacity=".55"/>
+    <text x="60" y="70" font-family="Inter,Segoe UI,sans-serif" font-size="26" font-weight="700"
+          letter-spacing="1" fill="#d9c2fb" text-anchor="middle">NPB</text></symbol>
+  <symbol id="bcB-sm" viewBox="0 0 120 120">
+    <path d="M60 14a46 46 0 1 1-33 78" fill="none" stroke="#b98cf0" stroke-width="9"
+          stroke-linecap="round"/>
+    <text x="60" y="74" font-family="Inter,Segoe UI,sans-serif" font-size="40" font-weight="700"
+          fill="#d9c2fb" text-anchor="middle">NPB</text></symbol>
+
+  <!-- BROADCASTER C — horizon + waveform, horizontal lockup -->
+  <symbol id="bcC" viewBox="0 0 120 120">
+    <rect x="12" y="34" width="96" height="52" rx="6" fill="rgba(185,140,240,.06)" stroke="#b98cf0"
+          stroke-width="2.2"/>
+    <path d="M22 60h9l5-13 6 26 6-19 5 10 5-5 5 8h39" fill="none" stroke="#d9c2fb" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M22 74h76" stroke="#b98cf0" stroke-width="2.4" opacity=".5"/></symbol>
+  <symbol id="bcC-sm" viewBox="0 0 120 120">
+    <path d="M10 60h12l7-22 9 44 9-33 7 17 7-9 8 14h41" fill="none" stroke="#d9c2fb"
+          stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</defs></svg>
+
+<section class="screen" id="s1">
+  <div class="fict"><span class="a">◈ FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION</span>
+    <span class="b">DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE</span></div>
+  <div class="sect" style="padding-bottom:6px">
+    <h1>Organisation identities — final pass</h1>
+    <p style="color:var(--low);font-size:14.5px;margin-top:8px;max-width:980px">Government approved.
+      Union refined toward dock-cleat geometry. Broadcaster restarted as three typography-led
+      directions — the mast composition is abandoned, not repaired.</p>
+  </div>
+
+  <div class="sect">
+    <h2>NATIONAL GOVERNMENT <em>— approved</em>
+      <span class="tag" style="color:var(--green)">✓ all eight gates re-run</span></h2>
+    <div class="g3">
+      <div class="card pick"><div class="stage"><svg width="140" height="140"><use href="#gov"/></svg></div>
+        <div class="meta"><div class="nm">Full mark — APPROVED</div>
+          <div class="ty">Compass rose in a restrained shield</div>
+          <div class="row"><span class="k">USE</span><span class="v">≥56px</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#gov"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#gov"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#gov"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="34" height="34"><use href="#gov"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict y">✓ APPROVED</div></div>
+      <div class="card pick"><div class="stage"><svg width="140" height="140"><use href="#gov-sm"/></svg></div>
+        <div class="meta"><div class="nm">Compact mark — APPROVED</div>
+          <div class="ty">Heavier stroke, four points, no rule</div>
+          <div class="row"><span class="k">USE</span><span class="v">≤34px, favicon</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#gov-sm"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#gov-sm"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#gov-sm"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="20" height="20"><use href="#gov-sm"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict y">✓ APPROVED</div></div>
+      <div class="card"><div class="stage"><div class="wordmark">
+          <svg width="52" height="52"><use href="#gov-sm"/></svg>
+          <div class="wm-txt">NATIONAL<br>GOVERNMENT<small>KESTRAL STRAIT · FICTIONAL</small></div></div></div>
+        <div class="meta"><div class="nm">Horizontal lockup</div>
+          <div class="ty">Compact mark plus wordmark</div>
+          <div class="row"><span class="k">USE</span><span class="v">dossier header</span></div></div>
+        <div class="verdict y">✓ APPROVED</div></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h2>COASTAL WORKERS' UNION <em>— direction C refined</em>
+      <span class="tag" style="color:var(--green)">✓ not a molecule · not a crypto mark</span></h2>
+    <div class="g3">
+      <div class="card pick"><div class="stage"><svg width="140" height="140"><use href="#un"/></svg></div>
+        <div class="meta"><div class="nm">Refined mark — RECOMMENDED</div>
+          <div class="ty">Links flattened toward dock-cleat geometry, rope seizing at the joint</div>
+          <div class="row"><span class="k">CHANGED</span><span class="v">rounded links → flattened
+            cleat forms; twin seizing lines added</span></div>
+          <div class="row"><span class="k">READS AS</span><span class="v">maritime labour, not a chain
+            retailer</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#un"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#un-sm"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#un-sm"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="20" height="20"><use href="#un-sm"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict y">✓ SILHOUETTE HOLDS AT 20PX</div></div>
+      <div class="card"><div class="stage"><div class="wordmark">
+          <svg width="52" height="52"><use href="#un-sm"/></svg>
+          <div class="wm-txt">COASTAL<br>WORKERS’ UNION<small>KESTRAL STRAIT · FICTIONAL</small></div></div></div>
+        <div class="meta"><div class="nm">Horizontal lockup</div><div class="ty">Compact mark plus wordmark</div>
+          <div class="row"><span class="k">USE</span><span class="v">dossier header</span></div></div>
+        <div class="verdict y">✓ APPROVED</div></div>
+      <div class="card" style="opacity:.6"><div class="stage" style="color:var(--faint);font-size:12.5px;
+        text-align:center;padding:44px 24px;line-height:1.7">Gates re-run after the refinement:<br><br>
+        gender-symbol ✓<br>anthropomorphic-figure ✓<br>real-company ✓<br>national-emblem ✓<br>
+        party-mark ✓<br>religious ✓<br>extremist ✓<br>copyrighted-fictional ✓</div>
+        <div class="meta"><div class="nm">Gate record</div>
+          <div class="ty">All eight, after every change — not only the one that failed</div></div></div>
+    </div>
+  </div>
+
+  <div class="sect" style="padding-bottom:26px">
+    <h2>NORTHSHORE PUBLIC BROADCAST <em>— restarted, three typography-led directions</em>
+      <span class="tag" style="color:var(--amber)">◈ mast composition abandoned, not repaired</span></h2>
+    <div class="g3">
+      <div class="card pick"><div class="stage"><svg width="150" height="150"><use href="#bcA"/></svg></div>
+        <div class="meta"><div class="nm">A — monogram + signal bars <span style="color:var(--green)">◄ RECOMMENDED</span></div>
+          <div class="ty">NPB with three ascending bars, right-weighted</div>
+          <div class="row"><span class="k">AT 20PX</span><span class="v">NPB legible, bars survive as mass</span></div>
+          <div class="row"><span class="k">RISK</span><span class="v">bars could read as signal
+            strength — which is correct here</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#bcA"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#bcA-sm"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#bcA-sm"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="20" height="20"><use href="#bcA-sm"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict y">✓ CLEAREST AT 20PX</div></div>
+      <div class="card"><div class="stage"><svg width="150" height="150"><use href="#bcB"/></svg></div>
+        <div class="meta"><div class="nm">B — monogram in a broadcast aperture</div>
+          <div class="ty">NPB inside an asymmetric opening arc</div>
+          <div class="row"><span class="k">AT 20PX</span><span class="v">arc thins; monogram carries it</span></div>
+          <div class="row"><span class="k">RISK</span><span class="v">open circle can read as a
+            loading spinner</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#bcB"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#bcB-sm"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#bcB-sm"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="20" height="20"><use href="#bcB-sm"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict n">◈ VIABLE, SECOND CHOICE</div></div>
+      <div class="card"><div class="stage"><svg width="150" height="150"><use href="#bcC"/></svg></div>
+        <div class="meta"><div class="nm">C — waveform and horizon</div>
+          <div class="ty">Transmission waveform crossing a horizon line</div>
+          <div class="row"><span class="k">AT 20PX</span><span class="v">waveform collapses to a
+            scribble</span></div>
+          <div class="row"><span class="k">RISK</span><span class="v">reads as audio editing, not
+            broadcasting</span></div></div>
+        <div class="sizes">
+          <figure><svg width="56" height="56"><use href="#bcC"/></svg><figcaption>56</figcaption></figure>
+          <figure><svg width="34" height="34"><use href="#bcC-sm"/></svg><figcaption>34</figcaption></figure>
+          <figure><svg width="20" height="20"><use href="#bcC-sm"/></svg><figcaption>20</figcaption></figure>
+          <figure class="mono"><svg width="20" height="20"><use href="#bcC-sm"/></svg><figcaption>mono</figcaption></figure></div>
+        <div class="verdict n">◈ FAILS THE 20PX TEST</div></div>
+    </div>
+    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div class="card"><div class="stage" style="min-height:110px"><div class="wordmark">
+          <svg width="54" height="54"><use href="#bcA-sm"/></svg>
+          <div class="wm-txt">NORTHSHORE<br>PUBLIC BROADCAST<small>KESTRAL STRAIT · FICTIONAL</small></div></div></div>
+        <div class="meta"><div class="nm">Direction A — full wordmark lockup</div>
+          <div class="ty">Compact mark plus complete organisation name</div></div>
+        <div class="verdict y">✓ RECOMMENDED FOR THE DOSSIER HEADER</div></div>
+      <div class="card" style="opacity:.6"><div class="stage" style="min-height:110px;
+        color:var(--faint);font-size:12.5px;text-align:center;line-height:1.7;padding:22px">
+        Gates re-run on all three directions:<br>
+        gender-symbol ✓ · anthropomorphic-figure ✓ · real-company ✓ · national-emblem ✓<br>
+        party-mark ✓ · religious ✓ · extremist ✓ · copyrighted-fictional ✓</div>
+        <div class="meta"><div class="nm">Gate record</div>
+          <div class="ty">A typography-led mark cannot produce a body or a stem-and-circle</div></div></div>
+    </div>
+  </div>
+  <div class="cap">MOCKUP v3 · marks final. Direction A is recommended: at 20px an NPB monogram is
+    unambiguous where every abstract broadcasting symbol tried so far has been read as something
+    else. The mast is abandoned rather than repaired — two failed gates on one composition is
+    the composition telling us something.</div>
+</section>

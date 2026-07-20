@@ -1,114 +1,85 @@
 # Portrait model licence review
 
-**Reviewed 20 July 2026.** Terms below were read from the licence text or model card at the URLs
-given, not from third-party summaries. Where a model card states a licence *name* but not its
-terms, the licence file itself was fetched — that distinction is the reason this document exists.
+**Reviewed 20 July 2026.** Terms read from the licence text or model card at the URLs given, not
+from third-party summaries.
 
-**No generated portrait may enter the repository before a candidate here is marked APPROVED and the
-founder accepts the recommendation.**
-
----
-
-## Correction to an earlier statement of mine
-
-In `IDENTITY-ASSET-PIPELINE.md` I wrote that FLUX.1-dev is *"non-commercial and therefore unsuitable
-if MERIDIAN ever commercialises."*
-
-**That was too strong and is corrected here.** The FLUX.1-dev model card states: *"Generated outputs
-can be used for personal, scientific, and commercial purposes."* The **weights** are restricted to
-non-commercial use; the **outputs** are not. Since MERIDIAN would use the model offline to author
-assets and would never redistribute weights, FLUX.1-dev is a legitimate candidate rather than a
-disqualified one.
-
-I have not read the full FLUX.1-dev licence file, only the model card statement, so it is marked
-**REQUIRES LEGAL REVIEW** rather than approved.
+**FOUNDER DECISION, 20 July 2026: the offline Colab route is approved. Primary model
+`FLUX.2 [klein] 4B`. Fallback `FLUX.1-schnell`. SDXL and FLUX.1-dev are NOT used in this proof
+pack.** This is approval for a bounded fictional portrait study — not approval to distribute model
+weights, bundle model code, or make broader legal claims.
 
 ---
 
-## Candidate 1 — FLUX.1-schnell
+## CORRECTION — "nothing to propagate" was wrong
+
+I previously described Apache 2.0 as carrying *"nothing to propagate downstream."* **That is too
+broad and is withdrawn.**
+
+Apache 2.0 imposes conditions when you **distribute the licensed work or a derivative** — retaining
+copyright, patent, trademark and attribution notices, including a copy of the licence, marking
+modified files, and passing on any `NOTICE` file. Those obligations attach to the model and its
+code, not to a generated image. They become live the moment MERIDIAN redistributes either.
+
+**The clean engineering posture for this study, adopted:**
+
+| | |
+|---|---|
+| Model weights committed? | **No** |
+| Cached model files committed? | **No** |
+| Third-party inference code copied into MERIDIAN? | **No** |
+| Access tokens or Colab credentials committed? | **No** |
+| `NOTICE` file present in this repository? | **No** — none required, because nothing licensed is redistributed |
+| What enters the repository | **Only manually approved PNG outputs, plus a sidecar record** |
+| Attribution retained | Model name, exact revision, licence and source URL recorded in every sidecar **even where not strictly required for a generated image** |
+
+The generation notebook stays **outside** this repository until it has been checked for secrets,
+machine paths, caches and third-party code. If a clean notebook is later committed it must contain
+only MERIDIAN-authored orchestration and installation *references* — never vendored inference code.
+
+**This is a practical engineering decision, not legal advice.** Commercially distributing bundled
+model components would need dedicated legal review.
+
+---
+
+## Selected model — FLUX.2 [klein] 4B
 
 | Field | Value |
 |---|---|
-| Exact model name | `black-forest-labs/FLUX.1-schnell` |
-| Version | FLUX.1 [schnell], 12B parameters, Safetensors |
-| Official source | https://huggingface.co/black-forest-labs/FLUX.1-schnell |
-| Weights licence | **Apache 2.0** (`apache-2.0`) |
-| Model/code licence | Apache 2.0 |
-| Commercial use | **Permitted.** Card states the model "can be used for personal, scientific, and commercial purposes" |
-| Generated-output terms | No separate output provision; Apache 2.0 imposes none |
-| Attribution | Standard Apache 2.0 notice retention |
-| Redistribution | Permitted under Apache 2.0 |
-| Other restrictions | **None use-based** — this is the material difference from OpenRAIL |
-| Licence URL reviewed | Model card, 20 July 2026 |
-| Weights hash | Not recorded — **must be captured at download** |
+| Model repository | `black-forest-labs/FLUX.2-klein-4B` |
+| Official source | https://huggingface.co/black-forest-labs/FLUX.2-klein-4B · https://github.com/black-forest-labs/flux2 |
+| Weights licence | **Apache 2.0** |
+| Commercial use | Permitted |
+| Consumer-hardware suitability | Stated by the vendor; the reason it is preferred over the 12B schnell package for a small proof pack |
+| Exact revision | **NOT YET PINNED** — must be captured at download |
+| Weight hash | **NOT YET CAPTURED** |
 | **Decision** | **APPROVED FOR PORTRAIT STUDY** |
 
-**Why this is the recommendation.** Apache 2.0 carries no use-based restrictions, so nothing has to
-be propagated to downstream users of MERIDIAN, and no clause interacts with a repository that is
-"source available, all rights reserved". It is the only candidate with no ongoing obligation.
+### A pinning hazard worth naming
 
-## Candidate 2 — Stable Diffusion XL base 1.0
+The `FLUX.2-klein` family contains **several repositories, and they do not share one licence.**
+Search results list `FLUX.2-klein-4B`, `FLUX.2-klein-4b-nvfp4`, `FLUX.2-klein-base-4b-fp8`,
+`FLUX.2-klein-9b-fp8` and `FLUX.2-klein-base-9b-fp8`. **The 4B variants are Apache 2.0; the 9B
+variants are under the FLUX.2-dev Non-Commercial Licence.**
 
-| Field | Value |
-|---|---|
-| Exact model name | `stabilityai/stable-diffusion-xl-base-1.0` |
-| Version | SDXL base 1.0 |
-| Official source | https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0 |
-| Weights licence | **CreativeML Open RAIL++-M** (`LICENSE.md`) |
-| Commercial use | **Permitted** — perpetual, worldwide, royalty-free; a fee may be charged on redistribution |
-| Generated-output terms | **"Licensor claims no rights in the Output You generate using the Model."** Outputs are unencumbered |
-| Attribution | Must retain all copyright, patent, trademark and attribution notices |
-| Redistribution | Permitted, **with obligations** — see below |
-| Other restrictions | **Use-based restrictions (Attachment A)**, including: no unlawful use · no harm to minors · **no creating or spreading deliberately false information intended to harm others** · no PII generation for harmful purposes · no defamation or harassment · no fully automated decisions affecting legal rights · no discrimination on protected characteristics · no medical advice · no law-enforcement, immigration, asylum or crime-prediction use |
-| Downstream obligation | Must make the use-based restrictions an **enforceable provision** for recipients, **give notice** to subsequent users, and **supply a copy of the licence** |
-| Licence URL reviewed | `.../raw/main/LICENSE.md`, 20 July 2026 |
-| **Decision** | **APPROVED FOR PORTRAIT STUDY**, with one noted consideration |
+So "FLUX.2 klein" is not by itself a licence statement. Pulling the wrong repository — easily done,
+since the names differ by three characters — silently changes the terms from permissive to
+non-commercial. **The sidecar must record the exact repository and revision, not the family name.**
 
-**The consideration, stated plainly rather than waved past.** Attachment A prohibits using the model
-to *"create or spread deliberately false information intended to harm others."* MERIDIAN generates
-**portraits of admittedly fictional people, labelled FICTIONAL in the interface, inside a simulation
-that exists to study how false claims move through an invented society.** That is not deception and
-is not aimed at harming anyone — but it is close enough to the clause's subject matter that it
-should be a conscious decision, not an assumption.
+I have not read the FLUX.2-klein-4B `LICENSE` file directly; the Hugging Face page returned HTTP 401
+to my fetch. The Apache 2.0 designation above comes from the vendor's own licensing page and
+repository listing. **Before generation, open the model repository and confirm the licence file in
+place**, then record its hash.
 
-The downstream-notice obligation attaches to redistributing the **model**, which MERIDIAN would not
-do. Outputs are explicitly unencumbered. So the practical risk is low — but Apache 2.0 has no such
-clause to reason about at all, which is why FLUX.1-schnell is preferred.
+## Fallback — FLUX.1-schnell
 
-## Candidate 3 — FLUX.1-dev
+`black-forest-labs/FLUX.1-schnell`, Apache 2.0, 12B, model card read directly 20 July 2026.
+**Use only if the primary cannot produce convincing, consistent portraits — and record why.**
+Do not switch silently.
 
-| Field | Value |
-|---|---|
-| Exact model name | `black-forest-labs/FLUX.1-dev` |
-| Official source | https://huggingface.co/black-forest-labs/FLUX.1-dev |
-| Weights licence | **FLUX.1 [dev] Non-Commercial License** (`flux-1-dev-non-commercial-license`) |
-| Commercial use — weights | **Prohibited** |
-| Commercial use — outputs | **Permitted.** Card: "Generated outputs can be used for personal, scientific, and commercial purposes" |
-| Licence text read | **No** — model card only |
-| **Decision** | **REQUIRES LEGAL REVIEW** |
+## Not used in this pack
 
-Likely the highest portrait quality of the three. Not approved because I read the card, not the
-licence, and the weights/outputs split is exactly the kind of asymmetry that needs the actual text.
-
-## Candidate 4 — MetaHuman
-
-| Field | Value |
-|---|---|
-| Source | Epic Games |
-| Licence | Unreal Engine EULA and MetaHuman terms |
-| Use outside the Epic ecosystem | **Unverified** |
-| **Decision** | **REQUIRES LEGAL REVIEW** — benchmark only, not a pipeline candidate |
-
----
-
-## Recommendation
-
-**Use FLUX.1-schnell.** Apache 2.0, commercial use explicit, no use-based restrictions, nothing to
-propagate downstream. SDXL is an acceptable fallback and is the model whose tooling already exists
-in `C:\Users\daijo\forsyte-img-tools\`, at the cost of one clause requiring a conscious decision.
-
-**Before the first portrait is committed:** record the exact weights file hash, the resolved model
-revision, and this document's approval decision in every generation sidecar.
+**SDXL base 1.0** and **FLUX.1-dev** — both previously reviewed and both defensible, excluded here
+to avoid carrying licence ambiguity into a question that is purely about visual design.
 
 ---
 
