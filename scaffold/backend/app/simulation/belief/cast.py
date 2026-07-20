@@ -79,6 +79,44 @@ PEOPLE: list[dict[str, Any]] = [
     },
 ]
 
+# ── Descriptive metadata ─────────────────────────────────────────────────────────────────────────
+#
+# INERT. This layer exists for the interface and for narrative colour. It is deliberately kept in a
+# SEPARATE structure from PEOPLE rather than as extra keys on it, so that "did a descriptive field
+# reach the calculation?" is answerable by inspection instead of by discipline.
+#
+# Nothing here is read by UpdateInput, threshold resolution, source-trust resolution, prior
+# resolution, exposure calculation or any calculation trace. `test_descriptive_metadata` proves it.
+#
+# No intelligence, competence, class rank, educational prestige, wealth rank, rationality or
+# sophistication value appears here. Background describes the world someone has moved through; it
+# is not a measure of what they are capable of. Values are restrained and fictional.
+
+DESCRIPTIVE: dict[str, dict[str, str]] = {
+    "family-spokesperson": {
+        "occupation_description": "Represents the Strait Families Group in public and press meetings.",
+        "education_history": "Vocational maritime training; later community advocacy coursework.",
+        "socioeconomic_description": "Coastal household; income tied to the fishing season.",
+        "public_biography": "Became the group's spokesperson after the closure stranded local crews.",
+        "role_narrative": "Speaks with families daily and relays what they report.",
+    },
+    "government-minister": {
+        "occupation_description": "Holds the maritime brief in the governing coalition.",
+        "education_history": "Public administration degree; earlier career in regional government.",
+        "socioeconomic_description": "Salaried public office; inland residence.",
+        "public_biography": "Appointed to the maritime brief in the current administration.",
+        "role_narrative": "Answers to the coalition and to departmental process.",
+    },
+    "broadcast-journalist": {
+        "occupation_description": "Correspondent covering the strait for the public broadcaster.",
+        "education_history": "Left formal education early; trained through a newsroom apprenticeship.",
+        "socioeconomic_description": "Salaried; rents in the Northshore district.",
+        "public_biography": "Has reported on the strait region for several years.",
+        "role_narrative": "Files under the broadcaster's verification process.",
+    },
+}
+
+
 ORGANISATIONS: list[dict[str, Any]] = [
     {
         "organisation_id": "national-government",
