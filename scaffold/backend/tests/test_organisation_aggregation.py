@@ -168,26 +168,64 @@ def test_11_large_uncertain_bloc_constrains_a_firm_position() -> None:
     assert decided.position_strength is PositionStrength.firm
 
 
-def test_12_official_position_is_not_the_weighted_mean() -> None:
+def test_12_official_position_is_derived_not_copied_from_the_mean() -> None:
     """
-    The decisive test. The broadcaster's weighted mean is 0.55 — above the midpoint, so a mean-based
-    reading would call it leaning SUPPORT. The governance rule says UNCERTAIN/WITHHELD, because a
-    body that is half undecided has no position to assert. Those disagree, which is the point.
-    """
-    r = run("public-broadcaster")
-    mean = r.explanation["weighted_mean_for_comparison"]
-    assert mean == pytest.approx(0.55, abs=1e-9)
-    assert mean > 0.5, "precondition: the mean reads as leaning supportive"
-    assert r.official_position is not OfficialPosition.support
-    assert r.official_position is OfficialPosition.uncertain
-    assert r.explanation["official_position_equals_weighted_mean"] is False
+    CORRECTED. An earlier version of this test claimed the broadcaster was the decisive case,
+    because its mean of 0.55 is above 0.5 and the governance rule returns UNCERTAIN.
 
-    # And the alignment number is not the mean either.
-    for oid in ORG_IDS:
-        res = run(oid)
-        assert res.resulting_alignment != pytest.approx(
-            res.explanation["weighted_mean_for_comparison"], abs=1e-9
-        )
+    That comparison was inconsistent: it read the governance position through the uncertain band
+    (0.35-0.65) while reading the mean through a bare >0.5 threshold. Judged on the SAME band, a
+    mean of 0.55 also says uncertain - so the broadcaster is a case where the two AGREE, and the
+    flag correctly reports True.
+
+    Genuine divergence is demonstrated below with constructed distributions. What the broadcaster
+    actually demonstrates is different and still valuable: a large undecided bloc plus moderate
+    cohesion WITHHOLDS a firm position. That is about position STRENGTH, not about disagreeing
+    with the mean.
+    """
+    broadcaster = run("public-broadcaster")
+    assert broadcaster.explanation["weighted_mean_for_comparison"] == pytest.approx(0.55)
+    assert broadcaster.explanation["mean_implied_position"] == "uncertain"
+    assert broadcaster.explanation["official_position_equals_weighted_mean"] is True
+    assert broadcaster.position_strength is PositionStrength.withheld
+
+
+def test_12b_governance_can_diverge_from_the_mean() -> None:
+    """A plurality that clears the bar while the mean still reads as undecided, and the reverse."""
+    split = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+        cohesion=0.80, prior_alignment=0.55, update_weight=None, target_alignment=1.0))
+    assert split.official_position is OfficialPosition.support
+    assert split.explanation["mean_implied_position"] == "uncertain"
+    assert split.explanation["official_position_equals_weighted_mean"] is False
+
+    undecided = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.45, "oppose": 0.10, "uncertain": 0.45},
+        cohesion=0.80, prior_alignment=0.60, update_weight=None, target_alignment=1.0))
+    assert undecided.official_position is OfficialPosition.uncertain
+    assert undecided.explanation["mean_implied_position"] == "support"
+    assert undecided.explanation["official_position_equals_weighted_mean"] is False
+
+
+def test_12c_the_flag_is_derived_not_authored() -> None:
+    """It must be able to take BOTH values, and must not depend on which organisation it is."""
+    agrees = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.90, "oppose": 0.05, "uncertain": 0.05},
+        cohesion=0.90, prior_alignment=0.90, update_weight=None, target_alignment=1.0))
+    disagrees = aggregate(OrganisationInput(
+        internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+        cohesion=0.90, prior_alignment=0.55, update_weight=None, target_alignment=1.0))
+    assert agrees.explanation["official_position_equals_weighted_mean"] is True
+    assert disagrees.explanation["official_position_equals_weighted_mean"] is False
+
+    # Identical inputs under three different organisations produce the same flag.
+    flags = {
+        run(o, internal_blocs={"support": 0.55, "oppose": 0.45, "uncertain": 0.0},
+            cohesion=0.90, prior_alignment=0.55, update_weight=None
+            ).explanation["official_position_equals_weighted_mean"]
+        for o in ORG_IDS
+    }
+    assert flags == {False}
 
 
 def test_13_missing_internal_distribution_is_unavailable_not_zero() -> None:

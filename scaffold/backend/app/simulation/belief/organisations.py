@@ -205,6 +205,17 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
         for name, share in blocs.items()
     )
 
+    # DERIVED, never authored. A hard-coded False would be an authored claim wearing the costume of
+    # a derived one - precisely what a trace exists to prevent. The comparison asks whether the
+    # position the governance rule produced is the same one the weighted mean would have implied.
+    # It is legitimately True when a body's plurality and its mean happen to agree.
+    mean_implied = (
+        OfficialPosition.support if weighted_mean > 0.65
+        else OfficialPosition.oppose if weighted_mean < 0.35
+        else OfficialPosition.uncertain
+    )
+    equals_mean = position is mean_implied
+
     return OrganisationResult(
         internal_distribution=blocs,
         prior_alignment=i.prior_alignment,
@@ -247,7 +258,8 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
                 + (" (withheld position -> zero)" if strength is PositionStrength.withheld else "")
             ),
             "weighted_mean_for_comparison": weighted_mean,
-            "official_position_equals_weighted_mean": False,
+            "mean_implied_position": mean_implied.value,
+            "official_position_equals_weighted_mean": equals_mean,
             "objectives": list(i.objectives),
         },
     )

@@ -116,7 +116,7 @@ def org_trace(oid: str) -> OrganisationTrace:
         uncertain_bloc_share=x["uncertain_share"], decisive_margin=x["decisive_margin"],
         governance_rule=r.governance_rule, official_position=r.official_position.value,
         official_position_derivation=x["position_derivation"],
-        official_position_equals_weighted_mean=False,
+        official_position_equals_weighted_mean=x['official_position_equals_weighted_mean'],
         action_direction=r.action_direction.value, action_intensity=r.action_intensity,
         action_intensity_derivation=x["action_intensity_derivation"],
         objectives=r.objectives,
@@ -304,7 +304,7 @@ def test_19_20_21_organisation_traces_separate_the_concepts() -> None:
     for oid in ("national-government", "public-broadcaster", "coastal-workers-union"):
         t = org_trace(oid)
         assert t.internal_distribution and t.official_position
-        assert t.official_position_equals_weighted_mean is False
+        assert isinstance(t.official_position_equals_weighted_mean, bool)
         assert t.action_direction is not None
         assert t.action_intensity is not None
         assert "intensity" in t.action_intensity_derivation
