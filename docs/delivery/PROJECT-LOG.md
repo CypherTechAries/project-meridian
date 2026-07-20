@@ -179,6 +179,50 @@ Open questions for the owner, if any.
 Where a date cannot be established, `**Date:**` reads `undated` and `**Date confidence:** unknown`,
 with a statement of what is known about the ordering instead. Estimating a date is not permitted.
 
+## 1.9 Milestone entry template — required from 20 July 2026
+
+Section 1.5 has always required two layers. In practice entries were being written with the
+technical layer first and the plain-English layer distributed through it, which meant a
+non-technical reader had to parse implementation detail before reaching the point. This template
+fixes the **order**, not the content. Every milestone entry from 20 July 2026 onwards begins with
+the four headings below, in this sequence:
+
+```
+### YYYY-MM-DD — Short title
+**Type:** decision | closure | record | handoff | correction | backfill
+**Status:** drafted | owner-approved | superseded by <entry>
+**Date confidence:** exact | document-stated | unknown
+
+### What changed
+
+One or two sentences a non-technical reader can follow. No file names, no formulas,
+no class names, no test counts.
+
+### Why it matters
+
+The benefit gained, or the problem corrected. If a defect was fixed, say what would
+have gone wrong had it shipped.
+
+### Example
+
+One concrete fictional example. Not an abstraction of the example — the example.
+
+### Technical evidence
+
+- **Commits:** short SHAs, in implementation order where the order is itself evidence
+- **Tests:** counts, suites, and the command that reproduces them
+- **Implementation files:** path:line citations
+- **Defects found:** what was wrong, how it was found, what changed
+- **Limitations:** what this milestone still does not do
+```
+
+The plain-English section comes first and the technical section stays complete. Shortening the
+technical layer to make room is not the intent and is not permitted — the two layers serve two
+audiences, and neither is the summary of the other.
+
+This template governs new entries only. It does not authorise editing an existing entry into the
+new shape; section 1.7 still applies without exception.
+
 ---
 
 # Part 2 — The log
@@ -1041,3 +1085,107 @@ evidence → 277 with role-invariance). Frontend 64.
 **Outstanding in this milestone:** organisation posture and internal-position distributions, cohort
 distribution buckets, provenance and traces as first-class structured outputs, and the 20-item
 report. No UI work has begun.
+
+---
+
+### 20 July 2026 — belief-divergence milestone completed and merged; hosted frontend CI added
+**Type:** closure
+**Status:** owner-approved
+**Date confidence:** exact
+
+**Relationship to the preceding entry.** The entry above ("20 July 2026 — public v0.1 released, and
+the belief-divergence milestone begun") recorded the milestone in progress and listed four items as
+outstanding. This entry closes all four. It does not correct that entry — nothing in it was wrong —
+it completes it, and it is the first entry written in the §1.9 format. The earlier entry stays
+exactly as written, per §1.7.
+
+### What changed
+
+MERIDIAN can now show why different people, organisations and population groups end up believing
+different things after hearing exactly the same claim — and it can show its working for each one.
+The interface's own tests now also run automatically on every proposed change, which they did not
+before.
+
+### Why it matters
+
+Before this, MERIDIAN could show that a problem spreads through society, but it treated the people
+in that society as a single average level of concern. It could not answer the question that makes a
+society interesting: *why did these two people, given identical information, end up somewhere
+different?*
+
+It now answers that, and the answer is inspectable rather than asserted. Crucially it does not
+answer it by assuming that someone's job or background determines their conclusion — the mechanism
+is explicitly built so that swapping a person's declared inputs produces the other person's result
+exactly, which means identity is contributing nothing.
+
+Three honesty properties came with it. Someone who never heard a claim is no longer recorded as
+having rejected it. An organisation's public position is no longer assumed to be the average of the
+views inside it. And when the engine only knows a group's average, it now says the breakdown is
+unavailable rather than inventing one that would look convincing and be fictional twice over.
+
+### Example
+
+A family spokesperson, a government minister and a broadcast journalist all hear the same allegation
+from the same source at the same moment.
+
+The spokesperson already holds first-hand testimony about it, so it takes little extra to convince
+them, and they move materially towards believing it. The minister must follow a formal departmental
+verification process before changing an official position, so they barely move. The journalist's
+broadcaster requires corroboration before treating an allegation as established, so they move a
+little and remain genuinely undecided — not convinced, not dismissive.
+
+Meanwhile inland households never receive the claim at all. Their earlier view stays exactly where
+it was, recorded as unchanged and unexposed rather than as disagreement.
+
+### Technical evidence
+
+**Commits** — implementation order is itself the evidence that results were not tuned to fit:
+
+| Commit | Stage |
+|---|---|
+| `b8b0c81` | Rule specified and frozen, before any implementation |
+| `6320cf1` | Fixtures frozen — cast, priors, trust, exposure |
+| `16f593c` | First untuned run |
+| `fc0fb1c` | Counterfactual evidence added afterwards |
+| `0d69bf8` | Merge of PR #11 into `main` |
+| `ecf21da` | Merge of PR #12 — hosted frontend CI |
+
+No fixture value and no coefficient was changed after outcomes were inspected. All four frozen
+commits remain reachable from `main`.
+
+**Tests** — 384 backend, 64 frontend, both green on hosted CI on `main`
+(run [`29743199312`](https://github.com/CypherTechAries/project-meridian/actions/runs/29743199312)).
+Reproduce with `python -m pytest tests -q` in `scaffold/backend` and `npm ci && npm test` in
+`scaffold/frontend`. Both checks are now required by branch protection and neither can be bypassed.
+
+**Implementation files** — `scaffold/backend/app/simulation/belief/`: `schemas.py` (five separate
+layers), `thresholds.py` (thresholds scoped to a proposition and a process), `update.py` (the frozen
+rule), `organisations.py` (governance rule, direction and force separated), `cohorts.py` (exposure,
+belief and availability as three independent axes), `provenance.py` (typed traces), `cast.py`
+(fixtures). Eight test files, 267 tests specific to this milestone.
+
+**Defects found** — nine, each recorded in full in PR #11:
+
+1. Unknown fields silently dropped, so a safety control existed and did not fire — found by feeding
+   it hostile input rather than by reading it.
+2. A threshold stored as a permanent property of a person rather than of a proposition and process.
+3. Threshold justifications that implied competence rather than situation.
+4. Opposing something produced roughly a quarter of the force of supporting it, for no reason.
+5. A population figure described as covering exposed groups when it covered all of them.
+6. An absence guard that could not see nested fields.
+7. A trace field that claimed to be derived and was hard-coded.
+8. **A reporting error of mine, found only because defect 7 was fixed.** I had presented the public
+   broadcaster as proof that an organisation's official position differs from the average view
+   inside it. It does not — I had judged the position by one standard and the average by another.
+   Once both were read consistently they agreed. The claim was corrected, and the genuine
+   divergence cases are now constructed ones that actually demonstrate it.
+9. Display-rounded figures used as exact regression constants.
+
+No frozen fixture and no formula changed as a result of any of them.
+
+**Limitations** — no memory, no relationships, no personal history, no changing trust, no
+personalised information environment, no ordering of information, no cumulative stress, no random
+life events, no people persisting between runs, no full individual breakdown inside a population
+group, and no updating of evaluative opinions. Belief Update Rule v1 is a bounded, deterministic
+first-order mechanism for testing whether declared inputs can produce inspectable divergence. **It
+is not a complete psychological model of a person.**
