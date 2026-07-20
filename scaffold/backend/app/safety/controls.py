@@ -29,7 +29,21 @@ PACKAGED_SCENARIOS: Final[frozenset[str]] = frozenset({"kestral-strait"})
 # Typed target identifiers: fict:<scenario_id>:<kind>:<entity_id>. The prefix and scenario segment
 # make a cross-world or real-world reference structurally inexpressible rather than merely refused.
 TARGET_PREFIX: Final = "fict"
-TARGET_KINDS: Final[frozenset[str]] = frozenset({"cohort", "agent", "institution"})
+
+# Entity kinds a target may name.
+#
+# EXTENDED 20 July 2026 for the Belief Formation and Divergence Slice: 'person' and 'organisation'
+# were added because that milestone models named fictional people and organisations, which the
+# original three kinds could not express.
+#
+# This widens what CAN be named, and it deliberately does not weaken the control: a target must
+# still carry the 'fict:' prefix, still name the active world, and still RESOLVE in that world's
+# registry. Adding a kind does not make any real person or organisation addressable - the registry
+# is built from scenario data, so an entity that the fictional world does not contain remains
+# unreachable regardless of its kind.
+TARGET_KINDS: Final[frozenset[str]] = frozenset(
+    {"cohort", "agent", "institution", "person", "organisation"}
+)
 
 # ── B5-04 ────────────────────────────────────────────────────────────────────────────────────────
 # Protected/sensitive traits and project-declared proxies. Rejected as targeting, ranking,
