@@ -1,0 +1,36 @@
+name: Bug report
+description: Something behaves incorrectly, or a stated claim does not hold
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        MERIDIAN is a local research prototype. Please do not report security issues here —
+        see SECURITY.md.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what occurred instead.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Seed, scenario, run mode, tick count, and the steps taken.
+      placeholder: |
+        mode: incident
+        ticks: 20
+        seed: 88213
+    validations: { required: true }
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Engine, API, Interface, Documentation, A stated claim does not hold, Other]
+    validations: { required: true }
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: OS, Python version, Node version.
