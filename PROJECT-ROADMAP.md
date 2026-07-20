@@ -161,6 +161,31 @@ technical second - and no statement appears as current capability until its impl
 merged, tested and evidenced. Unmerged belief and organisation work must not be published as
 current.
 
+**The public writing rule (added 20 July 2026).** Every important public idea needs three parts: a
+short plain-English statement, a concrete everyday example directly beneath it, and a clear
+statement of what MERIDIAN does or does not know.
+
+**The ten-year-old reading test.** A ten-year-old should be able to read the paragraph and explain
+it back in one sentence. Plain English is not childish language - the idea stays serious, the words
+stay ordinary.
+
+Words to avoid near the top of the README unless immediately explained: distribution, denominator,
+aggregate, weighted, provenance, contextual, divergence, cohort, epistemic, state mass, alignment,
+propensity, mechanism. Prefer: groups, people, what they saw, what they believe, what changed, why
+it changed, where the information came from, what the system knows, what it does not know.
+
+Worked correction, kept as the calibration example. TOO ACADEMIC: "A population average cannot tell
+you how many people agree, disagree or remain uncertain." RIGHT REGISTER: "An average can hide what
+is really happening. A score of 5 out of 10 could mean everyone is unsure - or that half strongly
+agree and half strongly disagree. If MERIDIAN does not know which, it says so instead of guessing."
+
+Message-bank entries carry: heading, one-sentence explanation, concrete example, implementation
+status, supporting evidence, wording to avoid. Seven canonical statements are approved and held for
+transcription when the bank is created.
+
+The page should make a visitor notice, then understand, then care, and only then inspect how it
+works.
+
 ### Where existing planning work lands
 
 - The **Belief Formation and Divergence Slice**
