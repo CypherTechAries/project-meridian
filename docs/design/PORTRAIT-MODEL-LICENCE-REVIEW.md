@@ -41,34 +41,46 @@ model components would need dedicated legal review.
 
 ---
 
-## Selected model — FLUX.2 [klein] 4B
+## Selected model — FLUX.2 [klein] 4B — PINNED
 
 | Field | Value |
 |---|---|
-| Model repository | `black-forest-labs/FLUX.2-klein-4B` |
+| Repository | `black-forest-labs/FLUX.2-klein-4B` |
+| **Pinned revision** | **`303481f0390afb112393f9d77e8f0be72fcefeb7`** |
 | Official source | https://huggingface.co/black-forest-labs/FLUX.2-klein-4B · https://github.com/black-forest-labs/flux2 |
 | Weights licence | **Apache 2.0** |
 | Commercial use | Permitted |
-| Consumer-hardware suitability | Stated by the vendor; the reason it is preferred over the 12B schnell package for a small proof pack |
-| Exact revision | **NOT YET PINNED** — must be captured at download |
-| Weight hash | **NOT YET CAPTURED** |
-| **Decision** | **APPROVED FOR PORTRAIT STUDY** |
+| Licence file SHA-256 | **Captured at run time** by the notebook's preflight gate |
+| Model file SHA-256 | Captured at run time where the hub exposes LFS metadata |
+| **Decision** | **APPROVED — PINNED** |
 
-### A pinning hazard worth naming
+**Explicitly excluded:** any FLUX.2 9B repository · any repository selected by family name · FLUX.2-dev ·
+SDXL · FLUX.1-dev · an unpinned `main` revision.
 
-The `FLUX.2-klein` family contains **several repositories, and they do not share one licence.**
-Search results list `FLUX.2-klein-4B`, `FLUX.2-klein-4b-nvfp4`, `FLUX.2-klein-base-4b-fp8`,
-`FLUX.2-klein-9b-fp8` and `FLUX.2-klein-base-9b-fp8`. **The 4B variants are Apache 2.0; the 9B
-variants are under the FLUX.2-dev Non-Commercial Licence.**
+### The licence is verified at run time, not asserted here
 
-So "FLUX.2 klein" is not by itself a licence statement. Pulling the wrong repository — easily done,
-since the names differ by three characters — silently changes the terms from permissive to
-non-commercial. **The sidecar must record the exact repository and revision, not the family name.**
+My earlier fetch of the model page returned HTTP 401, so I did not read the licence file myself. Rather
+than record a second-hand designation as fact, **the notebook verifies it before generating anything**:
+it downloads `LICENSE.md` at the pinned revision, checks the text contains `Apache License`,
+`Version 2.0` and the canonical Apache URL, hashes the file, and **stops with an error if any check
+fails**. The resulting `licence-verification.json` travels inside the output ZIP.
 
-I have not read the FLUX.2-klein-4B `LICENSE` file directly; the Hugging Face page returned HTTP 401
-to my fetch. The Apache 2.0 designation above comes from the vendor's own licensing page and
-repository listing. **Before generation, open the model repository and confirm the licence file in
-place**, then record its hash.
+### Why the pin matters
+
+The `FLUX.2-klein` family contains repositories that **do not share one licence** — the 4B variants
+are Apache 2.0, the 9B variants are under the FLUX.2-dev Non-Commercial Licence. The names differ by
+three characters. The preflight gate therefore refuses any repository whose id is not exactly the
+approved one, rejects anything containing `9b` or `dev`, and requires the id to end in `klein-4b`.
+
+### Apache 2.0 obligations are recorded, not dismissed
+
+The generated record carries this note verbatim:
+
+> Apache 2.0 is NOT obligation-free. Redistributing the model or its code invokes Apache 2.0
+> requirements: retain copyright, patent, trademark and attribution notices, include the licence,
+> mark modified files, and pass on any NOTICE file. MERIDIAN redistributes neither. Only generated,
+> manually approved PNG outputs are intended to enter the MERIDIAN repository, together with their
+> sidecar records.
 
 ## Fallback — FLUX.1-schnell
 
