@@ -1,9 +1,10 @@
 # MERIDIAN CI — Phase 0 item P0.3.
 #
-# STATUS: PREPARED AND LOCALLY REPRODUCED. NOT YET RUN ON HOSTED CI.
-# This file has never executed on GitHub Actions, because committing and pushing it requires
-# separate founder authorisation. Until a hosted run succeeds, no document may claim MERIDIAN
-# "has CI" or that any check is "guarded in CI". See docs/delivery/CAPABILITY-CLAIMS.md C9.
+# STATUS: RUNNING ON HOSTED CI.
+# The backend job first executed on GitHub Actions on 2026-07-20 (run 29741326030, success). The
+# frontend job below is added in the same spirit and is not a hosted result until it has run.
+# The rule that produced the original wording still stands: no document may claim a check is
+# "guarded in CI" until that specific job has passed hosted. See docs/delivery/CAPABILITY-CLAIMS.md C9.
 #
 # DESIGN PRINCIPLE: this workflow runs ONLY checks that genuinely exist and genuinely pass. It
 # deliberately contains no OS matrix, no multi-version matrix, no coverage gate, no performance
@@ -97,5 +98,77 @@ jobs:
           name: failure-diagnostics
           path: |
             scaffold/backend/.pytest_cache/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ── FRONTEND ─────────────────────────────────────────────────────────────────────────────────
+  #
+  # Independent of the backend job: no `needs:`, so the two run concurrently and a backend failure
+  # never hides a frontend failure. Runs on ubuntu-latest because nothing here is OS-specific —
+  # the backend's windows-latest pin exists for the mesa long-path workaround, which has no
+  # frontend equivalent.
+  #
+  # CLEAN-INSTALL EVIDENCE. `npm ci` is used, not `npm install`: it installs exactly the committed
+  # package-lock.json, refuses to silently update it, and deletes any pre-existing node_modules
+  # first. It fails outright if package.json and the lockfile disagree, which is the property that
+  # makes this a real check rather than a re-run of whatever happened to be on a laptop.
+  #
+  # The npm cache below caches the DOWNLOAD cache only, never node_modules, so every run still
+  # performs a full clean install from the lockfile. Caching node_modules would destroy exactly
+  # the evidence this job exists to produce.
+  frontend:
+    name: Frontend — install, build, tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scaffold/frontend
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: scaffold/frontend/package-lock.json
+
+      - name: Show environment
+        run: |
+          node --version
+          npm --version
+
+      # `playwright` is a devDependency used only by scripts/screenshot.mjs, which this job does
+      # not run. Skipping the browser download keeps the install bounded; a missing browser binary
+      # cannot affect the build or the test suite.
+      - name: Install dependencies from the committed lockfile
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+        run: npm ci
+
+      # Proves the lockfile was honoured. `npm ci` already fails on a mismatch; this makes the
+      # fact visible in the log rather than implied by the absence of an error.
+      - name: Confirm the lockfile was not modified by the install
+        run: git diff --exit-code -- package-lock.json package.json
+
+      # `npm run build` is `tsc --noEmit && vite build`, so this is a type check and a production
+      # build in one step. A type error fails the job before the bundle is attempted.
+      - name: Production build
+        run: npm run build
+
+      - name: Confirm the build produced no tracked artefacts
+        run: git status --porcelain --untracked-files=no -- . | tee /dev/stderr | wc -l | grep -qx 0
+
+      - name: Run tests
+        run: npm test
+
+      - name: Upload diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-failure-diagnostics
+          path: |
+            scaffold/frontend/dist/
           if-no-files-found: ignore
           retention-days: 7
