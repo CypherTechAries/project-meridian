@@ -12,8 +12,7 @@
 **Blocker:** B5 — *dual-use influence-targeting schema with no acceptable-use terms.*
 **Decided:** 18 July 2026 (policy). **Baseline approved:** 19 July 2026 (this document).
 **Clears when:** all eight controls have code paths, have tests, and hosted CI is green.
-**Status 19 July 2026:** all eight implemented and tested locally (backend 187, frontend 52).
-Awaiting hosted CI and founder review on `feat/b5-publication-controls`; **not yet merged**.
+**Status:** all eight implemented, tested and merged; hosted CI green.
 **Related:** [`../delivery/PUBLICATION-EXIT-CRITERIA.md`](../delivery/PUBLICATION-EXIT-CRITERIA.md) ·
 [`../delivery/CAPABILITY-CLAIMS.md`](../delivery/CAPABILITY-CLAIMS.md) ·
 [`../../PROJECT-ROADMAP.md`](../../PROJECT-ROADMAP.md)
@@ -22,14 +21,8 @@ Awaiting hosted CI and founder review on `feat/b5-publication-controls`; **not y
 
 ## B5-01 — Fail-closed fictional manifest
 
-Every runnable scenario must declare:
-
-```json
-"world_mode": "fictional"
-```
-
-Missing, unknown, malformed or non-fictional values are **rejected before scenario loading or
-simulation execution**.
+Every runnable scenario must declare `"world_mode": "fictional"`. Missing, unknown, malformed or
+non-fictional values are **rejected before scenario loading or simulation execution**.
 
 **No default-to-fictional behaviour.** A scenario omitting the field is invalid, not assumed safe.
 Rejection precedes construction of any engine object.
@@ -38,7 +31,7 @@ Rejection precedes construction of any engine object.
 
 ## B5-02 — Packaged fictional scenarios only
 
-Public v0.1 may run **only repository-bundled, explicitly allowlisted** fictional scenario packages.
+Public v0.1 may run **only repository-bundled, allowlisted** fictional scenario packages.
 
 Disabled: uploads · URL loading · external datasets · real-world import · conversion of news,
 documents or public datasets into runnable scenarios.
@@ -50,8 +43,8 @@ around. It also closes path traversal: a non-member is rejected before any files
 
 ## B5-03 — Fictional target registry
 
-Every influence, narrative, intervention or command target must use a **typed identifier that
-resolves inside the active fictional-world registry**.
+Every influence, narrative, intervention or command target must use a **typed identifier resolving
+inside the active fictional-world registry**.
 
 Rejected: free-text person, organisation or political-population targets · unresolved external
 identifiers · targets from another world · real persons, organisations, governments or populations.
@@ -144,20 +137,15 @@ real-organisation and real-population targeting structurally inexpressible rathe
 
 ## B5-07 — Persistent fictional-world disclosure
 
-Every runnable UI surface must visibly identify the product as a fictional simulation, using the
-approved wording exactly:
+Every runnable UI surface must visibly identify the product as a fictional simulation using the
+exact wording `FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION`. API responses must
+carry structured fictional-world metadata.
 
-```text
-FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION
-```
+The disclosure must survive navigation, dossier and modal views, screenshots, ordinary cropping and
+mixed engine/fixture screens.
 
-API responses must also carry structured fictional-world metadata.
-
-The disclosure must survive: normal navigation · dossier and modal views where applicable ·
-screenshots · ordinary cropping · mixed engine/fixture screens.
-
-Crop survival is a real requirement: a single-panel screenshot is the unit in which this interface
-is actually shared, so per-panel marking is mandatory and a global banner alone is insufficient.
+Crop survival is required: a single-panel screenshot is the unit this interface is shared in, so
+per-panel marking is mandatory and a global banner alone is insufficient.
 
 ---
 
@@ -170,28 +158,25 @@ scenario id and version · last-updated tick where applicable · fixture/live di
 (hand-authored, not modelled) · `UNKNOWN` (origin not established) · `UNAVAILABLE` (could not be
 obtained).
 
-**Fixture information must never be presented as computed engine output.**
-
-**`UNKNOWN` and `UNAVAILABLE` must never silently render as zero.** Zero is a number the engine
-computed; absence is not. Collapsing them is the specific dishonesty this control exists to prevent.
+**Fixture content must never be presented as computed engine output**, and **`UNKNOWN` /
+`UNAVAILABLE` must never render as zero** — zero is a computed number, absence is not. Collapsing
+them is the specific dishonesty this control prevents.
 
 ---
 
 ## Safe-harbor statement
 
-Recorded so enforcement does not over-reach into the modelling the project exists to do:
+So enforcement does not over-reach into the modelling the project exists to do:
 
 > Fictional aggregate narrative propagation, adoption, belief divergence, defensive
-> counter-messaging, and comparison of pre-authored defensive interventions **are permitted** when
-> the eight controls above are enforced.
+> counter-messaging and comparison of pre-authored defensive interventions **are permitted** when
+> the eight controls are enforced.
 
-They must not become: audience-targeting optimisation · susceptibility ranking · real-world
-influence recommendations · protected-trait exploitation.
+They must not become audience-targeting optimisation, susceptibility ranking, real-world influence
+recommendations or protected-trait exploitation.
 
-This is the boundary the
-[`../design/BELIEF-SENTIMENT-VERTICAL-SLICE.md`](../design/BELIEF-SENTIMENT-VERTICAL-SLICE.md)
-milestone must be built inside. B5 enforcement is a **precondition** for that milestone, and is not
-permission to add the capabilities its §5 defers.
+This bounds the [belief slice](../design/BELIEF-SENTIMENT-VERTICAL-SLICE.md): B5 is a
+**precondition** for it, not permission to add the capabilities its §5 defers.
 
 ---
 
@@ -200,9 +185,9 @@ permission to add the capabilities its §5 defers.
 **Technical enforcement is primary.** Documentation and disclosures are supplementary and cannot
 clear B5 without code and tests.
 
-Implementation preference, in order: strict typed schemas → allowlists → registry resolution.
-**Name-detection heuristics are not an acceptable substitute.** MERIDIAN does not build a general
-content-moderation system; it constrains what can be *expressed* to the engine.
+Preference order: strict typed schemas → allowlists → registry resolution. **Name-detection
+heuristics are not an acceptable substitute.** MERIDIAN constrains what can be *expressed* to the
+engine rather than moderating content.
 
 ---
 
