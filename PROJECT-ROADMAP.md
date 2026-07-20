@@ -141,6 +141,26 @@ evidence recorded in `docs/delivery/`.
 These versions are indicative, not contractual. The distinction that *is* binding is between public
 proof (v0.1) and enduring platform (v0.2 onward).
 
+### Queued: public plain-language refresh
+
+**Recorded 20 July 2026. Not started, and deliberately NOT applied during the active engine
+milestone.** MERIDIAN's strongest ideas are currently discoverable only inside design documents,
+formulas and commit messages. The public page explains the architecture before it explains the
+product.
+
+When the belief-divergence milestone is reviewed and merged, branch
+`docs/public-plain-language-refresh` will: create the canonical message bank at
+`docs/communications/PLAIN-LANGUAGE-MERIDIAN.md`; restructure the README opening so the first
+screenful is logo -> headline -> one plain sentence -> fictional disclosure -> real Briefing
+screenshot -> what you are looking at -> three or four plain-language statements; add a "What
+MERIDIAN is trying to make visible" section; and caption every screenshot with its implementation
+status and engine-versus-fixture disclosure.
+
+**The governing rule:** every important mechanism carries two descriptions - plain-language first,
+technical second - and no statement appears as current capability until its implementation is
+merged, tested and evidenced. Unmerged belief and organisation work must not be published as
+current.
+
 ### Where existing planning work lands
 
 - The **Belief Formation and Divergence Slice**
