@@ -12,12 +12,25 @@
 
 import './tokens.css'
 import './styles.css'
+import './briefing.css'
 
 import { initialSnapshot, runDemonstration, stageByField } from './engine/client.ts'
 import type { RunResult } from './engine/client.ts'
 import { escapeHtml } from './components/epistemic.ts'
 
 import { commandCentre, decisionRail, laggedResponse, transitionStrip } from './screens/command-centre.ts'
+import { briefingView } from './screens/briefing.ts'
+
+/**
+ * Depth mode. Briefing is the DEFAULT; Analysis holds the detailed dashboard.
+ *
+ * These are depth modes, not product-navigation destinations - Analysis is not a sibling of
+ * Society Pulse or Entity Dossiers, it is the same screen with more of itself shown. The switch is
+ * VISIBLE rather than a keyboard shortcut, because a first-time user will not discover a shortcut
+ * (usability rule 1).
+ */
+export type Mode = 'briefing' | 'analysis'
+let currentMode: Mode = 'briefing'
 
 export const FICTION_DISCLOSURE = 'FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION'
 export const MIXED_DISCLOSURE =
@@ -57,7 +70,7 @@ function brandMark(): string {
   </svg>`
 }
 
-function topbar(run: RunResult): string {
+function topbar(run: RunResult, mode: Mode = 'briefing'): string {
   const p = run.projection
   const conn =
     run.connection === 'live'
@@ -66,13 +79,18 @@ function topbar(run: RunResult): string {
   return `<div class="topbar" role="region" aria-label="Scenario and run status">
     <div class="topbar__left">
       <h1 class="scenario-title">Kestral Strait</h1>
-      <span class="scenario-sub">Demonstration run — ${escapeHtml(run.mode)}</span>
+      <span class="scenario-sub">Day ${Math.max(1, Math.round(p.simulated_hours / 24))} · fictional</span>
+      ${modeSwitch(mode)}
     </div>
     <div class="topbar__right">
       <span class="tb"><span class="tb__k">engine</span>${conn}</span>
-      <span class="tb"><span class="tb__k">rule pack</span><span class="tb__v">${escapeHtml(p.rule_pack_version)}</span></span>
-      <span class="tb"><span class="tb__k">tick</span><span class="tb__v">Tick ${p.tick}</span></span>
-      <span class="tb"><span class="tb__k">horizon</span><span class="tb__v">${p.demonstration_horizon_ticks} ticks · ${(p.simulated_hours / 24).toFixed(0)} days</span></span>
+      ${
+        mode === 'analysis'
+          ? `<span class="tb"><span class="tb__k">rule pack</span><span class="tb__v">${escapeHtml(p.rule_pack_version)}</span></span>
+             <span class="tb"><span class="tb__k">tick</span><span class="tb__v">Tick ${p.tick}</span></span>
+             <span class="tb"><span class="tb__k">horizon</span><span class="tb__v">${p.demonstration_horizon_ticks} ticks · ${(p.simulated_hours / 24).toFixed(0)} days</span></span>`
+          : ''
+      }
     </div>
   </div>`
 }
@@ -100,15 +118,38 @@ function nav(run: RunResult): string {
   </nav>`
 }
 
-function shell(run: RunResult): string {
+function modeSwitch(mode: Mode): string {
+  return `<div class="modesw" role="group" aria-label="Detail level">
+    <button class="modesw__btn ${mode === 'briefing' ? 'is-on' : ''}" type="button" data-mode="briefing"
+      aria-pressed="${mode === 'briefing'}">Briefing</button>
+    <button class="modesw__btn ${mode === 'analysis' ? 'is-on' : ''}" type="button" data-mode="analysis"
+      aria-pressed="${mode === 'analysis'}">Analysis</button>
+  </div>`
+}
+
+function shell(run: RunResult, mode: Mode): string {
+  if (mode === 'briefing') {
+    return `${briefingDisclosure()}
+    ${topbar(run, mode)}
+    <main class="main main--briefing" id="main" aria-label="Situation briefing">${briefingView(run)}</main>`
+  }
   return `${disclosures()}
-  ${topbar(run)}
+  ${topbar(run, mode)}
   <div class="layout">
     ${nav(run)}
     <main class="main" id="main" aria-label="Strategic Command Centre">${commandCentre(run)}</main>
     <aside class="rail" aria-label="Decisions and inspector">${decisionRail(run)}</aside>
   </div>
   ${transitionStrip(run)}`
+}
+
+/** Briefing keeps the disclosure, compactly. Simplification may not remove an honesty property. */
+function briefingDisclosure(): string {
+  return `<div class="disclosures disclosures--compact" role="region" aria-label="Prototype disclosures">
+    <span class="disc"><span class="disc__glyph" aria-hidden="true">◈</span>${FICTION_DISCLOSURE}</span>
+    <span class="disc__sep" aria-hidden="true">│</span>
+    <span class="disc disc--mixed">${MIXED_DISCLOSURE}</span>
+  </div>`
 }
 
 /** Inspector: full provenance lives here, not on every card. */
@@ -262,15 +303,42 @@ function wireInspector(root: HTMLElement, run: RunResult): void {
   if (political) select(political.field)
 }
 
-export function mount(root: HTMLElement, run: RunResult): void {
-  root.innerHTML = shell(run)
-  wireInspector(root, run)
+export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'briefing'): void {
+  currentMode = mode
+  root.innerHTML = shell(run, mode)
+  if (mode === 'analysis') wireInspector(root, run)
+
+  // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.
+  root.querySelectorAll<HTMLElement>('[data-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => mount(root, run, btn.dataset.mode as Mode))
+  })
+  root.querySelectorAll<HTMLElement>('[data-open-analysis]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      mount(root, run, 'analysis')
+      const id = btn.dataset.openAnalysis
+      if (!id) return
+      root.querySelectorAll<HTMLElement>('[data-card-id]').forEach((n) => {
+        if (n.dataset.cardId === id) n.click()
+      })
+    })
+  })
+  // A consequence card opens Analysis focused on the value behind it.
+  root.querySelectorAll<HTMLElement>('.bcard').forEach((card) => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.cardId
+      mount(root, run, 'analysis')
+      if (!id) return
+      root.querySelectorAll<HTMLElement>('[data-card-id]').forEach((n) => {
+        if (n.dataset.cardId === id) n.click()
+      })
+    })
+  })
 }
 
 const app = document.getElementById('app')
 if (app) {
   // First paint from the bundled recorded snapshot so the layout is inspectable immediately,
   // then replace with a genuine live run. The status chip states which is showing.
-  mount(app, initialSnapshot())
-  void runDemonstration('incident', 20).then((run) => mount(app, run))
+  mount(app, initialSnapshot(), 'briefing')
+  void runDemonstration('incident', 20).then((run) => mount(app, run, currentMode))
 }

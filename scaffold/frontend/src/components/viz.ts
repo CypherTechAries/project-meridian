@@ -218,3 +218,5 @@ export function bar(value: number, tone: string): string {
   const pct = Math.max(0, Math.min(1, value)) * 100
   return `<span class="bar" aria-hidden="true"><span class="bar__fill bar__fill--${tone}" style="width:${pct.toFixed(1)}%"></span></span>`
 }
+
+

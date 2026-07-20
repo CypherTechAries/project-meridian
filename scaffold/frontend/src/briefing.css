@@ -1,0 +1,169 @@
+/*
+ * BRIEFING VIEW — built to the founder-approved mockup.
+ *
+ * 68/32 split, one dominant crisis visual, one decision, three consequence cards. Kept in its own
+ * stylesheet so the Analysis View (styles.css) is untouched — the two modes must be able to change
+ * independently, and Analysis is work that was accepted, not work being replaced.
+ */
+
+.disclosures--compact { padding: 4px var(--sp-4); font-size: var(--fs-micro); }
+
+/* Depth switch: visible, never a keyboard shortcut alone (usability rule 1). */
+.modesw {
+  display: inline-flex; margin-left: var(--sp-5); border: 1px solid #1e3a52;
+  border-radius: 4px; overflow: hidden; background: rgba(10, 22, 36, 0.8);
+}
+.modesw__btn {
+  appearance: none; border: 0; background: transparent; cursor: pointer; font-family: inherit;
+  font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.12em; padding: 7px 22px;
+  color: var(--t-low);
+}
+.modesw__btn.is-on {
+  background: linear-gradient(180deg, #12354a, #0d2637); color: #7fe4f5;
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+.modesw__btn:not(.is-on):hover { color: var(--t-hi); }
+
+.sect {
+  margin: 0 0 var(--sp-2); font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0.16em;
+  color: #4d9fc0; text-transform: uppercase;
+}
+
+.main--briefing { padding: var(--sp-3) var(--sp-4) var(--sp-2); overflow: hidden; display: flex; }
+.briefing {
+  display: grid; gap: var(--sp-3); flex: 1; min-height: 0; width: 100%;
+  grid-template-columns: minmax(0, 1fr) 372px;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    "viz   needs"
+    "sum   needs"
+    "cards since";
+}
+
+/* One shared panel treatment: hairline edge plus a faint inner top highlight. */
+.bviz, .bsum, .bneeds, .bsince, .ccard {
+  background: linear-gradient(180deg, rgba(16, 32, 48, 0.72), rgba(9, 18, 29, 0.72));
+  border: 1px solid #16324a; border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(120, 190, 225, 0.07);
+}
+
+.bviz {
+  grid-area: viz; min-height: 0; display: flex; flex-direction: column;
+  padding: var(--sp-3) var(--sp-3) 0; overflow: hidden;
+}
+.bmap { display: block; width: 100%; height: 100%; flex: 1; min-height: 0; border-radius: 0 0 7px 7px; }
+
+/* ── Map ─────────────────────────────────────────────────────────────────── */
+.bmap__coast { stroke: #5a86a8; stroke-width: 1.6; }
+.bmap__swell path { fill: none; stroke: rgba(120, 180, 215, 0.055); stroke-width: 1.2; }
+.bmap__zone { stroke: #ff5c6a; stroke-opacity: 0.75; stroke-width: 1.6; }
+.bmap__ship path { fill: #ff8b93; }
+.bmap__zone-t { fill: #ff7b85; font-size: 15px; font-weight: 800; letter-spacing: 0.13em; }
+.bmap__zone-s { fill: #cf7d86; font-size: 12.5px; letter-spacing: 0.04em; }
+.bmap__place { fill: #cfe2f2; font-size: 19px; font-weight: 700; letter-spacing: 0.3em; }
+.bmap__strait { fill: #7fa8c6; font-size: 15px; letter-spacing: 0.34em; }
+.rt { fill: none; stroke-linecap: round; }
+.rt--blocked { stroke: #f0a742; stroke-width: 2.2; stroke-dasharray: 9 8; }
+.rt--reroute { stroke: #3fd0e8; stroke-dasharray: 10 8; }
+.cal__lead { stroke: rgba(150, 200, 230, 0.35); stroke-width: 1.1; stroke-dasharray: 3 3; }
+.cal__pill { fill: rgba(8, 20, 32, 0.9); stroke: #2b5876; stroke-width: 1; }
+.cal__num-bg { fill: none; stroke: #3fd0e8; stroke-width: 1.4; }
+.cal__num { fill: #7fe4f5; font-size: 12px; font-weight: 700; }
+.cal__txt { fill: #d8e7f4; font-size: 13px; }
+.lgd__bg { fill: rgba(6, 16, 26, 0.86); stroke: #1d3a55; stroke-width: 1; }
+.lgd__t { fill: #9fb8cc; font-size: 11.5px; }
+
+/* ── Situation summary ───────────────────────────────────────────────────── */
+.bsum { grid-area: sum; padding: var(--sp-3) var(--sp-4) var(--sp-4); }
+.bsum__head { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: #eef6ff; letter-spacing: -0.01em; }
+.bsum__text { margin: 0; font-size: var(--fs-lead); line-height: 1.5; color: var(--t-mid); }
+
+/* ── Needs you ───────────────────────────────────────────────────────────── */
+.bneeds { grid-area: needs; padding: var(--sp-3); display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.dcard { border-radius: 7px; padding: var(--sp-3) var(--sp-4); cursor: pointer; }
+.dcard--primary {
+  border: 1.5px solid #e8473f;
+  background: linear-gradient(160deg, rgba(58, 18, 20, 0.85), rgba(20, 12, 16, 0.9));
+  box-shadow: 0 0 26px rgba(232, 71, 63, 0.13), inset 0 1px 0 rgba(255, 150, 140, 0.13);
+}
+.dcard--secondary {
+  border: 1.5px solid #c98a2e;
+  background: linear-gradient(160deg, rgba(48, 34, 12, 0.7), rgba(18, 14, 10, 0.86));
+}
+.dcard__kicker { font-size: var(--fs-micro); font-weight: 800; letter-spacing: 0.14em; color: #ff6a62; }
+.dcard--secondary .dcard__kicker { color: #f0a742; }
+.dcard__title {
+  margin: 5px 0 7px; font-size: 24px; font-weight: 700; color: #fff; text-transform: capitalize;
+  line-height: 1.15; letter-spacing: -0.015em;
+}
+.dcard__why { margin: 0 0 10px; font-size: var(--fs-sm); line-height: 1.5; color: #b9c9d8; }
+.dcard__tags { list-style: none; display: flex; gap: 7px; margin: 0 0 10px; padding: 0; }
+.tag {
+  font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 3px; border: 1px solid currentColor;
+}
+.tag--political { color: #ff6a62; }
+.tag--legal { color: #4fa9e8; }
+.tag--diplomatic { color: #f0a742; }
+.tag--economic { color: #f0a742; }
+.tag--social { color: #37c9ad; }
+.dcard__acts { display: flex; gap: var(--sp-2); }
+.btn {
+  appearance: none; font-family: inherit; font-size: var(--fs-sm); font-weight: 700;
+  letter-spacing: 0.08em; padding: 10px 15px; border-radius: 5px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+.btn--ghost { background: rgba(10, 22, 34, 0.7); color: #dfeaf5; border: 1px solid #2c4f6d; }
+.btn--ghost:hover { border-color: var(--cyan); color: #fff; }
+.btn--solid { background: linear-gradient(180deg, #e8473f, #c22f28); color: #fff; border: 0; flex: 1; justify-content: center; }
+.btn--solid:hover { filter: brightness(1.08); }
+.bneeds__all {
+  appearance: none; background: transparent; border: 1px solid #1d3a55; border-radius: 6px;
+  color: #8fb4cc; font-family: inherit; font-size: var(--fs-sm); padding: 10px; cursor: pointer;
+  display: flex; justify-content: space-between;
+}
+.bneeds__all:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+.bneeds__note { margin: 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.4; }
+.dcard__none { margin: 0; font-size: var(--fs-sm); color: var(--t-mid); }
+
+/* ── Since yesterday ─────────────────────────────────────────────────────── */
+.bsince { grid-area: since; padding: var(--sp-3); }
+.bsince__row { display: flex; align-items: center; gap: var(--sp-3); }
+.bsince__icon {
+  width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid #2a5a70; color: #3fd0e8;
+}
+.bsince__icon svg { width: 20px; height: 20px; }
+.bsince__text { margin: 0; font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.45; flex: 1; }
+
+/* ── Consequence cards ───────────────────────────────────────────────────── */
+.ccards { grid-area: cards; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
+.ccard { padding: var(--sp-3); display: flex; flex-direction: column; gap: 9px; cursor: pointer; }
+.ccard:hover { border-color: #2a5a7a; }
+.ccard__head { display: flex; align-items: center; gap: 10px; }
+.ccard__icon { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; border: 1px solid currentColor; }
+.ccard__icon svg { width: 22px; height: 22px; }
+.ccard--people .ccard__icon { color: #37c9ad; }
+.ccard--economy .ccard__icon { color: #4fa9e8; }
+.ccard--politics .ccard__icon { color: #b98cf0; }
+.ccard__label { font-size: var(--fs-meta); font-weight: 800; letter-spacing: 0.16em; }
+.ccard--people .ccard__label { color: #37c9ad; }
+.ccard--economy .ccard__label { color: #4fa9e8; }
+.ccard--politics .ccard__label { color: #b98cf0; }
+.ccard__head .ob { margin-left: auto; }
+.ccard__state { margin: 0; font-size: 16.5px; line-height: 1.4; color: #eaf3fb; }
+.ccard__trend-k { font-size: var(--fs-micro); color: var(--t-faint); display: block; margin-bottom: 3px; }
+.tline { width: 100%; height: 34px; }
+.tline polyline { stroke-width: 1.8; }
+.tline--people { stroke: #37c9ad; fill: #37c9ad; }
+.tline--economy { stroke: #4fa9e8; fill: #4fa9e8; }
+.tline--politics { stroke: #b98cf0; fill: #b98cf0; }
+.ccard__inspect {
+  margin-top: auto; font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0.1em;
+  color: #7fb3cc; display: flex; justify-content: flex-end; gap: 6px;
+}
+.ccard:hover .ccard__inspect { color: var(--cyan); }
+
+/* The legend lives in the footer strip; per-card markers carry crop safety. */
+.blegend { display: flex; align-items: center; gap: 7px; font-size: var(--fs-micro); color: var(--t-faint); }
+.blegend__t { margin-right: var(--sp-3); }
