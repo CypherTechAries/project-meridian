@@ -1,5 +1,32 @@
 # Identity asset pipeline — portraits, marks and recipes
 
+> ## ⏸ STATUS — DEFERRED (founder decision, 2026-07-20)
+>
+> **All portrait-generation infrastructure work is stopped.** No Colab notebook, hosted image API,
+> ComfyUI, Character Foundry, local image generator, procedural or Blender face generation,
+> portrait-model licensing or automated likeness checking is to be pursued further. This document
+> and the accompanying licence review are **archived as future reference**, not active work.
+>
+> **MERIDIAN currently uses manually selected temporary portrait assets for recognisable fictional
+> identities. Automated character-image generation is deferred until population scale makes it
+> necessary.**
+>
+> **Honest state, 2026-07-20:** no rendered portraits actually exist yet — the Colab notebook was
+> never run. Every mockup therefore still shows a `PORTRAIT PENDING` placeholder silhouette, not a
+> face. When temporary portraits are added by any means, the policy below governs them:
+>
+> - the three people may use manually selected temporary portraits;
+> - each person uses the **same** portrait across roster, dossier, chat and belief landscape;
+> - names and portraits are marked **PROPOSED FIXTURE** — not engine output, not procedurally
+>   generated;
+> - a portrait is **never** evidence about intelligence, competence, beliefs or behaviour;
+> - portrait realism is **not a release blocker**;
+> - these mockups are **not** implemented product screenshots.
+>
+> The v3 notebook, the licence review and the pipeline options study remain in the repository /
+> Downloads as a record of what was investigated, so the work is not lost when it is picked up at
+> scale. Nothing below this box is a current engineering priority.
+
 **DESIGN ONLY.** No frontend code, no engine change, no real-person data.
 
 Mockups: [`identity-system.html`](mockups/identity-system.html) →
