@@ -1,0 +1,635 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>MERIDIAN — Entity Dossier and Society Belief Landscape (MOCKUP)</title>
+<!--
+  DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE.
+
+  This file is a static design artefact for founder review. It is not part of the application, is
+  not built, is not tested, and must never be presented as a screenshot of working software.
+
+  Every belief value, exposure state and organisation result below is copied from the merged engine
+  on main. Names, biographies and decorative wording are FIXTURE. Nothing was invented to improve
+  the composition. Where the engine does not know something, the mockup says so rather than drawing
+  a chart.
+-->
+<style>
+  :root{
+    --s-void:#05080d; --s-base:#070b12; --s-panel:#0b1119; --s-raised:#0f1722; --s-inset:#060a10;
+    --line:#16202e; --line-strong:#1f2d3f; --line-datum:#17394a;
+    --t-hi:#eef4fc; --t-mid:#b6c6d8; --t-low:#8b9db1; --t-faint:#6b7d92;
+    --cyan:#35c8e0; --cyan-dim:#1d6b7d; --cyan-glow:rgba(53,200,224,.16);
+    --violet:#b98cf0; --amber:#f0a742; --green:#4fd18b; --red:#ff6b57; --muted:#61748a;
+    --o-engine:#4fd18b; --o-fixture:#f0a742; --o-unavail:#61748a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--s-void);color:var(--t-hi);
+       font:400 15px/1.55 "Inter","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .screen{width:1440px;background:
+      radial-gradient(1200px 620px at 22% -8%, rgba(53,200,224,.075), transparent 62%),
+      radial-gradient(900px 520px at 88% 4%, rgba(185,140,240,.055), transparent 58%),
+      var(--s-base);
+      border:1px solid var(--line);margin:0 0 60px}
+  /* ── chrome ─────────────────────────────────────────────── */
+  .fict{display:flex;gap:26px;align-items:center;padding:7px 26px;background:var(--s-inset);
+        border-bottom:1px solid var(--line);font:600 10.5px/1 "Inter",sans-serif;letter-spacing:.13em}
+  .fict .a{color:var(--cyan)} .fict .b{color:var(--amber)}
+  .top{display:flex;align-items:center;gap:20px;padding:16px 26px;border-bottom:1px solid var(--line)}
+  .back{font:600 11px/1 sans-serif;letter-spacing:.1em;color:var(--t-faint);
+        border:1px solid var(--line-strong);border-radius:5px;padding:8px 13px}
+  .crumb{font:600 11px/1 sans-serif;letter-spacing:.14em;color:var(--t-faint)}
+  .crumb b{color:var(--t-mid);font-weight:600}
+  .live{margin-left:auto;font:700 10.5px/1 sans-serif;letter-spacing:.14em;color:var(--o-engine)}
+  .live i{font-style:normal;color:var(--t-faint);margin-right:7px}
+  /* ── header ─────────────────────────────────────────────── */
+  .hdr{display:grid;grid-template-columns:132px 1fr;gap:26px;padding:30px 26px 26px}
+  .por{width:132px;height:132px;border-radius:12px;border:1px solid var(--line-datum);
+       background:linear-gradient(150deg,#122232,#0a1119);position:relative;overflow:hidden;
+       display:flex;align-items:center;justify-content:center}
+  .por .glyph{font:300 54px/1 "Inter",sans-serif;color:var(--cyan);opacity:.85;letter-spacing:.04em}
+  .por .ring{position:absolute;inset:14px;border:1px solid rgba(53,200,224,.2);border-radius:50%}
+  .por.org{background:linear-gradient(150deg,#1a1630,#0a0d19)} .por.org .glyph{color:var(--violet)}
+  .por.org .ring{border-color:rgba(185,140,240,.22);border-radius:8px}
+  .por.coh{background:linear-gradient(150deg,#10221f,#080f14)} .por.coh .glyph{color:#37c9ad}
+  .por.coh .ring{border-color:rgba(55,201,173,.2);border-radius:8px}
+  .kind{font:700 10.5px/1 sans-serif;letter-spacing:.18em;color:var(--cyan);margin-bottom:9px}
+  .kind.org{color:var(--violet)} .kind.coh{color:#37c9ad}
+  h1{font:600 34px/1.15 "Inter",sans-serif;letter-spacing:-.015em;margin-bottom:7px}
+  .sub{color:var(--t-low);font-size:14px;margin-bottom:16px}
+  .claimbar{background:var(--s-panel);border:1px solid var(--line);border-left:3px solid var(--cyan);
+            border-radius:0 7px 7px 0;padding:13px 17px}
+  .claimbar .lbl{font:700 10px/1 sans-serif;letter-spacing:.16em;color:var(--t-faint);margin-bottom:6px}
+  .claimbar .txt{font-size:15px;color:var(--t-hi)}
+  /* ── markers ────────────────────────────────────────────── */
+  .m{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+     border-radius:3.5px;font:700 9.5px/1 sans-serif;vertical-align:middle}
+  .m.e{background:rgba(79,209,139,.14);color:var(--o-engine);border:1px solid rgba(79,209,139,.36)}
+  .m.f{background:rgba(240,167,66,.13);color:var(--o-fixture);border:1px solid rgba(240,167,66,.34)}
+  .m.u{background:rgba(97,116,138,.14);color:var(--o-unavail);border:1px solid rgba(97,116,138,.36)}
+  /* ── the headline answer ────────────────────────────────── */
+  .answer{margin:0 26px 26px;padding:26px 28px;border-radius:10px;
+          background:linear-gradient(96deg,rgba(53,200,224,.085),rgba(53,200,224,.018));
+          border:1px solid rgba(53,200,224,.24)}
+  .answer .lbl{font:700 10px/1 sans-serif;letter-spacing:.17em;color:var(--cyan);margin-bottom:11px}
+  .answer p{font:400 25px/1.38 "Inter",sans-serif;letter-spacing:-.01em;color:#fff}
+  .answer.amberish{background:linear-gradient(96deg,rgba(240,167,66,.075),rgba(240,167,66,.015));
+                   border-color:rgba(240,167,66,.24)}
+  .answer.amberish .lbl{color:var(--amber)}
+  /* ── grid + panels ──────────────────────────────────────── */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:0 26px 26px;align-items:start}
+  .cols.three{grid-template-columns:1.15fr 1fr .95fr}
+  .p{background:var(--s-panel);border:1px solid var(--line);border-radius:9px}
+  .p>h2{font:700 10.5px/1 sans-serif;letter-spacing:.17em;color:var(--t-faint);
+        padding:15px 19px 13px;border-bottom:1px solid var(--line)}
+  .p>.body{padding:19px}
+  /* ── before / after ─────────────────────────────────────── */
+  .ba{display:grid;grid-template-columns:1fr 34px 1fr;gap:12px;align-items:center;margin-bottom:18px}
+  .st{text-align:center;padding:15px 10px;border-radius:8px;background:var(--s-inset);
+      border:1px solid var(--line)}
+  .st.now{border-color:var(--line-datum);background:rgba(53,200,224,.05)}
+  .st .k{font:700 9.5px/1 sans-serif;letter-spacing:.15em;color:var(--t-faint);margin-bottom:9px}
+  .st .v{font:500 17px/1.25 "Inter",sans-serif;color:var(--t-hi)}
+  .st.now .v{color:#fff}
+  .arw{text-align:center;color:var(--cyan);font-size:19px}
+  .mv{padding:13px 16px;border-radius:7px;background:var(--s-inset);border:1px solid var(--line);
+      margin-bottom:11px}
+  .mv .k{font:700 9.5px/1 sans-serif;letter-spacing:.15em;color:var(--t-faint);margin-bottom:7px}
+  .mv .v{font-size:14.5px;color:var(--t-mid)}
+  .mv .v b{color:var(--t-hi);font-weight:600}
+  .bar{height:7px;border-radius:4px;background:var(--s-inset);border:1px solid var(--line);
+       position:relative;overflow:hidden;margin-top:9px}
+  .bar i{position:absolute;top:0;bottom:0;left:0;background:linear-gradient(90deg,var(--cyan-dim),var(--cyan))}
+  .bar.q i{background:linear-gradient(90deg,#3a5568,var(--muted))}
+  /* ── reasons ────────────────────────────────────────────── */
+  .rs{list-style:none} .rs li{display:flex;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .rs li:last-child{border-bottom:0;padding-bottom:0}
+  .rs .n{flex:0 0 22px;height:22px;border-radius:50%;border:1px solid var(--line-datum);
+         display:flex;align-items:center;justify-content:center;font:600 11px/1 sans-serif;color:var(--cyan)}
+  .rs .tx{font-size:14.5px;color:var(--t-mid);flex:1}
+  .inspect{margin-top:17px;width:100%;text-align:center;padding:11px;border-radius:7px;
+           border:1px solid var(--line-strong);background:var(--s-raised);
+           font:600 11.5px/1 sans-serif;letter-spacing:.09em;color:var(--t-low)}
+  /* ── not modelled ───────────────────────────────────────── */
+  .nm{border-color:rgba(97,116,138,.4)}
+  .nm>h2{color:var(--muted)}
+  .nm .lead{font-size:14.5px;color:var(--t-low);margin-bottom:15px;line-height:1.5}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tag{font:500 12px/1 sans-serif;color:var(--t-faint);background:var(--s-inset);
+       border:1px dashed var(--line-strong);border-radius:20px;padding:7px 12px}
+  /* ── org: inside vs official ────────────────────────────── */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:9px;overflow:hidden;
+         border:1px solid var(--line)}
+  .split>div{padding:21px;background:var(--s-panel)}
+  .split>div+div{border-left:1px solid var(--line);background:var(--s-raised)}
+  .split h3{font:700 10.5px/1 sans-serif;letter-spacing:.15em;color:var(--t-faint);margin-bottom:15px}
+  .blocs{display:flex;height:34px;border-radius:6px;overflow:hidden;border:1px solid var(--line);
+         margin-bottom:13px}
+  .blocs i{display:flex;align-items:center;justify-content:center;font:600 11.5px/1 sans-serif;color:#04070c}
+  .blocs .s{background:var(--green)} .blocs .u{background:var(--muted)} .blocs .o{background:var(--red)}
+  .lg{display:flex;gap:15px;font-size:12px;color:var(--t-faint)}
+  .lg i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px}
+  .official{font:600 27px/1.2 "Inter",sans-serif;color:#fff;margin-bottom:9px}
+  .official small{display:block;font:600 10.5px/1 sans-serif;letter-spacing:.15em;
+                  color:var(--amber);margin-bottom:9px}
+  .force{margin-top:15px}
+  .force .k{font:700 9.5px/1 sans-serif;letter-spacing:.14em;color:var(--t-faint);margin-bottom:8px}
+  /* ── unavailable block ──────────────────────────────────── */
+  .unav{padding:22px;border-radius:9px;background:repeating-linear-gradient(-45deg,
+        rgba(97,116,138,.05) 0 9px, transparent 9px 18px);border:1px dashed var(--line-strong)}
+  .unav .t{font:700 12px/1 sans-serif;letter-spacing:.15em;color:var(--muted);margin-bottom:11px}
+  .unav p{font-size:14.5px;color:var(--t-low);line-height:1.55}
+  /* ── landscape ──────────────────────────────────────────── */
+  .lgrid{padding:0 26px 26px}
+  .band{margin-bottom:20px}
+  .band>h2{font:700 10.5px/1 sans-serif;letter-spacing:.18em;color:var(--t-faint);
+           padding-bottom:11px;margin-bottom:14px;border-bottom:1px solid var(--line);
+           display:flex;align-items:center;gap:11px}
+  .band>h2 em{font-style:normal;color:var(--t-faint);opacity:.6;letter-spacing:.04em;font-weight:500}
+  .row{display:grid;gap:13px}
+  .row.p3{grid-template-columns:repeat(3,1fr)}
+  .row.p6{grid-template-columns:repeat(3,1fr)}
+  .card{background:var(--s-panel);border:1px solid var(--line);border-radius:9px;padding:17px;
+        border-top:2px solid var(--line-strong)}
+  .card.toward{border-top-color:var(--cyan)}
+  .card.slight{border-top-color:var(--cyan-dim)}
+  .card.unsure{border-top-color:var(--muted)}
+  .card.against{border-top-color:var(--amber)}
+  .card.nosee{border-top-color:#2a3646;background:var(--s-inset)}
+  .card .nm2{font:600 15.5px/1.3 "Inter",sans-serif;margin-bottom:4px}
+  .card .rl{font-size:12.5px;color:var(--t-faint);margin-bottom:13px}
+  .saw{display:inline-flex;align-items:center;gap:6px;font:700 9.5px/1 sans-serif;letter-spacing:.11em;
+       padding:5px 9px;border-radius:4px;margin-bottom:11px}
+  .saw.y{background:rgba(53,200,224,.1);color:var(--cyan);border:1px solid rgba(53,200,224,.26)}
+  .saw.n{background:rgba(97,116,138,.11);color:var(--muted);border:1px solid rgba(97,116,138,.3)}
+  .res{font:500 14.5px/1.35 "Inter",sans-serif;color:var(--t-hi);margin-bottom:9px}
+  .why{font-size:13px;color:var(--t-low);line-height:1.5}
+  .legend{display:flex;flex-wrap:wrap;gap:20px;padding:15px 19px;background:var(--s-panel);
+          border:1px solid var(--line);border-radius:9px;margin-bottom:20px;font-size:12.5px;
+          color:var(--t-low);align-items:center}
+  .legend b{color:var(--t-faint);font:700 10px/1 sans-serif;letter-spacing:.14em;margin-right:5px}
+  .legend span{display:flex;align-items:center;gap:7px}
+  .swatch{width:20px;height:3px;border-radius:2px;display:inline-block}
+  /* ── same message ───────────────────────────────────────── */
+  .same{margin:0 26px 22px;border:1px solid rgba(53,200,224,.24);border-radius:10px;overflow:hidden}
+  .same>h2{font:700 11px/1 sans-serif;letter-spacing:.19em;color:var(--cyan);padding:16px 21px;
+           background:rgba(53,200,224,.06);border-bottom:1px solid rgba(53,200,224,.18)}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);background:var(--s-panel)}
+  .three>div{padding:21px}
+  .three>div+div{border-left:1px solid var(--line)}
+  .three .who{font:600 16px/1.25 "Inter",sans-serif;margin-bottom:13px}
+  .three .out{font:500 15px/1.3 "Inter",sans-serif;color:var(--cyan);margin-bottom:9px}
+  .three .out.dim{color:var(--t-mid)} .three .out.q{color:var(--muted)}
+  .three .bec{font-size:13.5px;color:var(--t-low);line-height:1.5}
+  .foot{margin:0 26px 26px;padding:17px 21px;border-radius:9px;background:var(--s-inset);
+        border:1px solid var(--line);font-size:14px;color:var(--t-low);line-height:1.55}
+  .foot b{color:var(--t-mid);font-weight:600}
+  .cap{padding:11px 26px 22px;font-size:12.5px;color:var(--t-faint)}
+</style>
+
+<!-- ══════════════ SCREEN 1 — PERSON DOSSIER ══════════════ -->
+<section class="screen" id="s1">
+  <div class="fict">
+    <span class="a">◈ FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION</span>
+    <span class="b">DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE</span>
+  </div>
+  <div class="top">
+    <span class="back">‹ SOCIETY</span>
+    <span class="crumb">KESTRAL STRAIT · DAY 6 · <b>PERSON DOSSIER</b></span>
+    <span class="live"><i>SOURCE</i>ENGINE LIVE</span>
+  </div>
+
+  <div class="hdr">
+    <div class="por"><span class="ring"></span><span class="glyph">◑</span></div>
+    <div>
+      <div class="kind">PERSON</div>
+      <h1>Correspondent, Northshore Broadcast <span class="m f">F</span></h1>
+      <div class="sub">Covers the strait for the public broadcaster.</div>
+      <div class="claimbar">
+        <div class="lbl">THE CLAIM BEING EXAMINED</div>
+        <div class="txt">“The government ignored advance warnings about the closure of the Kestral Strait.”</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="answer">
+    <div class="lbl">WHAT HAPPENED <span class="m e">E</span></div>
+    <p>The journalist moved a little towards believing the claim — but still does not
+       have enough proof to report it as established.</p>
+  </div>
+
+  <div class="cols three">
+    <div class="p">
+      <h2>WHAT CHANGED <span class="m e">E</span></h2>
+      <div class="body">
+        <div class="ba">
+          <div class="st"><div class="k">BEFORE</div><div class="v">Doubted it</div></div>
+          <div class="arw">→</div>
+          <div class="st now"><div class="k">NOW</div><div class="v">Still unsure</div></div>
+        </div>
+        <div class="mv">
+          <div class="k">HOW FAR THEY MOVED</div>
+          <div class="v">A <b>small step</b> towards believing it.</div>
+          <div class="bar"><i style="width:41%"></i></div>
+        </div>
+        <div class="mv">
+          <div class="k">HOW SURE THEY ARE</div>
+          <div class="v">More settled than before, but <b>still short of sure</b>.</div>
+          <div class="bar q"><i style="width:44%"></i></div>
+        </div>
+        <div class="mv" style="margin-bottom:0">
+          <div class="k">DID THEY RECEIVE IT?</div>
+          <div class="v"><b>Yes</b> — over the newsroom wire.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p">
+      <h2>WHY <span class="m e">E</span></h2>
+      <div class="body">
+        <ul class="rs">
+          <li><span class="n">1</span><span class="tx">Their broadcaster requires corroboration
+            before treating an allegation as established.</span></li>
+          <li><span class="n">2</span><span class="tx">The evidence behind the claim was only
+            moderately strong.</span></li>
+          <li><span class="n">3</span><span class="tx">They had not previously accepted the
+            claim, so there was further to travel.</span></li>
+        </ul>
+        <div class="inspect">⌗ &nbsp;INSPECT CALCULATION</div>
+      </div>
+    </div>
+
+    <div class="p nm">
+      <h2>NOT MODELLED YET <span class="m u">?</span></h2>
+      <div class="body">
+        <p class="lead">MERIDIAN can explain how <em>this claim</em> changed their current view. It
+          cannot yet explain how years of memories, relationships and earlier events shaped them.</p>
+        <div class="tags">
+          <span class="tag">personal memories</span><span class="tag">relationships</span>
+          <span class="tag">changing trust</span><span class="tag">emotional state</span>
+          <span class="tag">personal history</span><span class="tag">what they saw before</span>
+          <span class="tag">order of earlier events</span><span class="tag">life beyond this run</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cap">MOCKUP 1 — Person Dossier. Every result marked <span class="m e">E</span> is
+    computed by the merged engine. Names and biography are <span class="m f">F</span> fixture text.</div>
+</section>
+
+<!-- ══════════════ SCREEN 2 — ORGANISATION DOSSIER ══════════════ -->
+<section class="screen" id="s2">
+  <div class="fict">
+    <span class="a">◈ FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION</span>
+    <span class="b">DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE</span>
+  </div>
+  <div class="top">
+    <span class="back">‹ SOCIETY</span>
+    <span class="crumb">KESTRAL STRAIT · DAY 6 · <b>ORGANISATION DOSSIER</b></span>
+    <span class="live"><i>SOURCE</i>ENGINE LIVE</span>
+  </div>
+
+  <div class="hdr">
+    <div class="por org"><span class="ring"></span><span class="glyph">▣</span></div>
+    <div>
+      <div class="kind org">ORGANISATION</div>
+      <h1>Northshore Public Broadcast <span class="m f">F</span></h1>
+      <div class="sub">The regional public broadcaster.</div>
+      <div class="claimbar">
+        <div class="lbl">THE CLAIM BEING EXAMINED</div>
+        <div class="txt">“The government ignored advance warnings about the closure of the Kestral Strait.”</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="answer amberish">
+    <div class="lbl">WHAT HAPPENED <span class="m e">E</span></div>
+    <p>The broadcaster does not take a firm public position, because half of the people
+       inside it are still undecided.</p>
+  </div>
+
+  <div style="padding:0 26px 18px">
+    <div class="split">
+      <div>
+        <h3>WHAT PEOPLE INSIDE IT THINK <span class="m e">E</span></h3>
+        <div class="blocs">
+          <i class="s" style="width:30%">30%</i><i class="u" style="width:50%">50%</i><i class="o" style="width:20%">20%</i>
+        </div>
+        <div class="lg">
+          <span><i style="background:var(--green)"></i>lean towards</span>
+          <span><i style="background:var(--muted)"></i>undecided</span>
+          <span><i style="background:var(--red)"></i>lean against</span>
+        </div>
+        <div class="mv" style="margin-top:16px;margin-bottom:0">
+          <div class="k">HOW UNITED THEY ARE</div>
+          <div class="v">Moderately divided — <b>not united enough</b> to speak firmly.</div>
+          <div class="bar q"><i style="width:55%"></i></div>
+        </div>
+      </div>
+      <div>
+        <h3>WHAT THE ORGANISATION OFFICIALLY SAYS <span class="m e">E</span></h3>
+        <div class="official"><small>OFFICIAL POSITION</small>No firm position</div>
+        <p class="why">The largest group inside is undecided, and the organisation is not united
+          enough to commit. So it withholds a public stance.</p>
+        <div class="force">
+          <div class="k">WHICH WAY IT WOULD ACT</div>
+          <div class="v" style="font-size:14.5px;color:var(--t-mid)">Neither — it is holding back.</div>
+        </div>
+        <div class="force">
+          <div class="k">HOW STRONGLY IT WOULD ACT</div>
+          <div class="bar q"><i style="width:0%"></i></div>
+          <div class="v" style="font-size:13.5px;color:var(--t-faint);margin-top:8px">
+            None. A withheld position carries no force.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="p">
+      <h2>HOW THE POSITION WAS DECIDED <span class="m e">E</span></h2>
+      <div class="body">
+        <ul class="rs">
+          <li><span class="n">1</span><span class="tx">The largest group inside is the undecided
+            one, at half the organisation.</span></li>
+          <li><span class="n">2</span><span class="tx">The organisation is not united enough to
+            commit to a firm stance.</span></li>
+          <li><span class="n">3</span><span class="tx">Its stated aims are to report verified
+            information and to maintain editorial independence.</span></li>
+        </ul>
+        <div class="inspect">⌗ &nbsp;INSPECT CALCULATION</div>
+      </div>
+    </div>
+    <div class="p nm">
+      <h2>NOT MODELLED YET <span class="m u">?</span></h2>
+      <div class="body">
+        <p class="lead">MERIDIAN treats this organisation as declared groups and a decision rule.
+          It is not a mind, and it has no institutional memory.</p>
+        <div class="tags">
+          <span class="tag">internal politics</span><span class="tag">who persuades whom</span>
+          <span class="tag">past decisions</span><span class="tag">changing trust</span>
+          <span class="tag">named individuals inside</span><span class="tag">how the groups formed</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cap">MOCKUP 2 — Organisation Dossier. The two panels are deliberately side by side:
+    what people inside think and what the institution says are never merged into one number.</div>
+</section>
+
+<!-- ══════════════ SCREEN 3 — POPULATION GROUP DOSSIER ══════════════ -->
+<section class="screen" id="s3">
+  <div class="fict">
+    <span class="a">◈ FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION</span>
+    <span class="b">DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE</span>
+  </div>
+  <div class="top">
+    <span class="back">‹ SOCIETY</span>
+    <span class="crumb">KESTRAL STRAIT · DAY 6 · <b>POPULATION GROUP DOSSIER</b></span>
+    <span class="live"><i>SOURCE</i>ENGINE LIVE</span>
+  </div>
+
+  <div class="hdr">
+    <div class="por coh"><span class="ring"></span><span class="glyph">◍</span></div>
+    <div>
+      <div class="kind coh">POPULATION GROUP</div>
+      <h1>Inland households <span class="m f">F</span></h1>
+      <div class="sub">402,000 people · the largest group in the fictional society</div>
+      <div class="claimbar">
+        <div class="lbl">THE CLAIM BEING EXAMINED</div>
+        <div class="txt">“The government ignored advance warnings about the closure of the Kestral Strait.”</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="answer amberish">
+    <div class="lbl">WHAT HAPPENED <span class="m e">E</span></div>
+    <p>Inland households never received this claim, so their earlier view stayed exactly
+       as it was. They have not rejected it — they have not heard it.</p>
+  </div>
+
+  <div class="cols three">
+    <div class="p">
+      <h2>DID THEY SEE THE CLAIM? <span class="m e">E</span></h2>
+      <div class="body">
+        <div class="saw n">✕ &nbsp;DID NOT RECEIVE IT</div>
+        <p class="why" style="margin-bottom:16px">No route carried this claim to them — not the
+          workplace, the union network, the community or the broadcast relay.</p>
+        <div class="mv" style="margin-bottom:0">
+          <div class="k">HOW MANY PEOPLE</div>
+          <div class="v"><b>402,000</b> — every person in this group.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p">
+      <h2>WHAT THEY THINK <span class="m e">E</span></h2>
+      <div class="body">
+        <div class="ba">
+          <div class="st"><div class="k">BEFORE</div><div class="v">Unsure</div></div>
+          <div class="arw">→</div>
+          <div class="st now"><div class="k">NOW</div><div class="v">Unsure</div></div>
+        </div>
+        <div class="mv">
+          <div class="k">CHANGE FROM THIS EVENT</div>
+          <div class="v"><b>None at all.</b> Their earlier view carried forward untouched.</div>
+        </div>
+        <div class="mv" style="margin-bottom:0">
+          <div class="k">WHERE THEIR EARLIER VIEW CAME FROM</div>
+          <div class="v">The fictional story <span class="m f">F</span> — not the engine. The engine
+            only decided <b>not to change it</b>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="p">
+      <h2>WHAT WE DO NOT KNOW <span class="m u">?</span></h2>
+      <div class="body">
+        <div class="unav">
+          <div class="t">BREAKDOWN NOT AVAILABLE</div>
+          <p>MERIDIAN knows this group’s average view, but not how many individual people
+             agree, disagree or remain unsure.</p>
+          <p style="margin-top:12px">An average can hide what is really happening. A score of
+             5 out of 10 could mean everyone is unsure — or that half strongly agree and half
+             strongly disagree. MERIDIAN does not know which, so it does not draw one.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cap">MOCKUP 3 — Population Group Dossier. The empty space where a pie chart would go
+    is the point. No breakdown is drawn, because none is known.</div>
+</section>
+
+<!-- ══════════════ SCREEN 4 — SOCIETY BELIEF LANDSCAPE ══════════════ -->
+<section class="screen" id="s4">
+  <div class="fict">
+    <span class="a">◈ FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION</span>
+    <span class="b">DESIGN MOCKUP — NOT IMPLEMENTED SOFTWARE</span>
+  </div>
+  <div class="top">
+    <span class="crumb">KESTRAL STRAIT · DAY 6 · <b>SOCIETY BELIEF LANDSCAPE</b></span>
+    <span class="live"><i>SOURCE</i>ENGINE LIVE</span>
+  </div>
+
+  <div class="hdr" style="grid-template-columns:1fr;padding-bottom:20px">
+    <div>
+      <div class="kind">ONE CLAIM · TWELVE RESPONSES</div>
+      <h1 style="font-size:29px;max-width:1020px">“The government ignored advance warnings about
+        the closure of the Kestral Strait.”</h1>
+      <div class="sub" style="margin-bottom:0">Said by the Strait Families Group spokesperson on day 6.
+        Everyone below heard the same words, from the same source, at the same moment.</div>
+    </div>
+  </div>
+
+  <div class="same">
+    <h2>SAME CLAIM — THREE RESPONSES</h2>
+    <div class="three">
+      <div>
+        <div class="who">Family spokesperson</div>
+        <div class="out">Moved towards the claim.</div>
+        <div class="bec">They already held first-hand testimony about what happened, so it took
+          little extra to convince them.</div>
+      </div>
+      <div>
+        <div class="who">Government minister</div>
+        <div class="out dim">Changed very little.</div>
+        <div class="bec">They must follow a formal verification process against official records
+          before changing an official position.</div>
+      </div>
+      <div>
+        <div class="who">Broadcast journalist</div>
+        <div class="out q">Still unsure.</div>
+        <div class="bec">Their broadcaster requires corroboration before treating an allegation
+          as established.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <b>Their jobs did not decide this.</b> Give the minister the spokesperson’s situation — the same
+    starting view, the same trust in the source, the same first-hand testimony — and the minister
+    reaches the spokesperson’s result exactly. What differs is the situation each person is in, not
+    who they are. <span class="m e">E</span>
+  </div>
+
+  <div class="lgrid">
+    <div class="legend">
+      <b>MOVEMENT</b>
+      <span><i class="swatch" style="background:var(--cyan)"></i>moved towards it</span>
+      <span><i class="swatch" style="background:var(--cyan-dim)"></i>moved slightly</span>
+      <span><i class="swatch" style="background:var(--muted)"></i>still unsure</span>
+      <span><i class="swatch" style="background:var(--amber)"></i>leans against it</span>
+      <span><i class="swatch" style="background:#2a3646"></i>never received it</span>
+      <span style="margin-left:auto"><span class="m e">E</span>&nbsp;engine&nbsp;&nbsp;
+        <span class="m f">F</span>&nbsp;story&nbsp;&nbsp;<span class="m u">?</span>&nbsp;not known</span>
+    </div>
+
+    <div class="band">
+      <h2>PEOPLE <em>— 3</em></h2>
+      <div class="row p3">
+        <div class="card toward">
+          <div class="nm2">Family spokesperson <span class="m f">F</span></div>
+          <div class="rl">Speaks for families of held crew</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Moved towards the claim</div>
+          <div class="why">Already held first-hand testimony.</div>
+        </div>
+        <div class="card slight">
+          <div class="nm2">Government minister <span class="m f">F</span></div>
+          <div class="rl">Minister for Maritime Affairs</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Barely moved</div>
+          <div class="why">Needs formal verification first.</div>
+        </div>
+        <div class="card unsure">
+          <div class="nm2">Broadcast journalist <span class="m f">F</span></div>
+          <div class="rl">Correspondent, Northshore Broadcast</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Still unsure</div>
+          <div class="why">Needs corroboration to report it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <h2>ORGANISATIONS <em>— 3</em></h2>
+      <div class="row p3">
+        <div class="card against">
+          <div class="nm2">National Government <span class="m f">F</span></div>
+          <div class="rl">The governing coalition</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Officially rejects it</div>
+          <div class="why">Most of it leans against, and it is united enough to say so firmly.</div>
+        </div>
+        <div class="card unsure">
+          <div class="nm2">Northshore Public Broadcast <span class="m f">F</span></div>
+          <div class="rl">The regional public broadcaster</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">No firm position</div>
+          <div class="why">Half of it is still undecided.</div>
+        </div>
+        <div class="card toward">
+          <div class="nm2">Coastal Workers’ Union <span class="m f">F</span></div>
+          <div class="rl">Represents affected labour</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Officially supports it</div>
+          <div class="why">Most of it agrees, and it is strongly united.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <h2>POPULATION GROUPS <em>— 6 · 1,001,000 people</em></h2>
+      <div class="row p6">
+        <div class="card unsure">
+          <div class="nm2">Port workers <span class="m f">F</span></div>
+          <div class="rl">41,000 · via the union</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Moved a little, still unsure</div>
+          <div class="why"><span class="m u">?</span> Breakdown not available</div>
+        </div>
+        <div class="card unsure">
+          <div class="nm2">Coastal households <span class="m f">F</span></div>
+          <div class="rl">96,000 · via the community</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Moved a little, still unsure</div>
+          <div class="why"><span class="m u">?</span> Breakdown not available</div>
+        </div>
+        <div class="card against">
+          <div class="nm2">Governing-party supporters <span class="m f">F</span></div>
+          <div class="rl">210,000 · via broadcast</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Still lean against it</div>
+          <div class="why"><span class="m u">?</span> Breakdown not available</div>
+        </div>
+        <div class="card unsure">
+          <div class="nm2">Opposition supporters <span class="m f">F</span></div>
+          <div class="rl">188,000 · via broadcast</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Moved a little, still unsure</div>
+          <div class="why"><span class="m u">?</span> Breakdown not available</div>
+        </div>
+        <div class="card nosee">
+          <div class="nm2">Inland households <span class="m f">F</span></div>
+          <div class="rl">402,000 · no route reached them</div>
+          <div class="saw n">✕ &nbsp;NEVER RECEIVED IT</div>
+          <div class="res">Earlier view unchanged</div>
+          <div class="why">Not rejection — they have not heard it.</div>
+        </div>
+        <div class="card unsure">
+          <div class="nm2">Small-business owners <span class="m f">F</span></div>
+          <div class="rl">64,000 · via the community</div>
+          <div class="saw y">✓ &nbsp;RECEIVED IT</div>
+          <div class="res">Moved slightly, still unsure</div>
+          <div class="why"><span class="m u">?</span> Breakdown not available</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot" style="margin-bottom:26px">
+    <b>Four in ten people never heard it.</b> 402,000 of the 1,001,000 people in this society did not
+    receive the claim at all. Their views are unchanged — which is not the same as disagreeing. Seeing
+    a claim and believing a claim are kept apart everywhere on this screen. <span class="m e">E</span>
+  </div>
+  <div class="cap">MOCKUP 4 — Society Belief Landscape. Cards, not a network graph: the question is
+    “who saw it and what did they make of it”, which a reader answers by scanning, not by tracing edges.</div>
+</section>
