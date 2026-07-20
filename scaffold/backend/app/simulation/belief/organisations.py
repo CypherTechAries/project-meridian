@@ -6,12 +6,19 @@ personality, no memory, no intelligence and no personal credence. What it has is
 distribution of positions, a governance rule for turning that distribution into an official stance,
 and a cohesion value describing how well it holds together.
 
-THE OFFICIAL POSITION IS NOT THE WEIGHTED MEAN. Copying the mean into an "official belief" would be
-the anthropomorphic shortcut this module exists to avoid — it would say the organisation *believes*
-the average of its members, which no organisation does. Instead the governance rule reads the
-distribution, and cohesion determines how strongly any position can be asserted. A body that is
-half undecided cannot speak with conviction however its plurality leans, and that falls out of the
-arithmetic rather than being written down as an outcome.
+THE OFFICIAL POSITION IS NOT ASSUMED TO BE THE WEIGHTED MEAN. An organisation's official position
+need not equal the average position of its members; it depends on its governance process, mandate,
+cohesion and internal distribution. Some bodies do aggregate by majority or weighted vote — this
+model simply does not assume it. Here the governance rule reads the distribution, and cohesion
+determines how strongly any position can be asserted. A body that is half undecided cannot speak
+with conviction however its plurality leans, and that falls out of the arithmetic rather than being
+written down as an outcome.
+
+ACTION DIRECTION AND INTENSITY ARE SEPARATE. Alignment runs 0 = oppose, 0.5 = neutral, 1 = support,
+so any propensity computed as `alignment x ...` is directionally asymmetric: a firmly opposing body
+would score near zero purely because opposition sits at the bottom of the axis. Direction and
+strength are different questions, and conflating them would make a determined opponent look
+inactive. Intensity is therefore measured from DISTANCE FROM NEUTRALITY, which is symmetric.
 
 Generic by construction: no branch on organisation id, display name, type or biography.
 """
@@ -39,6 +46,15 @@ class OfficialPosition(str, Enum):
     oppose = "oppose"
     uncertain = "uncertain"
     no_position = "no_position"
+
+
+class ActionDirection(str, Enum):
+    """Which way an organisation would act. Separate from how strongly."""
+
+    support = "support"
+    oppose = "oppose"
+    withhold = "withhold"
+    unavailable = "unavailable"
 
 
 class PositionStrength(str, Enum):
@@ -77,7 +93,8 @@ class OrganisationResult:
     official_position: Optional[OfficialPosition]
     position_strength: Optional[PositionStrength]
     cohesion: Optional[float]
-    action_propensity: Optional[float]
+    action_direction: ActionDirection
+    action_intensity: Optional[float]
     governance_rule: str
     objectives: tuple[str, ...]
     status: str
@@ -115,7 +132,8 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
             official_position=None,
             position_strength=None,
             cohesion=i.cohesion,
-            action_propensity=None,
+            action_direction=ActionDirection.unavailable,
+            action_intensity=None,
             governance_rule="plurality-subject-to-cohesion",
             objectives=i.objectives,
             status="UNAVAILABLE",
@@ -160,9 +178,27 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
     else:
         strength = PositionStrength.qualified
 
-    # Action propensity scales with how firmly the body can act, not with how strongly it feels.
+    # ── Action direction and intensity, kept separate ────────────────────────────────────────────
+    #
+    # Direction comes from the official position. Intensity is measured from DISTANCE FROM
+    # NEUTRALITY, so a firmly opposing body and a firmly supporting body with the same cohesion and
+    # the same decisive margin receive the SAME intensity. Using alignment directly would have made
+    # opposition look inactive purely because it sits near zero on the support axis.
     decisive = max(0.0, lead_share - uncertain_share)
-    action_propensity = _clamp(resulting * i.cohesion * decisive)
+    distance_from_neutral = abs(2.0 * resulting - 1.0)
+
+    if position is OfficialPosition.support:
+        direction = ActionDirection.support
+    elif position is OfficialPosition.oppose:
+        direction = ActionDirection.oppose
+    else:
+        direction = ActionDirection.withhold
+
+    if strength is PositionStrength.withheld:
+        # A body with no position to assert is not positioned to act on it.
+        action_intensity = 0.0
+    else:
+        action_intensity = _clamp(distance_from_neutral * i.cohesion * decisive)
 
     weighted_mean = sum(
         share * {"support": 1.0, "oppose": 0.0, "uncertain": 0.5}.get(name, 0.5)
@@ -177,7 +213,8 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
         official_position=position,
         position_strength=strength,
         cohesion=i.cohesion,
-        action_propensity=action_propensity,
+        action_direction=direction,
+        action_intensity=action_intensity,
         governance_rule="plurality-subject-to-cohesion",
         objectives=i.objectives,
         status="AGGREGATED",
@@ -200,9 +237,14 @@ def aggregate(i: OrganisationInput) -> OrganisationResult:
                 f"cohesion {i.cohesion:.2f} vs firm threshold {FIRM_POSITION_COHESION}; "
                 f"position={position.value}, strength={strength.value}"
             ),
-            "action_propensity_derivation": (
-                f"resulting_alignment {resulting:.4f} x cohesion {i.cohesion:.2f} "
-                f"x decisive margin {decisive:.2f}"
+            "action_direction": direction.value,
+            "distance_from_neutral": distance_from_neutral,
+            "decisive_margin": decisive,
+            "action_intensity_derivation": (
+                f"direction={direction.value}; intensity = distance from neutrality "
+                f"{distance_from_neutral:.4f} x cohesion {i.cohesion:.2f} x decisive margin "
+                f"{decisive:.2f} = {action_intensity:.4f}"
+                + (" (withheld position -> zero)" if strength is PositionStrength.withheld else "")
             ),
             "weighted_mean_for_comparison": weighted_mean,
             "official_position_equals_weighted_mean": False,

@@ -19,6 +19,7 @@ from app.simulation.belief import cast
 from app.simulation.belief import organisations as orgmod
 from app.simulation.belief.organisations import (
     FIRM_POSITION_COHESION,
+    ActionDirection,
     OfficialPosition,
     OrganisationInput,
     OrganisationResult,
@@ -95,10 +96,10 @@ def test_03_official_alignment_is_bounded() -> None:
             assert 0.0 <= r.resulting_alignment <= 1.0
 
 
-def test_04_action_propensity_is_bounded() -> None:
+def test_04_action_intensity_is_bounded_and_non_negative() -> None:
     for oid in ORG_IDS:
-        for w in (0.0, 1.0):
-            assert 0.0 <= run(oid, update_weight=w).action_propensity <= 1.0
+        for w in (0.0, 0.5, 1.0):
+            assert 0.0 <= run(oid, update_weight=w).action_intensity <= 1.0
 
 
 def test_05_identical_inputs_give_identical_outputs() -> None:
@@ -126,22 +127,23 @@ def test_08_reordering_internal_blocs_gives_the_same_result() -> None:
     backward = run("public-broadcaster", internal_blocs=reversed_blocs)
     assert forward.official_position == backward.official_position
     assert forward.resulting_alignment == backward.resulting_alignment
-    assert forward.action_propensity == backward.action_propensity
+    assert forward.action_intensity == backward.action_intensity
+    assert forward.action_direction == backward.action_direction
 
 
 def test_09_10_cohesion_moves_position_strength_monotonically() -> None:
     blocs = {"support": 0.6, "oppose": 0.2, "uncertain": 0.2}
-    propensities = [
-        run("national-government", internal_blocs=blocs, cohesion=c).action_propensity
+    intensities = [
+        run("national-government", internal_blocs=blocs, cohesion=c).action_intensity
         for c in (0.2, 0.4, 0.6, 0.8, 1.0)
     ]
-    assert propensities == sorted(propensities), "higher cohesion did not strengthen capacity to act"
+    assert intensities == sorted(intensities), "higher cohesion did not strengthen capacity to act"
 
     low = run("national-government", internal_blocs=blocs, cohesion=0.3)
     high = run("national-government", internal_blocs=blocs, cohesion=0.9)
     assert low.position_strength is PositionStrength.qualified
     assert high.position_strength is PositionStrength.firm
-    assert low.action_propensity < high.action_propensity
+    assert low.action_intensity < high.action_intensity
 
 
 def test_11_large_uncertain_bloc_constrains_a_firm_position() -> None:
@@ -154,7 +156,8 @@ def test_11_large_uncertain_bloc_constrains_a_firm_position() -> None:
     assert r.cohesion == 0.55
     assert r.official_position is OfficialPosition.uncertain
     assert r.position_strength is PositionStrength.withheld
-    assert r.action_propensity == 0.0
+    assert r.action_direction is ActionDirection.withhold
+    assert r.action_intensity == 0.0
 
     # Shrink the uncertain bloc and a position becomes available — the constraint is the bloc,
     # not the organisation.
@@ -192,8 +195,9 @@ def test_13_missing_internal_distribution_is_unavailable_not_zero() -> None:
     assert r.status == "UNAVAILABLE"
     assert r.official_position is None
     assert r.resulting_alignment is None
-    assert r.action_propensity is None
-    assert r.action_propensity != 0.0
+    assert r.action_intensity is None
+    assert r.action_intensity != 0.0
+    assert r.action_direction is ActionDirection.unavailable
     assert "internal_blocs" in r.unavailable_reason
 
 
@@ -242,7 +246,8 @@ def test_20_explanation_contains_the_required_derivations() -> None:
         for key in ("prior_alignment", "target_alignment", "update_weight", "cohesion",
                     "cohesion_contribution", "delta_alignment", "resulting_alignment",
                     "internal_distribution", "governance_rule", "position_derivation",
-                    "action_propensity_derivation", "objectives"):
+                    "action_direction", "action_intensity_derivation", "distance_from_neutral",
+                    "decisive_margin", "objectives"):
             assert key in e, f"{oid} explanation missing {key}"
         # Biography must never enter a calculation explanation.
         flat = " ".join(str(v) for v in e.values()).lower()
@@ -261,3 +266,85 @@ def test_21_unexposed_organisation_holds_its_distribution_without_moving() -> No
 def test_22_non_reconciling_distribution_is_refused() -> None:
     with pytest.raises(ValueError, match="sum to 1.0"):
         run("national-government", internal_blocs={"support": 0.5, "oppose": 0.2, "uncertain": 0.1})
+
+
+# ══ DIRECTION AND INTENSITY ARE SEPARATE ═════════════════════════════════════════════════════════
+#
+# The previous single `action_propensity` field multiplied alignment directly, which made a firmly
+# opposing body score near zero purely because opposition sits at the bottom of the support axis.
+# Direction and strength are different questions.
+
+
+def _mirror(alignment: float, cohesion: float, lead: float, unc: float, side: str):
+    """Same structure, mirrored side. Alignment mirrors about neutral."""
+    other = "oppose" if side == "support" else "support"
+    blocs = {side: lead, other: round(1.0 - lead - unc, 10), "uncertain": unc}
+    return aggregate(OrganisationInput(
+        internal_blocs=blocs, cohesion=cohesion, prior_alignment=alignment,
+        update_weight=None, target_alignment=1.0, objectives=("o",)))
+
+
+def test_23_mirrored_support_and_opposition_give_equal_intensity() -> None:
+    """Item 1 and 9. Equal cohesion, equal decisive margin, equal distance from neutral."""
+    sup = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    opp = _mirror(0.20, 0.72, 0.55, 0.25, "oppose")
+    assert sup.action_intensity == pytest.approx(opp.action_intensity, abs=1e-12)
+    assert sup.action_intensity > 0.0
+
+
+def test_24_mirrored_directions_are_opposite() -> None:
+    """Item 2."""
+    sup = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    opp = _mirror(0.20, 0.72, 0.55, 0.25, "oppose")
+    assert sup.action_direction is ActionDirection.support
+    assert opp.action_direction is ActionDirection.oppose
+
+
+def test_25_firm_opposition_can_have_high_intensity() -> None:
+    """
+    Item 8 — the defect this correction fixes. Under the old formula a firm opponent scored near
+    zero. It must now be able to score as high as a mirrored supporter.
+    """
+    opp = _mirror(0.05, 0.95, 0.90, 0.05, "oppose")
+    sup = _mirror(0.95, 0.95, 0.90, 0.05, "support")
+    assert opp.action_intensity > 0.5
+    assert opp.action_intensity == pytest.approx(sup.action_intensity, abs=1e-12)
+
+
+def test_26_neutral_or_withheld_positions_do_not_act_strongly() -> None:
+    """Item 3."""
+    withheld = run("public-broadcaster")
+    assert withheld.action_direction is ActionDirection.withhold
+    assert withheld.action_intensity == 0.0
+
+    near_neutral = _mirror(0.50, 0.90, 0.60, 0.10, "support")
+    assert near_neutral.action_intensity == pytest.approx(0.0, abs=1e-12)
+
+
+def test_27_intensity_rises_with_decisive_margin() -> None:
+    """Item 5."""
+    vals = [
+        _mirror(0.80, 0.80, lead, unc, "support").action_intensity
+        for lead, unc in ((0.55, 0.40), (0.60, 0.30), (0.70, 0.20), (0.85, 0.10))
+    ]
+    assert vals == sorted(vals)
+    assert all(0.0 <= v <= 1.0 for v in vals)
+
+
+def test_28_intensity_ignores_identity_and_bloc_order() -> None:
+    """Items 6 and 7, restated for the new field."""
+    a = _mirror(0.80, 0.72, 0.55, 0.25, "support")
+    b = aggregate(OrganisationInput(
+        internal_blocs={"uncertain": 0.25, "oppose": 0.20, "support": 0.55},
+        cohesion=0.72, prior_alignment=0.80, update_weight=None,
+        target_alignment=1.0, objectives=("different objective",)))
+    assert a.action_intensity == b.action_intensity
+    assert a.action_direction == b.action_direction
+
+
+def test_29_missing_inputs_leave_intensity_unavailable() -> None:
+    """Item 10, restated for the new field."""
+    for override in ({"cohesion": None}, {"internal_blocs": None}, {"prior_alignment": None}):
+        r = run("coastal-workers-union", **override)
+        assert r.action_intensity is None
+        assert r.action_direction is ActionDirection.unavailable
