@@ -11,11 +11,10 @@ SEPARATION OF CONCERNS. `bio` fields are descriptive fixture content for the int
 never read by the update rule; `test_belief_genericity` asserts that the update input contains no
 biography field at all.
 
-ROLE IS NOT CAPABILITY. `evidentiary_threshold` is declared from an entity's SITUATION — access,
-obligation, procedure, whether they already hold the underlying testimony — never from occupation,
-education, wealth, class or presumed intelligence. A prestigious role grants access, authority and
-constraints; it does not grant competence or rationality. Every threshold below carries the
-situational reason it was set, so the justification is auditable rather than assumed.
+ROLE IS NOT CAPABILITY. Thresholds live in `THRESHOLDS` as contextual records keyed by
+(entity, proposition), each carrying the process that set it — never on the person as a scalar,
+which would read as a permanent disposition. A prestigious role grants access, authority and
+constraints; it does not grant competence or rationality.
 
 B5: every identifier is a `fict:` typed target that must resolve in the active world's registry.
 There is no susceptibility, persuadability or ranking value anywhere in this module.
@@ -66,30 +65,16 @@ PEOPLE: list[dict[str, Any]] = [
     {
         "person_id": "family-spokesperson",
         "display_name": "Spokesperson, Strait Families Group",
-        # Declared from SITUATION, not from formality or credentials: this person holds first-hand
-        # testimony from the affected families and is the originator of the claim, so the claim
-        # requires no external corroboration to be actionable FOR THEM. A low threshold here means
-        # "already holds the underlying testimony", NOT "less rigorous" or "easier to convince".
-        "evidentiary_threshold": 0.20,
         "bio": "Speaks for families of crew held by the closure.",
     },
     {
         "person_id": "government-minister",
         "display_name": "Minister for Maritime Affairs",
-        # Declared from ACCESS AND OBLIGATION, not from competence: holds the departmental record
-        # the claim disputes and is bound by an official verification standard before contradicting
-        # it. This says nothing about being better informed in general, or better at reasoning.
-        "evidentiary_threshold": 0.75,
         "bio": "Holds the maritime brief in the governing coalition.",
     },
     {
         "person_id": "broadcast-journalist",
         "display_name": "Correspondent, Northshore Broadcast",
-        # Declared from PROCEDURE, not from occupation or intellect: the broadcaster's verification
-        # standard for this proposition requires a second independent source before an allegation is
-        # treated as established. The threshold belongs to the editorial process governing this
-        # claim, not to the person being more analytical than anyone else.
-        "evidentiary_threshold": 0.55,
         "bio": "Covers the strait for the public broadcaster.",
     },
 ]
@@ -134,6 +119,112 @@ COHORTS: list[dict[str, Any]] = [
     {"cohort_id": "inland-households", "display_name": "Inland households", "represents_population": 402_000},
     {"cohort_id": "small-business-owners", "display_name": "Small-business owners", "represents_population": 64_000},
 ]
+
+
+# ── Contextual thresholds ────────────────────────────────────────────────────────────────────────
+#
+# Keyed by (entity, proposition). The three factual values are EXACTLY those previously held as
+# person scalars - 0.20 / 0.75 / 0.55 - so the frozen first run is preserved. Only their scoping,
+# kind and provenance changed. This is a semantic correction, not tuning.
+#
+# The evaluative proposition carries DELIBERATION thresholds, a different kind: an evaluative claim
+# cannot be verified, so it has no verification threshold at all.
+
+THRESHOLD_RECORDS: list[dict[str, Any]] = [
+    {
+        "entity_id": "family-spokesperson",
+        "proposition_id": "P-WARNINGS-IGNORED",
+        "proposition_kind": "attribution",
+        "threshold_kind": "verification",
+        "value": 0.20,
+        "setting_process": "first-hand testimony already held",
+        "rationale": (
+            "The person already holds the first-hand testimony on which the factual claim is "
+            "based, reducing the additional corroboration required for this proposition."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+    {
+        "entity_id": "government-minister",
+        "proposition_id": "P-WARNINGS-IGNORED",
+        "proposition_kind": "attribution",
+        "threshold_kind": "verification",
+        "value": 0.75,
+        "setting_process": "departmental verification requirement",
+        "rationale": (
+            "The relevant governmental process requires formal verification against institutional "
+            "records before changing the official factual position."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+    {
+        "entity_id": "broadcast-journalist",
+        "proposition_id": "P-WARNINGS-IGNORED",
+        "proposition_kind": "attribution",
+        "threshold_kind": "verification",
+        "value": 0.55,
+        "setting_process": "broadcaster publication standard",
+        "rationale": (
+            "The broadcaster's publication process requires corroboration before reporting this "
+            "factual allegation as established."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+    # Evaluative proposition: DELIBERATION, not verification. Declared for schema completeness; the
+    # evaluative update path is not exercised by the frozen factual run.
+    {
+        "entity_id": "family-spokesperson",
+        "proposition_id": "P-EMERGENCY-LEGITIMATE",
+        "proposition_kind": "evaluative",
+        "threshold_kind": "deliberation",
+        "value": 0.35,
+        "setting_process": "campaign group internal consultation",
+        "rationale": (
+            "The group consults affected families before adopting a firm public position on a "
+            "measure that would affect them."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+    {
+        "entity_id": "government-minister",
+        "proposition_id": "P-EMERGENCY-LEGITIMATE",
+        "proposition_kind": "evaluative",
+        "threshold_kind": "commitment",
+        "value": 0.70,
+        "setting_process": "collective responsibility",
+        "rationale": (
+            "A firm public stance commits the whole coalition, so the position is not advanced "
+            "until it is agreed collectively."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+    {
+        "entity_id": "broadcast-journalist",
+        "proposition_id": "P-EMERGENCY-LEGITIMATE",
+        "proposition_kind": "evaluative",
+        "threshold_kind": "deliberation",
+        "value": 0.60,
+        "setting_process": "editorial impartiality standard",
+        "rationale": (
+            "The broadcaster's impartiality standard restricts correspondents from advancing a "
+            "firm position on a contested policy question."
+        ),
+        "source_reference": "cast.THRESHOLD_RECORDS",
+    },
+]
+
+
+def threshold_registry():
+    """Build the typed registry from the declared records."""
+    from .thresholds import ContextualThreshold, ThresholdRegistry
+
+    records = [
+        ContextualThreshold(
+            **r, scenario_id=SCENARIO_ID, scenario_version=SCENARIO_VERSION, origin="FIXTURE"
+        )
+        for r in THRESHOLD_RECORDS
+    ]
+    return ThresholdRegistry(records, {p["proposition_id"] for p in PROPOSITIONS})
 
 
 # ── Source trust ─────────────────────────────────────────────────────────────────────────────────

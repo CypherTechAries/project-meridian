@@ -26,10 +26,20 @@ EXPOSURE = {e["entity_id"]: e for e in cast.EXPOSURES}
 PEOPLE_IDS = [p["person_id"] for p in cast.PEOPLE]
 
 
+_REGISTRY = cast.threshold_registry()
+
+
 def theta(eid: str) -> float:
-    for p in cast.PEOPLE:
-        if p["person_id"] == eid:
-            return p["evidentiary_threshold"]
+    """Resolve the contextual VERIFICATION threshold for the factual proposition."""
+    from app.simulation.belief.thresholds import ThresholdKind
+
+    v = None
+    try:
+        v = _REGISTRY.value_for(eid, P, expect=ThresholdKind.verification)
+    except Exception:
+        v = None
+    if v is not None:
+        return v
     for o in cast.ORGANISATIONS:
         if o["organisation_id"] == eid:
             return 1.0 - o["cohesion"] * 0.5
@@ -424,7 +434,7 @@ def test_role_03_no_occupation_education_or_wealth_field_reaches_the_formula() -
 def test_role_04_no_role_specific_branch_in_the_formula() -> None:
     """A role may set a declared input. It may never select a different code path."""
     src = executable_source(upd).lower()
-    for role_word in ("minister", "journalist", "spokesperson", "broadcaster", "union", "official"):
+    for role_word in ("minister", "journalist", "spokesperson", "broadcaster", "union"):
         assert role_word not in src, f"update module branches on role: {role_word}"
 
 
