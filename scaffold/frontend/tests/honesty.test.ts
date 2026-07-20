@@ -10,14 +10,21 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { FICTION_DISCLOSURE, MIXED_DISCLOSURE, mount } from '../src/main.ts'
 import { initialSnapshot } from '../src/engine/client.ts'
+import { consequenceDomains } from '../src/engine/presentation.ts'
 import type { RunResult } from '../src/engine/client.ts'
 
 const ALLOWED_STATUS = ['AUTHORITATIVE', 'ASSESSED', 'DISPUTED', 'UNKNOWN', 'PRESENTATION_ONLY']
 const ALLOWED_CONF = ['HIGH', 'MEDIUM', 'LOW', 'NOT_APPLICABLE']
 
+/*
+ * These suites assert properties of the ANALYSIS view — the detailed dashboard that was the
+ * default before Briefing View existed. Every assertion is unchanged; only the mode they mount is,
+ * because the same guarantees now live one depth-level in. Briefing View has its own suite below,
+ * with its own stricter rules about what may appear at all.
+ */
 function render(run: RunResult = initialSnapshot()): HTMLElement {
   const root = document.createElement('div')
-  mount(root, run)
+  mount(root, run, 'analysis')
   return root
 }
 
@@ -313,7 +320,7 @@ describe('bounded defect-correction pass', () => {
 
   it('never renders unknown or unavailable as a zero', () => {
     const root = document.createElement('div')
-    mount(root, { ...initialSnapshot(), connection: 'unavailable', error: 'refused' })
+    mount(root, { ...initialSnapshot(), connection: 'unavailable', error: 'refused' }, 'analysis')
     const unavailable = Array.from(root.querySelectorAll('.ob--unavailable'))
     expect(unavailable.length).toBeGreaterThan(0)
     for (const el of unavailable) {
@@ -518,5 +525,108 @@ describe('lagged-response explanation is derived, not narrated', () => {
       .toLowerCase()
     expect(scoped.length).toBeGreaterThan(80)
     expect(scoped).not.toMatch(/will (rise|continue|peak|fall)|expected to|forecast|projected|predict/)
+  })
+})
+
+describe('Briefing View — default mode and derived copy', () => {
+  function briefing(run: RunResult = initialSnapshot()): HTMLElement {
+    const root = document.createElement('div')
+    mount(root, run, 'briefing')
+    return root
+  }
+  function analysis(run: RunResult = initialSnapshot()): HTMLElement {
+    const root = document.createElement('div')
+    mount(root, run, 'analysis')
+    return root
+  }
+
+  it('opens in Briefing mode by default', () => {
+    const root = document.createElement('div')
+    mount(root, initialSnapshot())
+    expect(root.querySelector('.briefing')).not.toBeNull()
+    expect(root.querySelector('.modesw__btn.is-on')?.textContent?.trim()).toBe('Briefing')
+  })
+
+  it('makes Analysis visibly discoverable, not a hidden shortcut', () => {
+    const btn = briefing().querySelector('.modesw__btn[data-mode="analysis"]')
+    expect(btn).not.toBeNull()
+    expect(btn?.textContent?.trim()).toBe('Analysis')
+    // Visible control, reachable by keyboard as a real button.
+    expect(btn?.tagName).toBe('BUTTON')
+  })
+
+  it('keeps the fictional disclosure visible in Briefing', () => {
+    expect(briefing().textContent).toContain(FICTION_DISCLOSURE)
+  })
+
+  it('renders People, Economy and Politics', () => {
+    const cards = Array.from(briefing().querySelectorAll('.ccard__label')).map((n) => n.textContent)
+    expect(cards).toEqual(['People', 'Economy', 'Politics'])
+  })
+
+  it('carries an origin marker on every consequence card, so a crop stays honest', () => {
+    for (const card of Array.from(briefing().querySelectorAll('.ccard'))) {
+      expect(card.querySelector('.ob')).not.toBeNull()
+    }
+  })
+
+  it('keeps raw engine machinery OUT of Briefing', () => {
+    const text = briefing().querySelector('.main--briefing')?.textContent ?? ''
+    expect(text).not.toMatch(/@1\.0\.0/)
+    expect(text).not.toMatch(/M-[A-Z-]+@/)
+    expect(text).not.toContain('NOT_APPLICABLE')
+    expect(text).not.toMatch(/rule pack|state revision|seed/i)
+  })
+
+  it('still exposes exact technical detail in Analysis', () => {
+    const text = analysis().textContent ?? ''
+    expect(text).toContain('kestral-causal-slice@1.0.0')
+    expect(text).toContain('NOT_APPLICABLE')
+  })
+
+  it('derives every default sentence rather than authoring it', () => {
+    const run = initialSnapshot()
+    const root = briefing(run)
+    const text = root.textContent ?? ''
+    // The top cohort is named from the projection, not hard-coded.
+    const top = run.projection.cohorts.slice().sort((a, b) => b.value - a.value)[0]!
+    expect(text).toContain(top.label.replace(/-/g, ' '))
+    // The day count comes from simulated hours.
+    expect(text).toContain(`${Math.round(run.projection.simulated_hours / 24)} day`)
+  })
+
+  it('shows no unsupported counts, deadlines or human activity', () => {
+    const text = (briefing().textContent ?? '').toLowerCase()
+    // Vessel/shift counts and named activity the engine does not model.
+    // Same-line only: a numbered map callout ('2' then 'Carriers rerouted south' on the
+    // next line) is a label index, not a vessel count, and must not trip this.
+    expect(text, 'vessel/shift counts').not.toMatch(/\b(three|four|five|\d+)[ ]+(carriers|vessels|ships|shifts)\b/)
+    expect(text, 'named human activity').not.toMatch(/shifts cancelled|families gather|vigil|interview/)
+    expect(text, 'deadline vocabulary').not.toMatch(/deadline|expires|due (in|by)|countdown|hours remaining/)
+  })
+
+  it('uses one shared direction derivation, so a value is never described two ways', () => {
+    const run = initialSnapshot()
+    const politics = consequenceDomains(run).find((d) => d.id === 'politics')!
+    const text = briefing(run).textContent ?? ''
+    expect(text).toContain(politics.statement)
+    // The label used on the card is the one the derivation produced.
+    expect(politics.statement).toContain(politics.trend!.label)
+  })
+
+  it('does not imply a decision can be executed', () => {
+    const root = briefing()
+    const note = (root.querySelector('.bneeds__note')?.textContent ?? '').replace(/\s+/g, ' ')
+    expect(note).toMatch(/no action is submitted, priced, validated or applied/i)
+    expect(root.querySelector('.btn--solid')?.hasAttribute('disabled')).toBe(false)
+  })
+
+  it('keeps primary actions keyboard reachable', () => {
+    const root = briefing()
+    for (const el of Array.from(root.querySelectorAll('.ccard, .dcard'))) {
+      expect(el.getAttribute('tabindex')).toBe('0')
+      expect(el.getAttribute('aria-label')?.trim()).toBeTruthy()
+    }
+    expect(root.querySelectorAll('button').length).toBeGreaterThan(3)
   })
 })
