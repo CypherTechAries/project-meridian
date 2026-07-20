@@ -31,7 +31,91 @@
 
 ---
 
-## What you're seeing
+## What you're looking at
+
+That screen is the **Briefing View**. It shows a made-up crisis — ships can no longer pass through a
+narrow stretch of water — as a situation report rather than a dashboard: a map of what happened, a
+summary in ordinary English, one decision to make, and cards showing how people, the economy and
+politics are being affected.
+
+Every sentence on that screen is worked out from the run itself. None of it is written into the
+interface by hand. Change the run and the wording changes with it.
+
+## What MERIDIAN already demonstrates
+
+Six things it can do today. Each one is finished, merged and tested.
+
+### One problem spreads through society
+
+A problem in one part of society causes consequences somewhere else, and they arrive at different
+times.
+
+*A blockade raises shipping costs. Carriers avoid the route. Port work falls. Families become
+worried. Political pressure stays high even after shipping begins to recover.*
+
+**IMPLEMENTED** · [How this was built and checked](docs/delivery/P0-5-CAUSAL-SLICE.md)
+
+### You can find out which step actually mattered
+
+MERIDIAN can remove one step in the chain and re-run everything, to show what that step was carrying.
+
+*Take out the rise in insurance costs, then check whether carriers still avoid the strait, whether
+jobs are still affected, and whether political pressure still builds.*
+
+**IMPLEMENTED** · [Baseline, incident and counterfactual runs](docs/delivery/P0-5-CAUSAL-SLICE.md)
+
+### People can see the same claim and react differently
+
+MERIDIAN records the reasons for those differences instead of assuming a person's job, education or
+background decides the answer.
+
+*The spokesperson already has first-hand testimony. The minister must follow a formal verification
+process. The journalist's broadcaster requires more proof before treating the claim as established.*
+
+**IMPLEMENTED** · [How belief change is worked out](docs/design/BELIEF-UPDATE-RULE.md)
+
+### Not hearing something is not the same as rejecting it
+
+Someone cannot respond to information they never received.
+
+*Inland households never receive the new claim. Their earlier view stays the same; MERIDIAN does not
+count them as having rejected it.*
+
+**IMPLEMENTED** · [How belief change is worked out](docs/design/BELIEF-UPDATE-RULE.md)
+
+### An organisation is not one mind
+
+MERIDIAN separates the views inside an organisation from the position it presents publicly.
+
+*Half of the broadcaster is still undecided, so the broadcaster does not take a firm public position.*
+
+**IMPLEMENTED** · [How belief change is worked out](docs/design/BELIEF-UPDATE-RULE.md)
+
+### When MERIDIAN does not know something, it says so
+
+The engine does not fill missing information with convincing-looking guesses.
+
+*MERIDIAN knows the average view of a population group, but not how many individual people agree,
+disagree or remain unsure. It marks that breakdown unavailable instead of making one up.*
+
+**IMPLEMENTED** · [The eight safety controls](docs/safety/B5-TECHNICAL-CONTROLS.md)
+
+> ### → [**Read the full plain-English guide: What MERIDIAN Can Do**](docs/WHAT-MERIDIAN-CAN-DO.md)
+>
+> Ten capabilities with examples, an honest list of what is still missing, and links to the evidence
+> behind every claim. Written for readers with no technical background.
+
+<p align="center">
+  <img src="docs/assets/screenshots/analysis-view.png" width="100%"
+       alt="MERIDIAN Analysis View: the same run as the Briefing View, shown with exact figures, the identifier of the rule that produced each one, and a marker on every value saying whether the engine worked it out or the story supplied it.">
+</p>
+
+<p align="center"><em>The Analysis View shows the machinery underneath: what changed, why it changed
+and where each result came from.</em></p>
+
+---
+
+## The Briefing View in detail
 
 The Briefing view presents the fictional Kestral Strait crisis as a situation report rather than a
 dashboard:
@@ -100,7 +184,7 @@ downstream of the removed link. That is how you tell a real causal channel from 
 | Hosted CI | **IMPLEMENTED** |
 | Briefing and Analysis interface | **PROTOTYPE UI** — mixes engine output with fixture content |
 | Persistent people and organisations | **PLANNED** (v0.2) |
-| Proposition-level belief modelling | **PLANNED** (v0.3) |
+| First-order belief change across people, organisations and groups | **IMPLEMENTED** |
 | Controlled LLM integration | **PLANNED** (v0.5) |
 | Events, hashes, restore and replay | **PLANNED** (v0.6) |
 | Synthetic societies of persistent virtual people | **LONG-TERM VISION** |
@@ -116,12 +200,12 @@ Only **IMPLEMENTED** rows describe working software. The authority for what may 
 cd scaffold/backend
 pip install -r requirements.txt
 pip install --no-deps -r requirements-mesa.txt   # separate on purpose; the file explains why
-python -m pytest tests -q                        # 187 tests
+python -m pytest tests -q                        # 384 tests
 uvicorn app.main:app --reload
 
 # Frontend — UI on :5173
 cd scaffold/frontend
-npm install
+npm ci                                           # exact locked versions
 npm test                                         # 64 tests
 npm run dev
 ```
@@ -151,7 +235,9 @@ Everything the interface shows is a **read-only projection**. The UI cannot writ
 - **Mechanisms** — nine, each with stable id, version, declared source and target fields, lag and
   lifecycle, emitting causal-parent references.
 - **Frontend** — Vite + TypeScript, no framework. Original SVG visuals, no map service.
-- **CI** — GitHub Actions on `windows-latest`: install, import smoke test, packaging check, tests.
+- **CI** — GitHub Actions, two required checks: backend on `windows-latest` (install, import smoke
+  test, packaging check, 384 tests) and frontend on `ubuntu-latest` (clean install from the committed
+  lockfile, production build, 64 tests). Neither can be bypassed on `main`.
 
 ## Safety controls
 
@@ -175,7 +261,9 @@ Stated plainly, because an honest boundary is more useful than an impressive one
 - **No persistence.** Nothing is written to a database; a run is discarded when the request completes.
 - **No replay, no event sourcing.** There is no restore path and no state hashing.
 - **No language model is called.** No module in the authoritative path imports a model or HTTP client.
-- **No belief modelling.** The engine models cohort-level concern, not what individual people believe.
+- **Belief modelling is first-order only.** People update once, from one claim, in isolation. There is
+  no memory, no relationships, no changing trust and no ordering of information. Opinions about whether
+  something is *right* do not update yet — only beliefs about whether something *happened*.
 - **Player decisions do not reach the tick loop.** They are recorded and have no effect.
 - **The interface is a prototype** mixing engine output with fixture content; the distinction is
   marked on screen.
@@ -192,7 +280,7 @@ first principles for examining information propagation and evaluating defensive 
 fictional environments: persistent fictional people and organisations with identity, relationships,
 beliefs and memory. **That is a direction, not a current capability.**
 
-v0.2 persistent agents · v0.3 belief, trust and exposure · v0.4 narrative competition and
+v0.2 persistent agents · ~~v0.3 belief, trust and exposure~~ **(delivered early)** · v0.4 narrative competition and
 intervention comparison · v0.5 controlled LLM integration · v0.6 events, hashes and replay ·
 v0.7 scenario authoring · v1.0 stable platform.
 
@@ -210,6 +298,9 @@ Detail: [`PROJECT-ROADMAP.md`](PROJECT-ROADMAP.md) ·
 | [`docs/delivery/P0-4A-RANDOMNESS.md`](docs/delivery/P0-4A-RANDOMNESS.md) | Keyed deterministic draws, and why the shared generator was a defect |
 | [`docs/safety/B5-TECHNICAL-CONTROLS.md`](docs/safety/B5-TECHNICAL-CONTROLS.md) | The eight controls, mapped to implementation and tests |
 | [`docs/design/USABILITY-RULES.md`](docs/design/USABILITY-RULES.md) | The interface rules this project holds itself to |
+| [`docs/WHAT-MERIDIAN-CAN-DO.md`](docs/WHAT-MERIDIAN-CAN-DO.md) | **Plain-English guide to current capabilities** — start here |
+| [`docs/communications/PLAIN-LANGUAGE-MERIDIAN.md`](docs/communications/PLAIN-LANGUAGE-MERIDIAN.md) | Approved public wording for every capability, with the evidence behind it |
+| [`docs/design/BELIEF-UPDATE-RULE.md`](docs/design/BELIEF-UPDATE-RULE.md) | How belief change is worked out, and what it deliberately does not claim |
 | [`docs/SCREENSHOTS.md`](docs/SCREENSHOTS.md) | Current interface captures |
 | [`docs/BRANCHING.md`](docs/BRANCHING.md) | Branch model and contribution workflow |
 | [`docs/world-model/`](docs/world-model/) | Long-range specifications — **specification, not implementation** |
