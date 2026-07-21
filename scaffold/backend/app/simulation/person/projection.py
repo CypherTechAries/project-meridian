@@ -20,6 +20,17 @@ authoritative person, persisted person memory, executed decision history or real
 PARITY IS THE POINT. Current situation comes from the VP-2 fixtures, decisions from `select_action`,
 relationships and histories from the VP-4 records, belief classification from the ONE canonical
 classifier. If this layer ever disagreed with those, the disagreement would be the bug.
+
+HOW THE DECISION IS OBTAINED — the exact behaviour, stated plainly:
+
+    The dossier decision is deterministically derived from the packaged VP-2 situation and VP-3
+    option fixtures when the read model is assembled. It is not persisted live person state and
+    nothing has been executed.
+
+The projection CALLS the canonical `select_action` over the frozen packaged fixtures. It holds no
+second scoring rule, no copy of the formula and no cached decision. Because both the situation and
+the options are frozen, the derivation is deterministic — the same assembly always yields the same
+result — but the result is computed at read time, not stored by a living person.
 """
 
 from __future__ import annotations

@@ -441,3 +441,91 @@ def test_58_all_three_dossiers_validate() -> None:
     for pid in PEOPLE:
         Dossier.model_validate(client.get(DOSS.format(f"fict:kestral-strait:person:{pid}")).json())
     Roster.model_validate(client.get(ROSTER).json())
+
+
+# ── derived-snapshot clarification (pre-merge) ────────────────────────────────────────────────────
+
+
+DERIVED_SNAPSHOT_STATEMENT = (
+    "The dossier decision is deterministically derived from the packaged VP-2 situation and VP-3 "
+    "option fixtures when the read model is assembled. It is not persisted live person state and "
+    "nothing has been executed."
+)
+
+
+def test_59_the_api_delegates_to_the_canonical_rule_and_holds_no_second_formula() -> None:
+    """
+    The projection CALLS VP-3's select_action over frozen fixtures. It must not duplicate the
+    formula, keep a second scoring rule, imply persistence by a living person, imply execution, or
+    mutate VP-2/VP-3 records.
+    """
+    import ast
+    import inspect
+
+    from app.simulation.person import projection as proj_mod
+
+    # 1. it delegates to the canonical rule
+    assert "select_action" in inspect.getsource(proj_mod)
+
+    # 2. it holds no second scoring rule — strip docstrings, then look for arithmetic on magnitudes
+    tree = ast.parse(inspect.getsource(proj_mod))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+            if ast.get_docstring(node) and node.body and isinstance(node.body[0], ast.Expr):
+                node.body[0].value = ast.Constant(value="")
+    code_only = ast.unparse(tree)
+    for formula_marker in ("priority *", "urgency *", "intensity *", "* alignment", "* response",
+                           "soft_penalty", "goal_component =", "total ="):
+        assert formula_marker not in code_only, f"projection re-implements scoring: '{formula_marker}'"
+
+    # 3. the produced decision is byte-identical to the canonical rule's own result
+    from app.simulation.person.decision import select_action as canonical
+    from app.simulation.person.vp3_decisions import FIXTURE_DECISIONS
+    for pid in PEOPLE:
+        api = client.get(DOSS.format(f"fict:kestral-strait:person:{pid}")).json()["decision"]
+        truth = canonical(FIXTURE_DECISIONS[pid]())
+        assert api["decision_trace"] == truth.model_dump(mode="json")
+
+    # 4. nothing implies persistence or execution. Scan the payload WITHOUT the boundary blocks —
+    # run_integration and claim_boundary deliberately NAME these words to deny them.
+    body = client.get(DOSS.format(JOURNALIST)).json()
+    payload = {k: v for k, v in body.items()
+               if k not in ("run_integration", "claim_boundary", "model_boundary")}
+    payload["decision"] = {k: v for k, v in payload["decision"].items() if k != "claim_boundary"}
+    payload["belief_history"] = {k: v for k, v in payload["belief_history"].items()
+                                 if k != "claim_boundary"}
+    flat = json.dumps(payload).lower()
+    # Only unambiguous assertions are banned as substrings. "was executed" is NOT listed: the
+    # honest denial "nothing was executed." contains it, and a substring scan cannot tell the two
+    # apart. The precise check is the execution_status VALUE assertion below.
+    for banned in ("persisted", "stored decision", "has executed", "carried out"):
+        assert banned not in flat, f"'{banned}' asserted outside a denial"
+
+    # every execution_status VALUE (not the field name) is NOT_EXECUTED, everywhere it appears
+    def statuses(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k == "execution_status":
+                    yield v
+                else:
+                    yield from statuses(v)
+        elif isinstance(node, list):
+            for i in node:
+                yield from statuses(i)
+
+    found = list(statuses(body))
+    assert found, "execution_status must be present"
+    assert all(v.upper() == "NOT_EXECUTED" for v in found), found
+
+    # and the denial itself is present
+    assert "not persisted person memory" in body["run_integration"]["explanation"].lower()
+    assert body["decision"]["execution_status"] == "NOT_EXECUTED"
+
+
+def test_60_derived_snapshot_behaviour_is_documented() -> None:
+    import inspect
+
+    from app.simulation.person import projection as proj_mod
+
+    doc = " ".join(inspect.getdoc(proj_mod).split())
+    assert " ".join(DERIVED_SNAPSHOT_STATEMENT.split()) in doc
