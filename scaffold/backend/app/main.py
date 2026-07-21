@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from .api.routes_simulation import router as simulation_router
 from .api.routes_demo import router as demo_router
 from .api.routes_belief import router as belief_router
+from .api.routes_virtual_person import router as virtual_person_router
 from .api.routes_ws import router as ws_router
 from .config import settings
 
@@ -43,6 +44,7 @@ app.add_middleware(
 app.include_router(simulation_router)
 app.include_router(demo_router)
 app.include_router(belief_router)
+app.include_router(virtual_person_router)
 app.include_router(ws_router)
 
 
