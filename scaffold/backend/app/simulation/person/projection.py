@@ -213,6 +213,10 @@ class DecisionSection(BaseModel):
     considered_options: tuple[str, ...]
     available_options: tuple[str, ...]
     unavailable_options: tuple[str, ...]
+    #: Declared display label for every considered option id, so a reader is never shown a raw
+    #: identifier such as "a-publish-now" where a readable option name belongs. Copied from the
+    #: VP-3 request; nothing is invented here.
+    option_labels: dict
     blocking_constraints: dict
     selected_action_id: Optional[str]
     selected_action_label: Optional[str]
@@ -336,6 +340,7 @@ def _decision_section(person_id: str) -> tuple[DecisionSection, DecisionResult]:
         considered_options=result.considered_options,
         available_options=result.available_options,
         unavailable_options=result.unavailable_options,
+        option_labels=dict(labels),
         blocking_constraints=blocking,
         selected_action_id=result.selected_action_id,
         selected_action_label=labels.get(result.selected_action_id or ""),
