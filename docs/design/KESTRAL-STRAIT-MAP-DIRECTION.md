@@ -9,11 +9,44 @@
 
 A first-time reader, given five seconds, must be able to answer:
 
-- **What is blocked?**
-- **Where is it blocked?**
-- **Where are ships going instead?**
-- **Which ports or communities are affected?**
-- **Why does the geography matter?**
+1. **What is blocked?**
+2. **Who is affected?**
+3. **Where is pressure building?**
+4. **What trade-offs are visible?**
+5. **What changed over time?**
+
+*(These supersede the earlier list — blocked route / rerouted route / affected ports / legend /
+framing — which is still the wording in [issue #30](https://github.com/CypherTechAries/project-meridian/issues/30).)*
+
+### What the engine can actually answer
+
+Checked against `scaffold/scenarios/kestral-strait.json` and the projection, 21 July 2026.
+**The engine has no spatial model.** There is no latitude, longitude, coordinate or geometry
+anywhere in the scenario or the engine.
+
+- **There are no port entities.** "Ports" exist only as `port_activity_deficit` — a *single scalar*.
+- `political_pressure` is likewise **one scalar**, with no location and no spatial distribution.
+- Cohorts carry a `region` **string** (`capital-metro`, `north-strait-coast`, `central-highlands`,
+  `distributed`) — declared scenario data that **no code currently reads**.
+- The existing map's place names, **"Northshore" and "Southport", are hard-coded in
+  `briefing-viz.ts`** — the current map labels places the scenario does not define.
+
+| Question | Answerable from the engine? |
+|---|---|
+| 1 · What is blocked? | **Yes** — the incident and `rerouting_level`. |
+| 2 · Who is affected? | **Partly.** Cohorts exist with employment and household pressure. *Placing* them needs the unread `region` field. |
+| 3 · Where is pressure building? | **No — not spatially.** One scalar for the whole scenario. **Drawing it at a location would invent data.** |
+| 4 · What trade-offs are visible? | **Yes**, from the government options — but they are not spatial at all. |
+| 5 · What changed over time? | **Yes** — the 20-tick trajectory exists. The current map shows one moment. |
+
+**Two of the five are not spatial questions, and one has no spatial answer.** So what is needed is a
+**situation diagram, not a map**: it may arrange elements by *relationship* — blockade → shipping →
+ports → coastal groups → government — rather than by location. A schematic may show pressure flowing
+*toward* the government without claiming the government sits at a place.
+
+**Do not invent a spatial distribution for a scalar.** That is exactly the "no simulated detail
+merely to make the screen look sophisticated" rule, and it is the strongest argument yet for
+candidate C below.
 
 The current map answers none of them. It was found artificial and unhelpful in the first cold
 usability test, and it is now hidden behind a control with a stated limitation.
@@ -98,6 +131,12 @@ decorative points, no clear blocked route, no legend. But that is a judgement, a
 ## Recommendation
 
 **Prototype C first, then A, and decide with a cold reader — not by argument.**
+
+**Decided 21 July 2026:** candidate C is the approved next step, tracked as
+[issue #33](https://github.com/CypherTechAries/project-meridian/issues/33). **No dependency or map
+code may be added until that prototype has been reviewed.** The engine's lack of any spatial model,
+recorded above, strengthens this: a real coastline would have to carry invented placement for two of
+the five questions, which a schematic does not.
 
 The reasoning:
 
