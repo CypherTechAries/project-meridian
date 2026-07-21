@@ -109,6 +109,9 @@ Briefing, and the removal of Analysis from primary navigation are on the unmerge
 carries the pre-reset screens.** When that PR merges, this brief must be reviewed: the interface
 description changes, and the usability-test link should be added.
 
+[Real-Geography Scenarios](REAL-GEOGRAPHY-SCENARIOS.md) — whether the map should sit on real
+geography. The map is the part of this use case still known to fail its comprehension test.
+
 ## Next proof required
 
 **Two, in order.**

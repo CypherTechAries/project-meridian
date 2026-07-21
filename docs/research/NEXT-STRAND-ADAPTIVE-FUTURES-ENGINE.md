@@ -230,3 +230,9 @@ engine is designed, not after.
 
 The single most useful early action is not to build anything. It is to **test whether MERIDIAN's
 existing runs under-disperse**, because if they do, that finding governs the whole strand.
+
+---
+
+**See also:** [Real Geography, Fictional Worlds](REAL-GEOGRAPHY-FICTIONAL-WORLDS.md) §8 —
+geography as a possible future engine input, and why it would need named RNG substreams first,
+for the same reason this strand does.

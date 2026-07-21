@@ -1171,3 +1171,9 @@ Two reasons to keep the research:
 
 **Recommended position: a written direction, not a roadmap item.** Revisit when the current product
 is understood by a first-time user without help, and when someone has actually paid for a scenario.
+
+---
+
+**See also:** [Real Geography, Fictional Worlds](REAL-GEOGRAPHY-FICTIONAL-WORLDS.md) — a
+graduated entity set on real geography inherits the false-authority risk described there, on top
+of the simulation-overconfidence risk described here.
