@@ -15,7 +15,7 @@
  * the Kestral screenshot; change the run and the sentences change or disappear.
  */
 
-import type { Projection, RunResult, TrajectoryPoint } from './client.ts'
+import type { OptionEntry, Projection, RunResult, TrajectoryPoint } from './client.ts'
 import { stageByField } from './client.ts'
 
 export type DirectionWord = 'RISING' | 'EASING' | 'STABLE'
@@ -295,4 +295,242 @@ export function primaryDecision(p: Projection) {
   const enabled = p.government_options.filter((o) => o.value === 'ENABLED')
   const constrained = p.government_options.filter((o) => o.value === 'CONSTRAINED')
   return enabled[0] ?? constrained[0] ?? null
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * PLAIN LANGUAGE
+ *
+ * Added by the first-user usability reset. A first-time reader could not understand the previous
+ * default view: decimals with no meaning, engine vocabulary, and internal action labels presented
+ * as questions. See docs/design/FIRST-USER-USABILITY-TEST.md.
+ *
+ * These helpers change WORDS ONLY. Every one of them reads the same derived trends as before, so a
+ * sentence here is still a claim the run supports. Nothing is authored to fit the screenshot, and
+ * where the run does not establish something, the sentence is omitted rather than invented.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Ordinary words for a direction. Never "peaked", "lagged", "post-peak" or "retention". */
+export type PlainDirection = 'rising' | 'falling' | 'steady'
+
+export function plainDirection(t: DerivedTrend | null): PlainDirection | null {
+  if (!t) return null
+  if (t.direction === 'RISING') return 'rising'
+  // A value that has turned over counts as falling even when the five-tick window reads STABLE,
+  // because "steady" would hide a turn the run genuinely shows.
+  if (t.direction === 'EASING' || t.postPeak) return 'falling'
+  if (t.direction === 'STABLE') return 'steady'
+  return null
+}
+
+/** How much of something there is, in words a reader already owns. Never a decimal. */
+export function plainLevel(v: number): string {
+  if (v >= 0.66) return 'high'
+  if (v >= 0.33) return 'moderate'
+  if (v > 0) return 'low'
+  return 'none recorded'
+}
+
+/**
+ * The three short sentences under the headline.
+ *
+ * Each is gated on the field that establishes it, so a run in a different state produces a
+ * different set — or fewer. The founder's example lede reads "Political pressure is rising"; that
+ * is written here as whatever the run actually shows, which at the tested state is a value that is
+ * high and has only just started to come down. Readability may not be bought with a false clause.
+ */
+export function crisisLede(run: RunResult): string[] {
+  const p = run.projection
+  const traj = run.trajectory
+  const out: string[] = []
+
+  const reroute = deriveTrend(p, traj, 'rerouting_level')
+  if (reroute && reroute.value > 0.5) out.push('Most ships are going the long way round.')
+  else if (reroute && reroute.value > 0) out.push('Some ships are going the long way round.')
+
+  const port = deriveTrend(p, traj, 'port_activity_deficit')
+  if (port && port.value > 0.3) out.push('Work at the coastal ports has fallen.')
+
+  const political = deriveTrend(p, traj, 'political_pressure')
+  const dir = plainDirection(political)
+  if (political && dir === 'rising') out.push('Pressure on the government is building.')
+  else if (political && dir === 'falling') out.push('Pressure on the government has started to come down.')
+  else if (political) out.push('Pressure on the government is holding steady.')
+
+  return out
+}
+
+/** One plain section of the situation: what is happening to people, trade, or the government. */
+export interface PlainSection {
+  id: 'people' | 'economy' | 'politics'
+  title: string
+  /** One or two sentences. Ordinary language, no numbers, no engine terms. */
+  sentences: string[]
+  /** Direction of movement where the run establishes one; null where it does not. */
+  direction: PlainDirection | null
+  /** What the direction applies to, named in ordinary words. */
+  directionSubject: string | null
+  /** Chain fields behind the sentences — shown only inside the evidence control. */
+  sources: string[]
+  origin: 'engine' | 'fixture' | 'unavailable'
+}
+
+/**
+ * People, Economy, Politics — the part of the old interface the first-time user understood.
+ * Kept, and rewritten so the sentences carry no numbers and no machinery.
+ */
+export function plainSections(run: RunResult): PlainSection[] {
+  const p = run.projection
+  const traj = run.trajectory
+  const origin: PlainSection['origin'] = run.connection === 'unavailable' ? 'unavailable' : 'engine'
+
+  const household = deriveTrend(p, traj, 'household_expectation_pressure')
+  const employment = deriveTrend(p, traj, 'employment_pressure')
+  const reroute = deriveTrend(p, traj, 'rerouting_level')
+  const port = deriveTrend(p, traj, 'port_activity_deficit')
+  const political = deriveTrend(p, traj, 'political_pressure')
+  const attention = deriveTrend(p, traj, 'narrative_attention')
+  const top = topCohort(p)
+
+  const people: string[] = []
+  if (top) {
+    people.push(`Worry is highest among the ${top.label.replace(/-/g, ' ')} group.`)
+  }
+  if (employment && employment.value > 0.2) {
+    people.push('People whose work depends on the ports are the most exposed.')
+  } else if (household) {
+    people.push('Households elsewhere are less affected so far.')
+  }
+
+  const economy: string[] = []
+  if (reroute && reroute.value > 0.5) {
+    economy.push('Shipping companies are avoiding the strait and sailing a longer route instead.')
+  } else if (reroute && reroute.value > 0) {
+    economy.push('Some shipping companies are avoiding the strait.')
+  } else {
+    economy.push('Shipping is following its normal route.')
+  }
+  if (port && port.value > 0.3) {
+    economy.push('Less cargo is arriving, so there is less work at the ports.')
+  }
+
+  const politics: string[] = []
+  if (political) {
+    politics.push(`Pressure on the government is ${plainLevel(political.value)}.`)
+  }
+  if (attention && attention.value > 0.1) {
+    // No causal clause here. "which keeps that pressure on" was both an unestablished claim and a
+    // direct contradiction of the direction line beneath it, which currently reads "falling".
+    politics.push('People are paying attention to it and talking about it.')
+  }
+
+  return [
+    {
+      id: 'people',
+      title: 'People',
+      sentences: people,
+      direction: plainDirection(household ?? employment),
+      directionSubject: 'worry among households',
+      sources: ['cohorts[].value', 'chain.household_expectation_pressure', 'chain.employment_pressure'],
+      origin,
+    },
+    {
+      id: 'economy',
+      title: 'Economy',
+      sentences: economy,
+      direction: plainDirection(reroute),
+      directionSubject: 'ships avoiding the strait',
+      sources: ['chain.rerouting_level', 'chain.port_activity_deficit'],
+      origin,
+    },
+    {
+      id: 'politics',
+      title: 'Politics',
+      sentences: politics,
+      direction: plainDirection(political),
+      directionSubject: 'pressure on the government',
+      sources: ['chain.political_pressure', 'chain.narrative_attention', 'chain.collective_activity'],
+      origin,
+    },
+  ]
+}
+
+/**
+ * A government option written so it makes sense to someone arriving cold.
+ *
+ * DECLARED, NOT GENERATED. "publish_legal_advice" is an internal identifier; turning it into
+ * "Publish Legal Advice" and calling that a question was the failure recorded as observation 8.
+ * Each entry below is a hand-written plain-language description of an option the scenario already
+ * declares. It describes WHAT THE OPTION IS. It states no consequence, because this prototype
+ * computes none, and it promises no effect, because nothing is ever executed.
+ *
+ * An option with no entry here falls back to a readable form of its own label and says plainly that
+ * no description has been written for it — it is never dressed up as a question it is not.
+ */
+export interface PlainDecision {
+  optionId: string
+  /** The decision as a question a first-time reader can answer. */
+  question: string
+  /** Two sentences: what the thing is, and why the choice matters. No consequences claimed. */
+  context: string[]
+  /** The two plain choices offered. Display only. */
+  choices: [string, string]
+  /** Why the option currently stands where it does, in ordinary words. */
+  standing: string
+  /** True when this option has a declared plain-language description. */
+  described: boolean
+}
+
+const DECISION_COPY: Record<string, { question: string; context: string[]; choices: [string, string] }> = {
+  publish_legal_advice: {
+    question: 'Should the government publish its legal assessment now?',
+    context: [
+      'The government has had lawyers look at whether the blockade is lawful, and it has not yet ' +
+        'shown anyone what they concluded.',
+      'Publishing it would put the government’s own account on the record while people are still ' +
+        'deciding what to believe.',
+    ],
+    choices: ['Publish the assessment now', 'Wait for more verification'],
+  },
+  pursue_quiet_diplomacy: {
+    question: 'Should the government try to settle this privately first?',
+    context: [
+      'Talking privately means approaching the other side directly instead of saying anything in ' +
+        'public.',
+      'It keeps the disagreement out of the open for now, and it means the government says nothing ' +
+        'publicly while people are waiting to hear from it.',
+    ],
+    choices: ['Open private talks', 'Keep handling it publicly'],
+  },
+  declare_emergency_powers: {
+    question: 'Should the government take emergency powers?',
+    context: [
+      'Emergency powers let a government act without going through its usual approvals.',
+      'They are the strongest step available here, and they are hard to step back from once taken.',
+    ],
+    choices: ['Take emergency powers', 'Carry on without them'],
+  },
+}
+
+export function plainDecision(o: OptionEntry): PlainDecision {
+  const copy = DECISION_COPY[o.option_id]
+  // Ordinary words for what the engine calls ENABLED / CONSTRAINED / AVAILABLE.
+  const standing =
+    o.value === 'ENABLED'
+      ? 'This choice is open to the government now.'
+      : o.value === 'CONSTRAINED'
+        ? 'This choice is limited at the moment — the situation has moved far enough to restrict it, but not far enough to open it.'
+        : 'This choice is available, and nothing in the situation has changed its standing yet.'
+
+  if (!copy) {
+    return {
+      optionId: o.option_id,
+      question: o.label.replace(/_/g, ' '),
+      context: ['No plain-language description has been written for this option yet.'],
+      choices: ['—', '—'],
+      standing,
+      described: false,
+    }
+  }
+  return { optionId: o.option_id, question: copy.question, context: copy.context,
+           choices: copy.choices, standing, described: true }
 }

@@ -19,7 +19,15 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * The viewport lock belongs to the Analysis dashboard, whose grid is sized by the window. It is
+ * NOT applied to the reading screens: on Briefing it produced an invisible internal scroll region,
+ * so the page reported exactly viewport height at every size and content below the fold could only
+ * be reached by scrolling inside a box. The page itself must scroll. Mode is stamped by `mount`.
+ */
 #app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+/* Briefing only: the Ask screen has its own composer-anchored layout and keeps the lock. */
+#app[data-mode="briefing"] { height: auto; min-height: 100vh; overflow: visible; }
 
 :focus-visible { outline: var(--focus); outline-offset: 2px; border-radius: 2px; }
 .u-sr {

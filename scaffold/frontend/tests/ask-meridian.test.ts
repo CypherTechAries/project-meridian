@@ -112,7 +112,7 @@ describe('landing view and navigation', () => {
     const active = root.querySelector('[aria-pressed="true"], .modesw__b--on, [data-mode="briefing"]')
     expect(root.textContent).toContain('Briefing')
     // the briefing situation summary is present on first mount
-    expect(root.querySelector('.bsum, .briefing, [class*="brief"]')).not.toBeNull()
+    expect(root.querySelector('.briefing')).not.toBeNull()
     expect(active === null || active.textContent?.toLowerCase()).toBeTruthy()
   })
 
@@ -138,7 +138,7 @@ describe('landing view and navigation', () => {
     const back = root.querySelector<HTMLElement>('[data-mode="briefing"]')
     expect(back).not.toBeNull()
     back!.click()
-    expect(root.querySelector('.bsum')).not.toBeNull()
+    expect(root.querySelector('.lede__h')).not.toBeNull()
   })
 })
 
