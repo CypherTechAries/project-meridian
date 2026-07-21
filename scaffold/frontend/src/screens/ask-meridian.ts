@@ -67,7 +67,9 @@ export interface AskMessage { role: 'user' | 'meridian'; text: string; response?
 function canonicalMapCard(run?: RunResult): string {
   if (!run) {
     return `<figure class="askc askc--map" data-component="CanonicalMapCard">
-      <figcaption class="askc__t">Kestral Strait <span class="m m--u" title="unavailable">?</span></figcaption>
+      <figcaption class="askc__t">Kestral Strait
+        <span class="pill pill--boundary" data-status="UNAVAILABLE">
+          <span class="visually-hidden">Status: </span>UNAVAILABLE</span></figcaption>
       <p class="askc__abs" data-canonical-map="unavailable">Map UNAVAILABLE — no run state is loaded.</p>
     </figure>`
   }
@@ -81,11 +83,23 @@ function canonicalMapCard(run?: RunResult): string {
   </figure>`
 }
 
+/**
+ * Boundary card.
+ *
+ * The status is a WORD, not a symbol. A bare "?" beside a heading reads as stray punctuation or an
+ * unfinished sentence, and a symbol alone cannot carry the distinction between "we chose not to
+ * model this" and "we have no value for it". The pill states which, in text, and never relies on
+ * colour to do so.
+ */
 function boundaryCard(c: AskComponent): string {
   const items = (c.body.not_modelled as string[] | undefined) ?? []
   const extras = Object.entries(c.body).filter(([k]) => k !== 'not_modelled')
+  // A declared not-modelled list is a modelling boundary; anything else here is a missing value.
+  const status = items.length ? 'NOT MODELLED' : 'UNAVAILABLE'
   return `<section class="askc askc--boundary" data-component="ModelBoundaryCard">
-    <h4 class="askc__t">${escapeHtml(c.title)} <span class="m m--u" title="not modelled">?</span></h4>
+    <h4 class="askc__t">${escapeHtml(c.title)}
+      <span class="pill pill--boundary" data-status="${status.replace(' ', '_')}">
+        <span class="visually-hidden">Status: </span>${status}</span></h4>
     ${items.length ? `<ul class="askc__tags">${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : ''}
     ${extras.length ? `<dl class="askc__kv">${extras
       .map(([k, v]) => `<dt>${escapeHtml(k.replace(/_/g, ' '))}</dt><dd>${escapeHtml(String(v))}</dd>`)
@@ -93,14 +107,31 @@ function boundaryCard(c: AskComponent): string {
   </section>`
 }
 
+/**
+ * Population-group card.
+ *
+ * The absence statement is one of the most important honesty properties in the product, so it is
+ * NOT metadata. "breakdown UNAVAILABLE" was previously the faintest text on the screen, at the
+ * smallest size — the opposite of the weight it deserves. It now reads as a legible status line
+ * with the reason stated in full.
+ *
+ * It says the breakdown is unavailable. It does not say it is zero, and it does not invent a
+ * distribution to fill the gap.
+ */
 function groupCard(c: AskComponent): string {
   const groups = (c.body.groups as Array<Record<string, string>> | undefined) ?? []
   return `<section class="askc askc--group" data-component="PopulationGroupCard">
-    <h4 class="askc__t">${escapeHtml(c.title)}</h4>
-    <p class="askc__note">Group-level averages. MERIDIAN does not model the individuals inside these groups.</p>
+    <h4 class="askc__t">${escapeHtml(c.title)}
+      <span class="pill pill--group" data-status="GROUP_LEVEL_MODEL">
+        <span class="visually-hidden">Status: </span>GROUP-LEVEL MODEL</span></h4>
+    <p class="askc__note">MERIDIAN knows the group average, not how every person inside the group
+      differs.</p>
     <ul class="askc__rows">${groups
-      .map((g) => `<li><span>${escapeHtml(String(g.name))}</span><span>${escapeHtml(String(g.result))}</span>
-        <span class="askc__abs">breakdown ${escapeHtml(String(g.breakdown ?? 'UNAVAILABLE'))}</span></li>`)
+      .map((g) => `<li class="askc__grow">
+        <span class="askc__gname">${escapeHtml(String(g.name))}</span>
+        <span class="askc__gres">${escapeHtml(String(g.result))}</span>
+        <span class="askc__gabs" data-availability="${escapeHtml(String(g.breakdown ?? 'UNAVAILABLE'))}">
+          Individual breakdown unavailable</span></li>`)
       .join('')}</ul>
   </section>`
 }

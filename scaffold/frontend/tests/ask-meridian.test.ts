@@ -229,8 +229,71 @@ describe('answers', () => {
   it('11 · population-group cards state they are group-level averages', () => {
     const v = el(askMeridianView([{ role: 'meridian', text: '', response: reactionResponse() }]))
     const card = v.querySelector('[data-component="PopulationGroupCard"]') as HTMLElement
-    expect(card.textContent).toContain('does not model the individuals')
-    expect(card.textContent).toContain('UNAVAILABLE')
+    expect(card.querySelector('[data-status="GROUP_LEVEL_MODEL"]')?.textContent)
+      .toContain('GROUP-LEVEL MODEL')
+    expect(card.textContent).toContain(
+      'MERIDIAN knows the group average, not how every person inside the group')
+  })
+
+  /*
+   * The absence statement is one of the most important honesty properties in the product. It was
+   * previously the faintest and smallest text on the screen; these tests pin the corrected weight
+   * so it cannot quietly regress to metadata.
+   */
+  it('11a · every group row states the individual breakdown is unavailable, readably', () => {
+    const v = el(askMeridianView([{ role: 'meridian', text: '', response: reactionResponse() }]))
+    const rows = [...v.querySelectorAll('.askc__grow')]
+    expect(rows.length).toBeGreaterThan(0)
+    for (const r of rows) {
+      const abs = r.querySelector('.askc__gabs') as HTMLElement
+      expect(abs.textContent?.trim()).toBe('Individual breakdown unavailable')
+      expect(abs.dataset.availability).toBe('UNAVAILABLE')
+      // it must not be styled as the faintest metadata on the card
+      expect(abs.className).not.toContain('askc__abs')
+    }
+  })
+
+  it('11b · an unavailable breakdown is never rendered as zero or as a distribution', () => {
+    const v = askMeridianView([{ role: 'meridian', text: '', response: reactionResponse() }])
+    expect(v).not.toContain('breakdown 0')
+    expect(v).not.toContain('0%')
+    expect(v).toContain('Individual breakdown unavailable')
+  })
+
+  it('11c · no bare question-mark marker sits beside a heading', () => {
+    const responses = [decisionResponse(), reactionResponse(), unsupportedResponse()]
+    const views = [askMeridianView([]), askHome(),
+      ...responses.map((r) => askMeridianView([{ role: 'meridian', text: '', response: r }]))]
+    for (const html of views) {
+      const d = el(html)
+      for (const h of d.querySelectorAll('.askc__t')) {
+        expect(h.textContent?.trim().endsWith('?')).toBe(false)
+        expect(h.querySelector('.m--u')).toBeNull()
+      }
+    }
+  })
+
+  it('11d · boundary status is a word, with screen-reader text, not colour alone', () => {
+    const v = el(askMeridianView([{ role: 'meridian', text: '', response: decisionResponse() }]))
+    const pill = v.querySelector('[data-component="ModelBoundaryCard"] .pill') as HTMLElement
+    expect(pill.textContent).toContain('Status: ')
+    expect(pill.textContent).toContain('NOT MODELLED')
+    expect(pill.dataset.status).toBe('NOT_MODELLED')
+  })
+
+  it('11e · a boundary card with no declared list is labelled UNAVAILABLE', () => {
+    const r: AskResponse = {
+      ...decisionResponse(),
+      components: [{
+        component_type: 'ModelBoundaryCard',
+        title: 'Unavailable data',
+        body: { 'population group breakdown': 'UNAVAILABLE', 'cohort confidence': 'NOT_MODELLED' },
+      }],
+    }
+    const v = el(askMeridianView([{ role: 'meridian', text: '', response: r }]))
+    const pill = v.querySelector('[data-component="ModelBoundaryCard"] .pill') as HTMLElement
+    expect(pill.dataset.status).toBe('UNAVAILABLE')
+    expect(pill.textContent).toContain('UNAVAILABLE')
   })
 
   it('12 · the model-boundary card remains visible', () => {
