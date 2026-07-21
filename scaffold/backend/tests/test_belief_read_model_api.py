@@ -232,7 +232,12 @@ def test_17_no_route_accepts_a_body_or_mutating_method() -> None:
 
 
 def test_18_no_ranking_or_targeting_operation_is_exposed() -> None:
-    paths = [r.path for r in app.routes if hasattr(r, "path") and "/belief" in r.path]
+    # DEFECT FOUND IN VP-5 REVIEW: this previously iterated `app.routes`, which in this FastAPI
+    # version wraps included routers in `_IncludedRouter` objects carrying no `.path`. The list was
+    # always EMPTY, so the assertions below passed vacuously and proved nothing. The OpenAPI schema
+    # is the real public surface.
+    paths = [p for p in app.openapi()["paths"] if "/belief" in p]
+    assert paths, "the belief routes must actually be discoverable"
     joined = " ".join(paths).lower()
     for banned in ("rank", "target", "influence", "persuad", "optimis", "audience", "segment"):
         assert banned not in joined
