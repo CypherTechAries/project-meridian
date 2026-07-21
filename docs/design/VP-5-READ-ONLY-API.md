@@ -59,6 +59,12 @@ invented prose) · **current situation** (goals, responsibilities, pressures, co
 value, plain-language band, origin, references) · **decision** · **relationships** · **information
 history** · **belief history** · **explanations** · **model boundary**.
 
+**`option_labels`** maps every considered action id to its declared fixture label, so that a raw
+internal id such as `a-publish-now` never reaches a reader where an option name belongs. It is an
+additive projection field: the projection already held these labels, nothing is rescored, no decision
+is recomputed, and no engine state changes. It does **not** belong in the engine schema. The id-keyed
+fields remain unchanged and authoritative — evidence and traces still address options by id.
+
 ```jsonc
 {
   "decision": {
@@ -67,6 +73,7 @@ history** · **belief history** · **explanations** · **model boundary**.
     "default_statement": "Selected by the declared rule. Not executed.",
     "unavailable_options": ["a-publish-now"],
     "blocking_constraints": {"a-publish-now": ["c-corroboration"]},
+    "option_labels": {"a-publish-now": "publish the claim immediately", /* … */ },
     "decision_trace": { /* exact component totals live ONLY here */ }
   },
   "belief_history": {

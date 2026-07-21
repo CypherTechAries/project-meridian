@@ -213,6 +213,53 @@ def test_21_22_23_decision_matches_vp3_exactly() -> None:
     assert body["tie_occurred"] == truth.tie_occurred
 
 
+# ── option_labels · additive projection field ─────────────────────────────────────────────────────
+#
+# `option_labels` carries the DECLARED fixture label for each considered action id, so that no raw
+# action id such as "a-publish-now" reaches a reader. It rescores nothing and recomputes nothing.
+# These four tests pin exactly that, and are retained under founder decision.
+
+def test_21a_option_labels_match_the_declared_vp3_options_and_rescore_nothing() -> None:
+    body = client.get(DOSS.format(JOURNALIST)).json()["decision"]
+    request = vp3_decisions.journalist_decision()
+    truth = select_action(request)
+    declared = {o.action_id: o.label for o in request.options}
+
+    # the label for every considered option is exactly the declared one
+    assert body["option_labels"] == declared
+    assert set(body["option_labels"]) == set(body["considered_options"])
+    # and the selection itself is untouched by the addition
+    assert body["selected_action_id"] == truth.selected_action_id
+    assert body["selected_action_label"] == declared[truth.selected_action_id]
+
+
+def test_21b_every_person_labels_every_considered_option() -> None:
+    for pid in PEOPLE:
+        body = client.get(DOSS.format(f"fict:kestral-strait:person:{pid}")).json()["decision"]
+        for action_id in body["considered_options"]:
+            label = body["option_labels"][action_id]
+            assert label and label != action_id
+            assert not label.startswith("a-"), f"{pid}: label is an action id: {label}"
+
+
+def test_21c_no_raw_action_id_is_a_default_user_facing_label() -> None:
+    body = client.get(DOSS.format(JOURNALIST)).json()["decision"]
+    # the strings a reader is shown by default
+    for text in (body["selected_action_label"], body["default_statement"], body["explanation"]):
+        for action_id in body["considered_options"]:
+            assert action_id not in text, f"raw action id in default display text: {action_id}"
+
+
+def test_21d_technical_action_ids_remain_available_for_evidence() -> None:
+    body = client.get(DOSS.format(JOURNALIST)).json()["decision"]
+    # the id-keyed fields evidence depends on are unchanged and still present
+    assert body["selected_action_id"].startswith("a-")
+    assert all(a.startswith("a-") for a in body["considered_options"])
+    assert all(a.startswith("a-") for a in body["unavailable_options"])
+    assert set(body["blocking_constraints"]) <= set(body["considered_options"])
+    assert {c["action_id"] for c in body["decision_trace"]["comparisons"]} == set(body["considered_options"])
+
+
 def test_24_execution_status_remains_not_executed() -> None:
     for pid in PEOPLE:
         body = client.get(DOSS.format(f"fict:kestral-strait:person:{pid}")).json()
