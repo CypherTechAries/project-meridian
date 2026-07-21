@@ -23,6 +23,7 @@ import {
   classifyBoundaryStatus,
 } from '../src/screens/ask-meridian.ts'
 import type { AskResponse } from '../src/screens/ask-meridian.ts'
+import { API_BASE } from '../src/engine/api.ts'
 import { briefingMap } from '../src/components/briefing-viz.ts'
 import { mapCallouts } from '../src/engine/presentation.ts'
 
@@ -112,7 +113,7 @@ describe('landing view and navigation', () => {
     const active = root.querySelector('[aria-pressed="true"], .modesw__b--on, [data-mode="briefing"]')
     expect(root.textContent).toContain('Briefing')
     // the briefing situation summary is present on first mount
-    expect(root.querySelector('.bsum, .briefing, [class*="brief"]')).not.toBeNull()
+    expect(root.querySelector('.briefing')).not.toBeNull()
     expect(active === null || active.textContent?.toLowerCase()).toBeTruthy()
   })
 
@@ -138,7 +139,7 @@ describe('landing view and navigation', () => {
     const back = root.querySelector<HTMLElement>('[data-mode="briefing"]')
     expect(back).not.toBeNull()
     back!.click()
-    expect(root.querySelector('.bsum')).not.toBeNull()
+    expect(root.querySelector('.lede__h')).not.toBeNull()
   })
 })
 
@@ -180,7 +181,10 @@ describe('answers', () => {
     const home = el(askHome())
     const first = home.querySelector('.askstart') as HTMLElement
     expect(first.dataset.question).toBe(STARTERS[0])
-    expect(ASK_ENDPOINT).toBe('/api/ask-meridian/query')
+    // This assertion previously required the endpoint to be page-relative, which is exactly the
+    // defect that made Ask MERIDIAN 404 in the real browser: the test locked the bug in place.
+    // It now requires the shared backend base. See tests/api-routing.test.ts.
+    expect(ASK_ENDPOINT).toBe(`${API_BASE}/api/ask-meridian/query`)
   })
 
   it('8 · a supported answer renders text and evidence components', () => {

@@ -19,7 +19,24 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * The viewport lock belongs to the Analysis dashboard, whose grid is sized by the window. It is
+ * NOT applied to the reading screens: on Briefing it produced an invisible internal scroll region,
+ * so the page reported exactly viewport height at every size and content below the fold could only
+ * be reached by scrolling inside a box. The page itself must scroll. Mode is stamped by `mount`.
+ */
 #app { height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+/*
+ * Only Ask keeps the lock, because its composer is anchored to the bottom of the window.
+ *
+ * Briefing and the technical-evidence screen both let the PAGE grow and the page scroll. On
+ * technical evidence the lock was measurably cutting text off: panels reported 312px of content
+ * in a 200px box, "Key metrics" labels were ellipsis-truncated at 1366px wide, and the inspector
+ * was a scroll box nested inside a card. Secondary content is still allowed to be long.
+ */
+#app[data-mode="briefing"], #app[data-mode="analysis"] {
+  height: auto; min-height: 100vh; overflow: visible;
+}
 
 :focus-visible { outline: var(--focus); outline-offset: 2px; border-radius: 2px; }
 .u-sr {
@@ -95,7 +112,8 @@ body {
 .sysrow__v--warn { color: var(--o-fixture); }
 
 /* ── Centre grid: the composition ──────────────────────────────────────── */
-.main { overflow: hidden; padding: var(--sp-3); min-width: 0; display: flex; }
+/* visible, not hidden: the grid inside is now sized by its content, and clipping it would undo that. */
+.main { overflow: visible; padding: var(--sp-3); min-width: 0; display: flex; }
 .scc {
   display: grid; gap: 10px; flex: 1; min-height: 0;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.15fr) minmax(0, 0.95fr);
@@ -113,7 +131,12 @@ body {
  * which reports ~0 min-content and would collapse the auto rows to 89px. The auto rows below size
  * to their real content; row 1 takes the remainder and the map absorbs it.
  */
-  grid-template-rows: minmax(244px, 1fr) auto auto auto;
+  /*
+   * `auto`, not `1fr`: with the page free to grow, every row must be free to reach its own
+   * content height. The map keeps a floor so it never collapses; it simply no longer takes the
+   * remainder at the expense of the panels beside it.
+   */
+  grid-template-rows: minmax(244px, auto) auto auto auto;
   grid-template-areas:
     "map      crisis   options"
     "map      metrics  options"
@@ -133,8 +156,12 @@ body {
 /* ── Panels: elevation, hairlines, cyan datum on the active edge ───────── */
 .panel {
   background: var(--s-panel); border: 1px solid var(--line); border-radius: var(--r-md);
-  display: flex; flex-direction: column; min-width: 0; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; min-width: 0; position: relative;
+  /* visible: a panel must never be shorter than its own text. Only the map panel clips, and it
+   * clips a drawing to its rounded corners, not words. */
+  overflow: visible;
 }
+.panel--map { overflow: hidden; }
 .panel::before {
   content: ""; position: absolute; inset: 0 auto 0 0; width: 2px;
   background: linear-gradient(180deg, transparent, var(--line-datum), transparent);
@@ -280,7 +307,12 @@ body {
   gap: var(--sp-2); padding: 0; border-bottom: 1px solid var(--line); cursor: pointer;
 }
 .krow:last-child { border-bottom: none; }
-.krow__label { font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/*
+ * Key metrics: labels WRAP. They were ellipsis-truncated at 1366px wide — "…" in the one panel
+ * whose whole purpose is naming what a number measures. A metric with an unreadable name is worse
+ * than a taller panel.
+ */
+.krow__label { font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.25; overflow-wrap: anywhere; }
 .krow__val {
   font-family: var(--f-num); font-size: var(--fs-lead); font-weight: 700; text-align: right;
   font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
@@ -345,10 +377,11 @@ body {
 /* ── Right rail ────────────────────────────────────────────────────────── */
 .rail {
   background: var(--s-base); border-left: 1px solid var(--line);
-  display: flex; flex-direction: column; overflow: hidden;
- overflow-y: auto; }
+  display: flex; flex-direction: column; overflow: visible;
+}
 .rail__decisions { border-bottom: 1px solid var(--line-strong); flex: 0 0 auto; }
-.rail__inspector { flex: 1 1 auto; overflow: auto; min-height: 0; }
+/* No nested scroll box. It was 667px of content in a 248px box at 1366 wide. */
+.rail__inspector { flex: 1 1 auto; overflow: visible; min-height: 0; }
 .rail__head {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); background: var(--s-raised);
@@ -386,15 +419,19 @@ body {
 
 /* ── Bottom transition strip ───────────────────────────────────────────── */
 .tstrip {
-  flex: 0 0 auto; display: flex; align-items: center; gap: var(--sp-3);
+  flex: 0 0 auto; display: flex; align-items: baseline; gap: var(--sp-3);
   padding: 6px var(--sp-4); background: var(--s-base); border-top: 1px solid var(--line);
-  overflow: hidden;
+  overflow: visible; flex-wrap: wrap;
 }
 .tstrip__title {
   margin: 0; font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.1em;
   color: var(--t-faint); display: flex; align-items: center; gap: 5px; flex: 0 0 auto;
 }
-.tstrip__list { overflow: hidden; list-style: none; margin: 0; padding: 0; display: flex; gap: var(--sp-3); overflow: hidden; flex: 1; }
+/* Wraps to a second line rather than dropping the last transitions off the right edge. */
+.tstrip__list {
+  overflow: visible; list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 4px var(--sp-3); flex: 1; min-width: 0;
+}
 .tstrip__item { display: flex; align-items: baseline; gap: 5px; font-size: var(--fs-micro); cursor: pointer; white-space: nowrap; }
 .tstrip__tick { color: var(--cyan-dim); font-family: var(--f-num); }
 .tstrip__mech { color: var(--t-mid); font-family: var(--f-num); }
@@ -419,7 +456,8 @@ body {
 .chainsum__dot--social { color: var(--d-social); }
 .chainsum__dot--narrative { color: var(--d-narrative); }
 .chainsum__dot--political { color: var(--d-political); }
-.chainsum__name { font-size: 10.5px; color: var(--t-low); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Wraps rather than truncating — a half-named causal stage is not evidence. */
+.chainsum__name { font-size: 10.5px; color: var(--t-low); line-height: 1.3; overflow-wrap: anywhere; }
 .chainsum__val { font-family: var(--f-num); font-size: 10.5px; color: var(--t-mid); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .chainsum__note { margin: 3px 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.35; }
 

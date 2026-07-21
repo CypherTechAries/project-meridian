@@ -1,59 +1,176 @@
 /*
- * BRIEFING VIEW — built to the founder-approved mockup.
+ * Briefing — rebuilt after the first user usability test failed.
+ * See docs/design/FIRST-USER-USABILITY-TEST.md.
  *
- * 68/32 split, one dominant crisis visual, one decision, three consequence cards. Kept in its own
- * stylesheet so the Analysis View (styles.css) is untouched — the two modes must be able to change
- * independently, and Analysis is work that was accepted, not work being replaced.
+ * The previous stylesheet built a fixed-height dashboard grid: three rows, a 372px rail, and
+ * `min-height: 0` with `overflow: hidden` on the panels. That combination is exactly what cropped
+ * text inside its own box (observation 4), because panels were sized by the viewport rather than
+ * by their content.
+ *
+ * The rule here is the opposite one, and it is load-bearing:
+ *
+ *   THE PAGE SCROLLS. NOTHING INSIDE IT DOES.
+ *
+ * No briefing element sets a fixed height, a max-height, or `overflow: hidden` on a text
+ * container. Cards grow to fit their words. If there are more words than fit the window, the
+ * window scrolls — a reader can always scroll, but cannot un-crop.
  */
 
-.disclosures--compact { padding: 4px var(--sp-4); font-size: var(--fs-micro); }
+.disclosures--compact { padding: 7px var(--sp-4); gap: 10px; font-size: var(--fs-micro); }
 
-/* Depth switch: visible, never a keyboard shortcut alone (usability rule 1). */
-.modesw {
-  display: inline-flex; margin-left: var(--sp-5); border: 1px solid #1e3a52;
-  border-radius: 4px; overflow: hidden; background: rgba(10, 22, 36, 0.8);
+/* ── Primary navigation ──────────────────────────────────────────────────── */
+/* Two siblings of equal weight. Ask MERIDIAN is a button, not a wordmark (observation 10). */
+.navbar { display: flex; gap: 8px; align-items: center; }
+.navbtn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font: 600 14.5px/1 inherit; letter-spacing: 0.01em;
+  padding: 10px 16px; border-radius: 7px; cursor: pointer;
+  background: var(--s-inset); color: var(--t-mid);
+  border: 1px solid var(--line-strong);
 }
-.modesw__btn {
-  appearance: none; border: 0; background: transparent; cursor: pointer; font-family: inherit;
-  font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.12em; padding: 7px 22px;
-  color: var(--t-low);
-}
-.modesw__btn.is-on {
-  background: linear-gradient(180deg, #12354a, #0d2637); color: #7fe4f5;
-  box-shadow: inset 0 -2px 0 var(--cyan);
-}
-.modesw__btn:not(.is-on):hover { color: var(--t-hi); }
+.navbtn:hover { color: var(--t-hi); border-color: var(--cyan-dim); background: #0d1c2a; }
+.navbtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.navbtn.is-on { background: #0e2534; border-color: var(--cyan); color: var(--t-hi); }
+.navbtn__i { font-size: 13px; color: var(--cyan); }
 
-.sect {
-  margin: 0 0 var(--sp-2); font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0.16em;
-  color: #4d9fc0; text-transform: uppercase;
-}
-
-.main--briefing { padding: var(--sp-3) var(--sp-4) var(--sp-2); overflow: hidden; display: flex; }
+/* ── Page frame ──────────────────────────────────────────────────────────── */
+/*
+ * A single reading column. Not a grid of panels: the wall of panels is what failed. The column is
+ * capped so lines stay readable on a 1920 screen, and the structure is identical at 1366, 1440 and
+ * 1920 — only the surrounding space changes.
+ */
+.main--briefing { display: block; overflow: visible; }
 .briefing {
-  display: grid; gap: var(--sp-3); flex: 1; min-height: 0; width: 100%;
-  grid-template-columns: minmax(0, 1fr) 372px;
-  grid-template-rows: minmax(0, 1fr) auto auto;
-  grid-template-areas:
-    "viz   needs"
-    "sum   needs"
-    "cards since";
+  width: 100%; max-width: 860px; margin: 0 auto;
+  padding: var(--sp-5) var(--sp-4) 64px;
+  display: flex; flex-direction: column; gap: 30px;
 }
 
-/* One shared panel treatment: hairline edge plus a faint inner top highlight. */
-.bviz, .bsum, .bneeds, .bsince, .ccard {
-  background: linear-gradient(180deg, rgba(16, 32, 48, 0.72), rgba(9, 18, 29, 0.72));
-  border: 1px solid #16324a; border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgba(120, 190, 225, 0.07);
+/* ── 1 · What happened ───────────────────────────────────────────────────── */
+.lede__h {
+  margin: 0 0 14px; font-size: clamp(30px, 3.4vw, 40px); line-height: 1.18;
+  letter-spacing: -0.02em; color: var(--t-hi); font-weight: 700;
+}
+.lede__p { margin: 0; font-size: 18.5px; line-height: 1.6; color: var(--t-mid); max-width: 62ch; }
+
+/* ── 2 · Why it matters ──────────────────────────────────────────────────── */
+.secs { display: flex; flex-direction: column; gap: 14px; }
+.sec {
+  padding: 22px 24px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(16, 32, 48, 0.5), rgba(9, 18, 29, 0.5));
+  border: 1px solid #16324a;
+  /* deliberately no height, no max-height and no overflow — the card grows to its content */
+}
+.sec__h {
+  margin: 0 0 10px; font-size: 20px; font-weight: 700; color: var(--t-hi);
+  letter-spacing: -0.01em;
+}
+.sec__p { margin: 0 0 8px; font-size: 16.5px; line-height: 1.6; color: var(--t-mid); max-width: 60ch; }
+.sec__p:last-of-type { margin-bottom: 0; }
+
+/* Direction: a word plus a shape, so it never depends on colour alone. */
+.sec__dir {
+  margin: 12px 0 0; font-size: 15px; color: var(--t-mid);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.sec__dir strong { color: var(--t-hi); font-weight: 600; }
+.sec__arrow { font-size: 17px; line-height: 1; }
+.sec__dir--rising .sec__arrow { color: #f0a742; }
+.sec__dir--falling .sec__arrow { color: #4fc98a; }
+.sec__dir--steady .sec__arrow { color: var(--t-low); }
+
+/*
+ * Reading limit on a section. Set apart from the sentences by a rule, because it qualifies how the
+ * section should be read rather than adding to what it says. Quiet, but not hidden — it is not
+ * inside the evidence control, and it does not need a click.
+ */
+.sec__caveat {
+  margin: 12px 0 0; padding-left: 12px; border-left: 2px solid var(--line-strong);
+  font-size: 14.5px; line-height: 1.6; color: var(--t-low); max-width: 60ch;
 }
 
-.bviz {
-  grid-area: viz; min-height: 0; display: flex; flex-direction: column;
-  padding: var(--sp-3) var(--sp-3) 0; overflow: hidden;
+/* ── Evidence controls ───────────────────────────────────────────────────── */
+/*
+ * Every technical value on this screen lives inside one of these and nowhere else. Closed by
+ * default; a native <details>, so it is keyboard-operable and needs no script.
+ */
+.ev { margin-top: 14px; }
+.ev__s {
+  display: inline-block; cursor: pointer; font-size: 14px; color: var(--cyan);
+  padding: 6px 0; text-decoration: underline; text-underline-offset: 3px;
 }
-.bmap { display: block; width: 100%; height: 100%; flex: 1; min-height: 0; border-radius: 0 0 7px 7px; }
+.ev__s:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; border-radius: 3px; }
+.ev__b { padding: 12px 0 2px; }
+.ev__note { margin: 0 0 8px; font-size: 14px; line-height: 1.55; color: var(--t-low); max-width: 60ch; }
+.ev__list { margin: 0; padding-left: 18px; }
+.ev__list li { font-size: 13.5px; color: var(--t-low); line-height: 1.7; }
+.ev__list code { font-size: 13px; color: var(--t-mid); }
+
+/* ── 3 · The one decision ────────────────────────────────────────────────── */
+.dec {
+  padding: 26px 28px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(20, 40, 56, 0.6), rgba(10, 20, 32, 0.6));
+  border: 1px solid var(--cyan-dim);
+}
+.dec__kicker {
+  margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--cyan);
+}
+.dec__h {
+  margin: 0 0 14px; font-size: clamp(22px, 2.2vw, 27px); line-height: 1.3;
+  font-weight: 700; color: var(--t-hi); letter-spacing: -0.015em;
+}
+.dec__p { margin: 0 0 10px; font-size: 16.5px; line-height: 1.6; color: var(--t-mid); max-width: 60ch; }
+.dec__standing { margin: 14px 0 0; font-size: 16px; line-height: 1.55; color: var(--t-hi); max-width: 60ch; }
+
+.dec__choices { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 14px; }
+.choice {
+  font: 600 15.5px/1 inherit; padding: 14px 20px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--s-inset); color: var(--t-hi);
+}
+.choice--a { border-color: var(--cyan); background: #0e2534; }
+.choice:hover { border-color: var(--cyan); }
+.choice:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+.dec__note { margin: 0; font-size: 14.5px; line-height: 1.5; color: var(--t-low); }
+
+/* ── Collapsed extras. They must not compete on first view. ──────────────── */
+.others__s, .where__s, .bfoot__tech {
+  cursor: pointer; font: 600 15px/1 inherit; color: var(--t-mid);
+  padding: 13px 18px; border-radius: 8px;
+  border: 1px solid var(--line-strong); background: transparent;
+  display: inline-block;
+}
+.others__s:hover, .where__s:hover, .bfoot__tech:hover { color: var(--t-hi); border-color: var(--cyan-dim); }
+.others__s:focus-visible, .where__s:focus-visible, .bfoot__tech:focus-visible {
+  outline: 2px solid var(--cyan); outline-offset: 2px;
+}
+.others__b, .where__b { padding: 18px 2px 4px; }
+.others__i { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.others__h { margin: 0 0 6px; font-size: 17px; font-weight: 600; color: var(--t-hi); line-height: 1.4; }
+.others__p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--t-mid); max-width: 60ch; }
+
+.where__note { margin: 0 0 10px; font-size: 14.5px; line-height: 1.55; color: var(--t-low); max-width: 60ch; }
+/* The known limitation sits above the drawing, not below it, so it is read first. */
+.where__limit {
+  margin: 0 0 14px; padding: 10px 12px; border-left: 2px solid var(--line-strong);
+  background: var(--s-inset); border-radius: 0 4px 4px 0;
+  font-size: 14px; line-height: 1.6; color: var(--t-low); max-width: 62ch;
+}
+.where__limit strong { color: var(--t-mid); }
+
+.bfoot {
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-start;
+  padding-top: 22px; border-top: 1px solid var(--line);
+}
+.bfoot__note { margin: 0; font-size: 14px; line-height: 1.55; color: var(--t-faint); max-width: 60ch; }
 
 /* ── Map ─────────────────────────────────────────────────────────────────── */
+/*
+ * Retained unchanged and moved behind "Show where this is happening". Given the component's own
+ * 960x430 ratio so its preserveAspectRatio="slice" crops nothing at any window width.
+ */
+.bmap { display: block; width: 100%; aspect-ratio: 960 / 430; border-radius: 8px; }
 .bmap__coast { stroke: #5a86a8; stroke-width: 1.6; }
 .bmap__swell path { fill: none; stroke: rgba(120, 180, 215, 0.055); stroke-width: 1.2; }
 .bmap__zone { stroke: #ff5c6a; stroke-opacity: 0.75; stroke-width: 1.6; }
@@ -73,97 +190,41 @@
 .lgd__bg { fill: rgba(6, 16, 26, 0.86); stroke: #1d3a55; stroke-width: 1; }
 .lgd__t { fill: #9fb8cc; font-size: 11.5px; }
 
-/* ── Situation summary ───────────────────────────────────────────────────── */
-.bsum { grid-area: sum; padding: var(--sp-3) var(--sp-4) var(--sp-4); }
-.bsum__head { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: #eef6ff; letter-spacing: -0.01em; }
-.bsum__text { margin: 0; font-size: var(--fs-lead); line-height: 1.5; color: var(--t-mid); }
+/* ── Technical evidence notice ───────────────────────────────────────────── */
+/* Shown above the former Analysis screen so it never reads as the normal experience. */
+.techbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  padding: 11px var(--sp-4); background: #10202c; border-bottom: 1px solid var(--line-strong);
+}
+.techbar__t { font-size: 14px; line-height: 1.5; color: var(--t-mid); max-width: 78ch; }
+.techbar__back {
+  font: 600 14px/1 inherit; padding: 9px 15px; border-radius: 7px; cursor: pointer;
+  border: 1px solid var(--cyan-dim); background: var(--s-inset); color: var(--t-hi); flex: 0 0 auto;
+}
+.techbar__back:hover { border-color: var(--cyan); }
+.techbar__back:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
-/* ── Needs you ───────────────────────────────────────────────────────────── */
-.bneeds { grid-area: needs; padding: var(--sp-3); display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
-.dcard { border-radius: 7px; padding: var(--sp-3) var(--sp-4); cursor: pointer; }
-.dcard--primary {
-  border: 1.5px solid #e8473f;
-  background: linear-gradient(160deg, rgba(58, 18, 20, 0.85), rgba(20, 12, 16, 0.9));
-  box-shadow: 0 0 26px rgba(232, 71, 63, 0.13), inset 0 1px 0 rgba(255, 150, 140, 0.13);
+/* ── 4 · What can I ask ──────────────────────────────────────────────────── */
+/* The Briefing must answer "what can I ask?" without the reader opening Ask first. */
+.askprompt, .unknown {
+  padding: 22px 24px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(16, 32, 48, 0.5), rgba(9, 18, 29, 0.5));
+  border: 1px solid #16324a;
 }
-.dcard--secondary {
-  border: 1.5px solid #c98a2e;
-  background: linear-gradient(160deg, rgba(48, 34, 12, 0.7), rgba(18, 14, 10, 0.86));
+.askprompt__h, .unknown__h {
+  margin: 0 0 10px; font-size: 20px; font-weight: 700; color: var(--t-hi); letter-spacing: -0.01em;
 }
-.dcard__kicker { font-size: var(--fs-micro); font-weight: 800; letter-spacing: 0.14em; color: #ff6a62; }
-.dcard--secondary .dcard__kicker { color: #f0a742; }
-.dcard__title {
-  margin: 5px 0 7px; font-size: 24px; font-weight: 700; color: #fff; text-transform: capitalize;
-  line-height: 1.15; letter-spacing: -0.015em;
+.askprompt__p, .unknown__p {
+  margin: 0 0 10px; font-size: 16.5px; line-height: 1.6; color: var(--t-mid); max-width: 60ch;
 }
-.dcard__why { margin: 0 0 10px; font-size: var(--fs-sm); line-height: 1.5; color: #b9c9d8; }
-.dcard__tags { list-style: none; display: flex; gap: 7px; margin: 0 0 10px; padding: 0; }
-.tag {
-  font-size: var(--fs-micro); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  padding: 3px 9px; border-radius: 3px; border: 1px solid currentColor;
+.unknown__p:last-child { margin-bottom: 0; }
+.askprompt__list { margin: 0 0 16px; padding-left: 20px; }
+.askprompt__list li {
+  font-size: 16px; line-height: 1.7; color: var(--t-mid); max-width: 60ch;
 }
-.tag--political { color: #ff6a62; }
-.tag--legal { color: #4fa9e8; }
-.tag--diplomatic { color: #f0a742; }
-.tag--economic { color: #f0a742; }
-.tag--social { color: #37c9ad; }
-.dcard__acts { display: flex; gap: var(--sp-2); }
-.btn {
-  appearance: none; font-family: inherit; font-size: var(--fs-sm); font-weight: 700;
-  letter-spacing: 0.08em; padding: 10px 15px; border-radius: 5px; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 7px;
+.askprompt__go {
+  font: 600 15px/1 inherit; padding: 13px 18px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--cyan); background: #0e2534; color: var(--t-hi);
 }
-.btn--ghost { background: rgba(10, 22, 34, 0.7); color: #dfeaf5; border: 1px solid #2c4f6d; }
-.btn--ghost:hover { border-color: var(--cyan); color: #fff; }
-.btn--solid { background: linear-gradient(180deg, #e8473f, #c22f28); color: #fff; border: 0; flex: 1; justify-content: center; }
-.btn--solid:hover { filter: brightness(1.08); }
-.bneeds__all {
-  appearance: none; background: transparent; border: 1px solid #1d3a55; border-radius: 6px;
-  color: #8fb4cc; font-family: inherit; font-size: var(--fs-sm); padding: 10px; cursor: pointer;
-  display: flex; justify-content: space-between;
-}
-.bneeds__all:hover { color: var(--cyan); border-color: var(--cyan-dim); }
-.bneeds__note { margin: 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.4; }
-.dcard__none { margin: 0; font-size: var(--fs-sm); color: var(--t-mid); }
-
-/* ── Since yesterday ─────────────────────────────────────────────────────── */
-.bsince { grid-area: since; padding: var(--sp-3); }
-.bsince__row { display: flex; align-items: center; gap: var(--sp-3); }
-.bsince__icon {
-  width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center;
-  border-radius: 50%; border: 1px solid #2a5a70; color: #3fd0e8;
-}
-.bsince__icon svg { width: 20px; height: 20px; }
-.bsince__text { margin: 0; font-size: var(--fs-sm); color: var(--t-mid); line-height: 1.45; flex: 1; }
-
-/* ── Consequence cards ───────────────────────────────────────────────────── */
-.ccards { grid-area: cards; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-3); }
-.ccard { padding: var(--sp-3); display: flex; flex-direction: column; gap: 9px; cursor: pointer; }
-.ccard:hover { border-color: #2a5a7a; }
-.ccard__head { display: flex; align-items: center; gap: 10px; }
-.ccard__icon { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; border: 1px solid currentColor; }
-.ccard__icon svg { width: 22px; height: 22px; }
-.ccard--people .ccard__icon { color: #37c9ad; }
-.ccard--economy .ccard__icon { color: #4fa9e8; }
-.ccard--politics .ccard__icon { color: #b98cf0; }
-.ccard__label { font-size: var(--fs-meta); font-weight: 800; letter-spacing: 0.16em; }
-.ccard--people .ccard__label { color: #37c9ad; }
-.ccard--economy .ccard__label { color: #4fa9e8; }
-.ccard--politics .ccard__label { color: #b98cf0; }
-.ccard__head .ob { margin-left: auto; }
-.ccard__state { margin: 0; font-size: 16.5px; line-height: 1.4; color: #eaf3fb; }
-.ccard__trend-k { font-size: var(--fs-micro); color: var(--t-faint); display: block; margin-bottom: 3px; }
-.tline { width: 100%; height: 34px; }
-.tline polyline { stroke-width: 1.8; }
-.tline--people { stroke: #37c9ad; fill: #37c9ad; }
-.tline--economy { stroke: #4fa9e8; fill: #4fa9e8; }
-.tline--politics { stroke: #b98cf0; fill: #b98cf0; }
-.ccard__inspect {
-  margin-top: auto; font-size: var(--fs-meta); font-weight: 700; letter-spacing: 0.1em;
-  color: #7fb3cc; display: flex; justify-content: flex-end; gap: 6px;
-}
-.ccard:hover .ccard__inspect { color: var(--cyan); }
-
-/* The legend lives in the footer strip; per-card markers carry crop safety. */
-.blegend { display: flex; align-items: center; gap: 7px; font-size: var(--fs-micro); color: var(--t-faint); }
-.blegend__t { margin-right: var(--sp-3); }
+.askprompt__go:hover { border-color: var(--cyan); background: #123048; }
+.askprompt__go:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }

@@ -92,10 +92,14 @@ function topbar(run: RunResult, mode: Mode = 'briefing'): string {
       ${modeSwitch(mode)}
     </div>
     <div class="topbar__right">
-      <span class="tb"><span class="tb__k">engine</span>${conn}</span>
       ${
+        /*
+         * The engine chip and every identifier belong to the technical view. Observation 1: the
+         * default screen opened with run status instead of the situation. Briefing shows neither.
+         */
         mode === 'analysis'
-          ? `<span class="tb"><span class="tb__k">rule pack</span><span class="tb__v">${escapeHtml(p.rule_pack_version)}</span></span>
+          ? `<span class="tb"><span class="tb__k">engine</span>${conn}</span>
+             <span class="tb"><span class="tb__k">rule pack</span><span class="tb__v">${escapeHtml(p.rule_pack_version)}</span></span>
              <span class="tb"><span class="tb__k">tick</span><span class="tb__v">Tick ${p.tick}</span></span>
              <span class="tb"><span class="tb__k">horizon</span><span class="tb__v">${p.demonstration_horizon_ticks} ticks · ${(p.simulated_hours / 24).toFixed(0)} days</span></span>`
           : ''
@@ -127,16 +131,26 @@ function nav(run: RunResult): string {
   </nav>`
 }
 
+/**
+ * Primary navigation.
+ *
+ * ANALYSIS IS NOT HERE. The first-user test recorded the Analysis card wall as unintelligible, so
+ * it is no longer offered as one of two equal ways to read the situation. It remains reachable, as
+ * "technical evidence", from the foot of the Briefing and from the Ask screen — a deliberate
+ * secondary route rather than the normal user experience. Nothing under it was deleted.
+ *
+ * ASK MERIDIAN IS A BUTTON. Observation 10: it read as a logo. It now sits beside Briefing, in the
+ * same shape and weight as its sibling, with an icon and a real label.
+ */
 function modeSwitch(mode: Mode): string {
-  return `<div class="modesw" role="group" aria-label="Detail level">
-    <button class="modesw__btn ${mode === 'briefing' ? 'is-on' : ''}" type="button" data-mode="briefing"
-      aria-pressed="${mode === 'briefing'}">Briefing</button>
-    <button class="modesw__btn ${mode === 'analysis' ? 'is-on' : ''}" type="button" data-mode="analysis"
-      aria-pressed="${mode === 'analysis'}">Analysis</button>
-  </div>
-  <button class="asknav ${mode === 'ask' ? 'is-on' : ''}" type="button" data-mode="ask"
-     aria-pressed="${mode === 'ask'}" data-destination="ask"
-     title="Ask a question about this fictional scenario">Ask MERIDIAN</button>`
+  const tab = (m: Mode, label: string, icon: string) =>
+    `<button class="navbtn${mode === m ? ' is-on' : ''}" type="button" data-mode="${m}"
+      aria-pressed="${mode === m}"><span class="navbtn__i" aria-hidden="true">${icon}</span><span
+      class="navbtn__l">${label}</span></button>`
+  return `<nav class="navbar" aria-label="Primary">
+    ${tab('briefing', 'Briefing', '▤')}
+    ${tab('ask', 'Ask MERIDIAN', '✦')}
+  </nav>`
 }
 
 function shell(run: RunResult, mode: Mode): string {
@@ -153,8 +167,18 @@ function shell(run: RunResult, mode: Mode): string {
     ${topbar(run, mode)}
     <main class="main main--briefing" id="main" aria-label="Situation briefing">${briefingView(run)}</main>`
   }
+  /*
+   * TECHNICAL EVIDENCE. Formerly "Analysis", and formerly one of two equal reading modes. The
+   * first-user test rejected it as a default experience, so it is now labelled for what it is and
+   * is reached only deliberately. Its content is unchanged and nothing under it was deleted.
+   */
   return `${disclosures()}
   ${topbar(run, mode)}
+  <div class="techbar" role="region" aria-label="Technical evidence notice">
+    <span class="techbar__t">Technical evidence — exact values, engine identifiers and update
+      history. Built for inspection, not for reading.</span>
+    <button type="button" class="techbar__back" data-mode="briefing">Back to Briefing</button>
+  </div>
   <div class="layout">
     ${nav(run)}
     <main class="main" id="main" aria-label="Strategic Command Centre">${commandCentre(run)}</main>
@@ -345,15 +369,28 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ question: q }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // A non-2xx is never an answer. A 404 in particular means the request did not reach the
+      // engine at all — that must show as UNAVAILABLE, not as a MERIDIAN reply.
+      if (!res.ok) throw new Error(`the engine returned HTTP ${res.status}`)
       const response = (await res.json()) as AskResponse
+      // A body that is not catalogue-shaped is not an answer, whatever the status code was — a dev
+      // server can return 200 with an HTML shell or a bare error object.
+      //
+      // The test is `supported` + `short_answer`, NOT `matched_intent`. A question the catalogue
+      // declines to answer is a real, valid response with `matched_intent: null`, and treating it
+      // as a transport failure would replace an honest "I cannot answer that" with a false claim
+      // that the engine was unreachable.
+      if (!response || typeof response.supported !== 'boolean' || typeof response.short_answer !== 'string') {
+        throw new Error('the response was not a MERIDIAN answer')
+      }
       askMessages = [...askMessages, { role: 'meridian', text: '', response }]
-    } catch {
+    } catch (e) {
+      const why = e instanceof Error ? e.message : 'the engine could not be reached'
       askMessages = [
         ...askMessages,
         {
           role: 'meridian',
-          text: 'Answer UNAVAILABLE — the engine could not be reached. Nothing has been assumed in its place.',
+          text: `Answer UNAVAILABLE — ${why}. Nothing has been assumed in its place.`,
         },
       ]
     }
@@ -386,6 +423,8 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
 
 export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'briefing'): void {
   currentMode = mode
+  // Releases the Analysis viewport lock on the reading screens — see #app in styles.css.
+  root.dataset.mode = mode
   root.innerHTML = shell(run, mode)
   if (mode === 'analysis') wireInspector(root, run)
   if (mode === 'ask') wireAsk(root, run)

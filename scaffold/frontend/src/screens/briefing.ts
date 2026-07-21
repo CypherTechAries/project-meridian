@@ -1,167 +1,227 @@
 /**
- * Briefing View — the default player experience, built to the founder-approved mockup.
+ * Briefing — the landing screen, rebuilt after the first user usability test failed.
  *
- * Composition: header · dominant crisis visual (68%) with situation summary beneath · NEEDS YOU
- * decision stack (32%) · three consequence cards · origin legend.
+ * See docs/design/FIRST-USER-USABILITY-TEST.md. The previous version was a command-centre wall: a
+ * dominant map, a decision stack, three cards each carrying a badge and a trend strip, an origin
+ * legend, and engine vocabulary throughout. A first-time user could not read it.
  *
- * EVERY sentence comes from `engine/presentation.ts`. Three things in the mockup are NOT rendered,
- * because no engine field establishes them and a readable sentence is still a claim:
+ * This screen answers three questions in order, and nothing else:
  *
- *   - `TICK 120` and `20:00 LOCAL` — the run is at tick 20 and the engine models no clock.
- *   - `Greenport Docks` / `Veteran Anchorage` — not in scenario data. Northshore and Southport are.
- *   - any vessel count, deadline, or named human activity.
+ *   1. What happened?          — one headline sentence
+ *   2. Why does it matter?     — three short sentences, then People / Economy / Politics
+ *   3. What needs attention?   — one decision, written as a question
  *
- * Honesty properties that survive simplification: the fictional disclosure and its crop survival,
- * per-card origin markers, and the statement that no decision can be executed.
+ * WHAT IS DELIBERATELY ABSENT from the default view: decimals, ticks, seeds, revisions, rule-pack
+ * identifiers, raw action identifiers, provenance panels, trend graphs, origin badges on every
+ * card, and the large map. None of that is deleted — all of it stays reachable through the
+ * evidence controls and the technical route. It simply is not the first thing a reader meets.
+ *
+ * EVERY sentence still comes from `engine/presentation.ts`. Simplifying the words did not licence
+ * authoring them: a readable sentence is still a claim, and a claim must be true of this run.
  */
 
 import type { OptionEntry, RunResult } from '../engine/client.ts'
 import {
-  consequenceDomains,
+  crisisLede,
   mapCallouts,
+  plainDecision,
+  plainSections,
   primaryDecision,
-  sinceYesterday,
   situationSummary,
 } from '../engine/presentation.ts'
-import type { ConsequenceDomain, DerivedTrend } from '../engine/presentation.ts'
+import type { PlainSection } from '../engine/presentation.ts'
 import { escapeHtml } from '../components/epistemic.ts'
-import { originBadge } from '../components/origin.ts'
-import { briefingMap, trendLine } from '../components/briefing-viz.ts'
+import { STARTERS } from './ask-meridian.ts'
+import { briefingMap } from '../components/briefing-viz.ts'
 
-/** Domain icons. Original geometry — no third-party icon set. */
-const ICONS: Record<string, string> = {
-  people: `<circle cx="9" cy="8" r="3.2"/><circle cx="17.5" cy="9.5" r="2.4"/>
-    <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" fill="none"/><path d="M16 20c0-2.4 1.3-4.4 3.2-5" fill="none"/>`,
-  economy: `<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="none"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" fill="none"/>`,
-  politics: `<path d="M4 20h16M6 20V10M10 20V10M14 20V10M18 20V10M3 10h18L12 4z" fill="none"/>`,
+/** The prototype's hardest limit, stated wherever a choice is shown. */
+export const NOTHING_EXECUTES = 'Decision support only — nothing will be executed.'
+
+/**
+ * Direction, in one ordinary word plus a shape that does not depend on colour.
+ * No trend graph: observation 3 recorded that the tiny graphs crowded the cards and explained
+ * nothing. The exact series is still available through the evidence control.
+ */
+function directionLine(s: PlainSection): string {
+  if (!s.direction || !s.directionSubject) return ''
+  const arrow = s.direction === 'rising' ? '↑' : s.direction === 'falling' ? '↓' : '→'
+  return `<p class="sec__dir sec__dir--${s.direction}">
+    <span class="sec__arrow" aria-hidden="true">${arrow}</span>
+    ${escapeHtml(s.directionSubject)} is <strong>${escapeHtml(s.direction)}</strong></p>`
 }
 
-const DOMAIN_TAGS: Record<string, string[]> = {
-  publish_legal_advice: ['political', 'legal'],
-  pursue_quiet_diplomacy: ['political', 'diplomatic'],
-  declare_emergency_powers: ['political', 'legal'],
+/**
+ * One of the three impact sections.
+ *
+ * The evidence control is a native <details>. Technical values live inside it and nowhere else on
+ * this screen, so a reader who does not want them never sees them, and a reader who does is one
+ * click away rather than one screen away.
+ */
+function section(s: PlainSection): string {
+  return `<section class="sec sec--${s.id}" aria-labelledby="sec-${s.id}">
+    <h3 class="sec__h" id="sec-${s.id}">${escapeHtml(s.title)}</h3>
+    ${s.sentences.map((t) => `<p class="sec__p">${escapeHtml(t)}</p>`).join('')}
+    ${directionLine(s)}
+    ${s.caveat ? `<p class="sec__caveat">${escapeHtml(s.caveat)}</p>` : ''}
+    <details class="ev">
+      <summary class="ev__s">Show where this comes from</summary>
+      <div class="ev__b">
+        <p class="ev__note">These are the engine values behind the sentences above.
+          ${s.origin === 'engine'
+            ? 'They are produced by the simulation.'
+            : s.origin === 'unavailable'
+              ? 'The engine is unreachable, so these are from a recorded snapshot.'
+              : 'They come from declared fixture input.'}</p>
+        <ul class="ev__list">${s.sources.map((f) => `<li><code>${escapeHtml(f)}</code></li>`).join('')}</ul>
+      </div>
+    </details>
+  </section>`
 }
 
-function consequenceCard(d: ConsequenceDomain, trend: DerivedTrend | null): string {
-  const values = trend?.recent ?? []
-  return `<article class="ccard ccard--${d.id}" data-card-id="${escapeHtml(d.trend?.field ?? d.id)}"
-      tabindex="0" role="button"
-      aria-label="${escapeHtml(d.title)}: ${escapeHtml(d.statement)}. Select to inspect the underlying values in Analysis view.">
-    <header class="ccard__head">
-      <span class="ccard__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" fill="currentColor">${ICONS[d.id]}</svg>
-      </span>
-      <span class="ccard__label">${escapeHtml(d.title)}</span>
-      ${originBadge(d.origin)}
-    </header>
-    <p class="ccard__state">${escapeHtml(d.statement)}</p>
-    <div class="ccard__trend">
-      <span class="ccard__trend-k">Trend (last 5 days)</span>
-      ${trendLine(values, d.id)}
+/**
+ * The one decision, written as a question.
+ *
+ * Observation 8: "Publish Legal Advice" is an internal action label. The question, the explanation
+ * and the two choices all come from `plainDecision`, which declares them per option rather than
+ * deriving prose from an identifier. No consequence is stated, because the prototype computes none.
+ */
+function decision(o: OptionEntry): string {
+  const d = plainDecision(o)
+  return `<section class="dec" aria-labelledby="dec-h" data-option-id="${escapeHtml(d.optionId)}">
+    <p class="dec__kicker">Needs a decision</p>
+    <h2 class="dec__h" id="dec-h">${escapeHtml(d.question)}</h2>
+    ${d.context.map((t) => `<p class="dec__p">${escapeHtml(t)}</p>`).join('')}
+    <p class="dec__standing">${escapeHtml(d.standing)}</p>
+    ${d.described
+      ? `<div class="dec__choices" role="group" aria-label="Choices — display only">
+           ${d.choices.map((c, i) => `<button type="button" class="choice ${i === 0 ? 'choice--a' : 'choice--b'}"
+             data-choice="${escapeHtml(c)}">${escapeHtml(c)}</button>`).join('')}
+         </div>`
+      : ''}
+    <p class="dec__note" data-nothing-executes>${escapeHtml(NOTHING_EXECUTES)}</p>
+    <details class="ev">
+      <summary class="ev__s">Show the calculation</summary>
+      <div class="ev__b">
+        <p class="ev__note">This option's standing is decided by one engine value. Its identifier,
+          exact number and update history are in the technical evidence view.</p>
+        <ul class="ev__list">
+          <li>option: <code>${escapeHtml(o.option_id)}</code></li>
+          <li>status: <code>${escapeHtml(o.value)}</code></li>
+          <li>driven by: <code>${escapeHtml(o.driven_by)}</code></li>
+        </ul>
+      </div>
+    </details>
+  </section>`
+}
+
+/** Other options, collapsed. They must not compete with the primary decision on first view. */
+function otherDecisions(options: OptionEntry[]): string {
+  if (options.length === 0) return ''
+  return `<details class="others">
+    <summary class="others__s">See other decisions (${options.length})</summary>
+    <div class="others__b">
+      ${options.map((o) => {
+        const d = plainDecision(o)
+        return `<article class="others__i" data-option-id="${escapeHtml(d.optionId)}">
+          <h4 class="others__h">${escapeHtml(d.question)}</h4>
+          <p class="others__p">${escapeHtml(d.standing)}</p>
+        </article>`
+      }).join('')}
+      <p class="dec__note">${escapeHtml(NOTHING_EXECUTES)}</p>
     </div>
-    <span class="ccard__inspect">INSPECT <span aria-hidden="true">›</span></span>
-  </article>`
+  </details>`
 }
 
-function decisionCard(o: OptionEntry, primary: boolean): string {
-  const name = o.label.replace(/_/g, ' ')
-  const tags = DOMAIN_TAGS[o.option_id] ?? ['political']
-  /*
-   * DERIVED, not copied from the mockup.
-   *
-   * The mockup's wording ("could reduce public and political pressure") is a CONSEQUENCE claim, and
-   * this prototype computes no cost or effect for any option - the options panel says so in the
-   * same breath. Asserting an outcome here would contradict that caveat. What IS true, and is what
-   * the engine actually establishes, is why the option currently holds its status.
-   */
-  const field = o.driven_by.replace('chain.', '').replace(/_/g, ' ')
-  const why =
-    o.value === 'ENABLED'
-      ? `Open because ${field} has passed the threshold this option declares.`
-      : o.value === 'CONSTRAINED'
-        ? `Constrained: ${field} has risen far enough to limit this option, but not to open it.`
-        : `Available: ${field} is below every threshold this option declares.`
-  return `<article class="dcard ${primary ? 'dcard--primary' : 'dcard--secondary'}"
-      data-card-id="${escapeHtml(o.option_id)}" tabindex="0" role="button"
-      aria-label="${primary ? 'Primary decision' : 'Secondary option'}: ${escapeHtml(name)}, ${escapeHtml(o.value)}. Select to inspect.">
-    <span class="dcard__kicker">${primary ? 'PRIMARY DECISION' : 'SECONDARY OPTION'}</span>
-    <h3 class="dcard__title">${escapeHtml(name)}</h3>
-    <p class="dcard__why">${escapeHtml(why)}</p>
-    <ul class="dcard__tags">${tags.map((t) => `<li class="tag tag--${t}">${t}</li>`).join('')}</ul>
-    ${
-      primary
-        ? `<div class="dcard__acts">
-             <button class="btn btn--ghost" type="button" data-open-analysis="${escapeHtml(o.option_id)}">
-               <span aria-hidden="true">⌕</span> INSPECT
-             </button>
-             <button class="btn btn--solid" type="button" data-plan="${escapeHtml(o.option_id)}"
-               aria-describedby="plan-note">DEVELOP PLAN <span aria-hidden="true">›</span></button>
-           </div>`
-        : ''
-    }
-  </article>`
+/**
+ * The map, behind a control.
+ *
+ * Observation 7: the map looked artificial and did not help. The founder offered two remedies —
+ * redraw it so a new reader can explain it in five seconds, or take it off the top level and put it
+ * behind "Show where this is happening". This takes the second, because it is honest about the
+ * present state of the diagram rather than pretending a restyle would fix it. Redrawing it remains
+ * open work, recorded as a known limitation.
+ */
+/**
+ * Stated next to the control, not buried in a document. A reader who opens the map is entitled to
+ * know it has not met the bar the rest of the screen was rebuilt to meet.
+ */
+export const MAP_LIMITATION =
+  'This map is supporting evidence and has not yet passed the five-second comprehension test — ' +
+  'a first-time reader cannot reliably explain it after five seconds. A redesign is tracked as ' +
+  'open work. Nothing on this screen depends on reading it.'
+
+function whereSection(run: RunResult): string {
+  const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
+  return `<details class="where">
+    <summary class="where__s">Show where this is happening</summary>
+    <div class="where__b">
+      <p class="where__note">A fictional strait. This diagram is a simplified drawing of the
+        situation, not a real coastline and not a map of any real place.</p>
+      <p class="where__limit"><strong>Known limitation.</strong> ${escapeHtml(MAP_LIMITATION)}</p>
+      ${briefingMap(run, mapCallouts(run), days)}
+    </div>
+  </details>`
 }
 
 export function briefingView(run: RunResult): string {
   const p = run.projection
   const summary = situationSummary(run)
-  const domains = consequenceDomains(run)
+  const lede = crisisLede(run)
+  const sections = plainSections(run)
   const primary = primaryDecision(p)
-  const secondary = p.government_options.find(
-    (o) => o.option_id !== primary?.option_id && o.value === 'CONSTRAINED',
-  )
-  const callouts = mapCallouts(run)
-  const days = Math.max(1, Math.round(p.simulated_hours / 24))
+  const others = p.government_options.filter((o) => o.option_id !== primary?.option_id)
 
   return `<div class="briefing">
 
-    <!-- ── Crisis visual: dominant, ~two thirds of usable width ─────────── -->
-    <section class="bviz" aria-labelledby="lbl-crisis">
-      <h2 class="sect" id="lbl-crisis">CRISIS OVERVIEW</h2>
-      ${briefingMap(run, callouts, days)}
+    <!-- 1 · What happened? ─────────────────────────────────────────────── -->
+    <header class="lede">
+      <h1 class="lede__h">${escapeHtml(summary.headline)}</h1>
+      ${lede.length
+        ? `<p class="lede__p">${lede.map(escapeHtml).join(' ')}</p>`
+        : '<p class="lede__p">Nothing further has been established about the situation yet.</p>'}
+    </header>
+
+    <!-- 2 · Why does it matter? ────────────────────────────────────────── -->
+    <div class="secs">
+      ${sections.map(section).join('')}
+    </div>
+
+    <!-- 3 · What needs attention? ──────────────────────────────────────── -->
+    ${primary
+      ? decision(primary)
+      : `<section class="dec"><h2 class="dec__h">No decision is waiting.</h2>
+           <p class="dec__note">${escapeHtml(NOTHING_EXECUTES)}</p></section>`}
+
+    ${otherDecisions(others)}
+
+    ${whereSection(run)}
+
+    <!-- 4 · What can I ask? ─────────────────────────────────────────────── -->
+    <section class="askprompt" aria-labelledby="lbl-ask">
+      <h2 class="askprompt__h" id="lbl-ask">You can ask about this</h2>
+      <p class="askprompt__p">Ask in your own words. This version can explain the situation but
+        cannot change it. For example:</p>
+      <ul class="askprompt__list">
+        ${STARTERS.slice(0, 3).map((q) => `<li>${escapeHtml(q)}</li>`).join('')}
+      </ul>
+      <button type="button" class="askprompt__go" data-mode="ask">Ask MERIDIAN</button>
     </section>
 
-    <!-- ── Situation summary ───────────────────────────────────────────── -->
-    <section class="bsum" aria-labelledby="lbl-sum">
-      <h2 class="sect" id="lbl-sum">SITUATION SUMMARY</h2>
-      <p class="bsum__head">${escapeHtml(summary.headline)}</p>
-      <p class="bsum__text">${escapeHtml(summary.text)}</p>
+    <!-- 5 · What does MERIDIAN not know? ───────────────────────────────── -->
+    <section class="unknown" aria-labelledby="lbl-unknown">
+      <h2 class="unknown__h" id="lbl-unknown">What MERIDIAN does not know</h2>
+      <p class="unknown__p">This is one fictional scenario, not a forecast. MERIDIAN does not know
+        what will happen next, whether people would really behave this way, or anything about the
+        real world. It models a first-order change in what people believe, a current situation and a
+        declared decision — and nothing else.</p>
+      <p class="unknown__p">Where a value is not known it is marked unknown or unavailable, never
+        zero. Population groups are averages; the individuals inside them are not modelled.</p>
     </section>
 
-    <!-- ── NEEDS YOU: one dominant decision, one secondary ──────────────── -->
-    <aside class="bneeds" aria-labelledby="lbl-needs">
-      <h2 class="sect" id="lbl-needs">NEEDS YOU</h2>
-      ${primary ? decisionCard(primary, true) : '<p class="dcard__none">No option has changed status.</p>'}
-      ${secondary ? decisionCard(secondary, false) : ''}
-      <button class="bneeds__all" type="button" data-mode="analysis">
-        See all options in Analysis view <span aria-hidden="true">›</span>
-      </button>
-      <p class="bneeds__note" id="plan-note">Display only — no action is submitted, priced, validated
-      or applied in this prototype.</p>
-    </aside>
-
-    <!-- ── Since yesterday ─────────────────────────────────────────────── -->
-    <aside class="bsince" aria-labelledby="lbl-since">
-      <h2 class="sect" id="lbl-since">SINCE YESTERDAY</h2>
-      <div class="bsince__row">
-        <span class="bsince__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="3.4" height="7" rx="1"/>
-          <rect x="10.3" y="9" width="3.4" height="11" rx="1"/><rect x="16.6" y="5" width="3.4" height="15" rx="1"/></svg>
-        </span>
-        <p class="bsince__text">${escapeHtml(sinceYesterday(run))}</p>
-        ${originBadge(run.connection === 'unavailable' ? 'unavailable' : 'engine')}
-      </div>
-    </aside>
-
-    <!-- ── Three consequence domains (scenario-defined) ─────────────────── -->
-    <section class="ccards" aria-label="How society is being affected">
-      ${domains.map((d) => consequenceCard(d, d.trend)).join('')}
-    </section>
-
-    <!-- ── Origin legend ───────────────────────────────────────────────── -->
-    <footer class="blegend" aria-label="Origin key">
-      ${originBadge('engine')}<span class="blegend__t">Engine-derived</span>
-      ${originBadge('fixture')}<span class="blegend__t">Fixture input</span>
+    <footer class="bfoot">
+      <button type="button" class="bfoot__tech" data-mode="analysis">Open technical evidence</button>
+      <p class="bfoot__note">The technical view shows exact values, engine identifiers and update
+        history. It is built for inspection, not for reading.</p>
     </footer>
   </div>`
 }
