@@ -157,6 +157,34 @@ has already fallen, because it lags its causes and decays more slowly.
 **Effects keep propagating through a society after the original disruption begins to ease.** That is
 the idea MERIDIAN exists to make visible.
 
+## Possible uses
+
+Research and experiments are revealing several possible ways MERIDIAN could be used. **This section
+separates what exists from what is being investigated.** Most of it does not exist.
+
+### What MERIDIAN demonstrates today
+
+A bounded fictional crisis can be run through deterministic rules and inspected — through a
+plain-language briefing, three impact areas, government options whose status changes as pressure
+builds, population groups, virtual people with belief and information histories, and a
+selected-but-never-executed decision. One scenario. Nothing is persisted, and nothing is executed.
+
+### Directions under research
+
+**None of these is available.** Each is at the stage its use-case brief states, and none is a
+roadmap commitment.
+
+- **Adaptive futures** — exploring many plausible paths through a scenario. *Under research;
+  MERIDIAN generates no real-world probabilities, and outcome dispersion must be measured first.*
+- **Training and exercises** — repeatable fictional decision environments. *Future direction; no
+  authoring, roles, facilitation, replay or multiplayer exist.*
+- **Simulation-born entities** — exporting useful designs and operating models from simulated
+  worlds. *Future direction; MERIDIAN cannot graduate entities.*
+- **Narrative supply-chain analysis** — understanding where claims come from, who benefits and what
+  evidence is missing. *Under research; MERIDIAN performs no real-world ingestion or analysis.*
+
+See the maintained [use-case register](docs/use-cases/README.md).
+
 ## Baseline, incident and counterfactual
 
 Three runs, which is what makes the causal claim checkable rather than asserted:

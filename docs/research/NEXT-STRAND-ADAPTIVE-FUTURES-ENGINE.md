@@ -1,5 +1,7 @@
 # Next research strand — the Adaptive Futures Engine
 
+**Derived use case:** [Adaptive Futures Engine](../use-cases/ADAPTIVE-FUTURES-ENGINE.md).
+
 **Status: QUEUED, NOT STARTED.** This is a placeholder written on 21 July 2026 so the idea is not
 lost, and so that the research already done for the simulation-born-entities strand is attached to
 it while it is fresh. **No research task has been run on this yet.**

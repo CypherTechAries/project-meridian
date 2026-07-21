@@ -28,6 +28,8 @@ Companion documents:
 [SIMULATION-BORN-ENTITY-SOURCES.md](SIMULATION-BORN-ENTITY-SOURCES.md) ·
 [product concept note](../design/ENTITY-GRADUATION-CONCEPT.md)
 
+**Derived use case:** [Simulation-Born Entities](../use-cases/SIMULATION-BORN-ENTITIES.md).
+
 ---
 
 ## 1. The executive idea
