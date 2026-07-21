@@ -158,6 +158,54 @@ for evidence. Strand 2 **multiplies the apparent evidence** — "this design sur
 is far more persuasive than "this design survived one run", and no more valid. If both strands are
 built, the honesty controls must be strengthened, not reused.
 
+## 8a. THE FIRST RESEARCH QUESTION
+
+> **Do MERIDIAN's existing scenario runs under-disperse?**
+
+**This is the first question, before any engine design.** In plain words:
+
+- **Under-dispersion means the model produces too narrow a range of outcomes.** If you ran it many
+  times with everything that could reasonably vary allowed to vary, you would still see roughly the
+  same story each time — while the real world would have produced a wider spread.
+- **A deterministic model can be perfectly reproducible and still under-disperse.** Reproducibility
+  and adequate variation are *different requirements*, and MERIDIAN currently has the first. Same
+  seed, same inputs, same answer is a correctness property. It says nothing about whether the set of
+  possible answers is wide enough.
+- **Fitting known historical data does not prove performance on genuinely new events.** A model
+  tuned until it reproduces something that already happened has been fitted, not tested.
+- **Building outcome visualisation before measuring dispersion would create false confidence.** A
+  well-designed screen showing "this outcome recurred in 62% of runs" is persuasive whether or not
+  the runs explored anything. Presentation quality and evidential quality are unrelated, and the
+  first can disguise the absence of the second.
+
+### Proposed evaluation — PRODUCT PROPOSAL, not to be implemented under this note
+
+1. **Repeated runs across declared seeds and parameter variations** — a stated, versioned grid, not
+   ad-hoc exploration.
+2. **Distribution of final outcomes** — not the mean, the spread and the shape.
+3. **Distribution of important intermediate states**, since a model can vary at the end while being
+   rigid in the middle, or the reverse.
+4. **Sensitivity to small input changes** — how much does a minor perturbation move the result?
+5. **Frequency of rare outcomes**, and whether any occur at all. A model that never produces a tail
+   event cannot be used to study tail events.
+6. **Diversity of decision paths** — do different runs reach the same end by different routes, or is
+   there effectively one path?
+7. **Comparison between modelled variation and observed historical variation**, only where a valid
+   comparison genuinely exists. Where it does not, say so rather than manufacture one.
+8. **Explicit identification of mechanisms that force convergence** — averaging, clamping, shared
+   random draws, attractor dynamics, single-path rules. These should be found and named, not
+   inferred from the output.
+9. **Tests for whether component models suppress variance**, in isolation, before they are composed.
+10. **Clear separation between scenario frequency and real-world probability**, maintained in every
+    output, every internal note and every conversation about the result.
+
+**No real-world probabilities are to be assigned**, and no engine code is to change, on the strength
+of this evaluation. Its purpose is to establish whether the strand is viable at all.
+
+**INFERENCE.** If MERIDIAN does under-disperse, that is not a reason to abandon the strand — it is
+the strand's first genuine finding, and it would govern everything designed afterwards. If it does
+not under-disperse, that is a real and citable result worth having before any of this is built.
+
 ## 9. Questions the next research task should answer
 
 1. Can a recurrence statistic over runs be reported without implying a probability about the world?

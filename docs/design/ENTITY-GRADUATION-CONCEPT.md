@@ -76,9 +76,12 @@ counterpart to be a twin of. Calling an exported fiction a digital twin borrows 
 thing has not earned, and the research report sets out the standards definitions that make this a
 real distinction rather than a preference about words.
 
-**It is not a claim to legal personhood.** A graduated entity is never the legal actor. A real
-company or a real person owns the assets, signs the contracts and carries the responsibility. The
-entity is a collection of assets and software operated by somebody accountable.
+**It is not a claim to legal personhood.** Companies are non-human legal persons already — that is
+not the issue. The issue is that a *simulated entity or software system* has no legal personality of
+its own under current UK law, so it is never the legal actor. A company or other recognised legal
+structure owns the assets, signs the contracts and carries the obligations, with accountable humans
+in the roles the law reserves to natural persons. The graduated entity is a set of assets that legal
+person holds — and that wrapper is not paperwork, it is the thing that exists in law.
 
 **It is not autonomy.** Nothing in this concept requires — or permits — an entity to act on its own.
 The safest and most valuable version has a human deciding everything that touches the world.

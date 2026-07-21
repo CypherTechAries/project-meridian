@@ -298,16 +298,39 @@ origin vocabulary is the right foundation and would need a new value, not a reus
 
 ### 9.1 The finding everything else follows from
 
-**CURRENT LAW.** UK law recognises natural persons and bodies corporate created by or under statute.
-There is no route by which a software system, an agent or a fictional persona acquires legal
-personality of its own. The nearest authoritative judicial statement is *Thaler v Comptroller-General*
-[2023] UKSC 49: an AI machine cannot be named as inventor because the statute requires a natural
-person. That is a narrow holding on the Patents Act 1977 and should not be over-read as a general
-ruling on AI personality.
+**Four things must be kept apart**, because collapsing them is the source of most confusion in this
+area:
 
-**INFERENCE.** A graduated entity cannot own, contract, employ, be liable, or be responsible. Every
-one of those verbs attaches to a person or a company. This is not a policy choice MERIDIAN is
-making; it is the structure of the law the concept must operate inside.
+| | What it is | Legal personality? |
+|---|---|---|
+| **A simulated entity** | A fictional person, organisation or product inside MERIDIAN | No |
+| **A software system** | Code that runs, including any agent built from a simulated entity | No |
+| **A natural person** | A human being | Yes |
+| **A company or other legal person** | A body corporate or other recognised legal structure | **Yes** |
+
+**CURRENT LAW.** Legal personality is not confined to human beings. Companies and other bodies
+corporate have legal personality without being human, and that is precisely why they can own
+property, enter contracts and bear obligations. What UK law does **not** recognise is legal
+personality in a simulated entity, a software agent or an AI system.
+
+The position, stated carefully:
+
+> **A simulated entity, software agent or AI system does not itself have legal personality under
+> current UK law. Real-world operation would therefore need to occur through an existing legal
+> person, such as a company or other recognised legal structure, with accountable humans fulfilling
+> the roles required by law.**
+
+The nearest authoritative judicial statement is *Thaler v Comptroller-General* [2023] UKSC 49: an AI
+machine cannot be named as inventor because the statute requires a natural person. That is a narrow
+holding on the Patents Act 1977 and should not be over-read as a general ruling on AI personality.
+
+**INFERENCE.** A graduated entity therefore cannot itself own, contract, employ, be liable or be
+responsible. Those capacities belong to the legal person it operates through.
+
+**The legal wrapper is not administrative packaging.** It is the thing that actually holds the
+assets, signs the contracts and carries the obligations. Treating it as paperwork to be arranged
+later inverts the structure: there is no entity to wrap *around* — the wrapper **is** the entity that
+exists in law, and the simulation-born material is a set of assets it holds.
 
 ### 9.2 Becoming a real company
 
@@ -322,12 +345,30 @@ making; it is the structure of the law the concept must operate inside.
 - **Identity verification became a legal requirement on 18 November 2025** under ECCTA 2023, with a
   transition to 17 November 2026. New directors must verify before appointment; a Companies House
   personal code is issued; failure is an offence and blocks filings.
-- A person with significant control is **an individual**; entity chains must resolve to individuals.
-  AML "beneficial owner" is likewise defined as an **individual** (MLR 2017 reg. 5).
+- **Persons with significant control — stated precisely, because the simple version is wrong.**
+  The statutory definition of a PSC is an *individual* meeting one or more of the specified
+  conditions (Companies Act 2006 s.790C(2)). But a company's PSC register does **not** therefore
+  always name an individual: where the statutory conditions are met, it may instead record a
+  **registrable relevant legal entity** — a legal entity that is itself subject to its own
+  disclosure requirements. **Ownership and control chains may legitimately pass through legal
+  entities**, and a PSC record may identify one.
+- What the framework is aimed at is that **ultimate beneficial-ownership, identity-verification and
+  accountability processes may require the natural persons behind those structures to be
+  identified** — through the RLE's own filings, through the identity-verification duties introduced
+  by ECCTA 2023, and through anti-money-laundering customer due diligence, where "beneficial owner"
+  is defined in terms of individuals (MLR 2017 reg. 5).
+- **This is not the same as saying every chain does in fact resolve to a named individual.** It does
+  not always: there are exemptions, "no PSC" declarations, foreign structures and trusts, and the
+  register's accuracy is not verified filing-by-filing. **INFERENCE:** anyone relying on these
+  records should treat them as a disclosure regime with known gaps, not as a map of real control.
+- **What is clear for this concept:** a simulated entity or software system cannot satisfy the role
+  of an accountable natural person, and cannot be the human whose identity is verified. Wherever the
+  law requires a natural person, a human being has to be there.
 
 **INFERENCE, and the practical heart of the matter:** there is **no anonymous or synthetic route into
-the UK company register**. A fictional company becoming a real one requires an identity-verified
-human being on the public record.
+the UK company register**. A fictional company becoming a real one requires identity-verified human
+beings discharging the roles the law reserves to natural persons — at minimum a natural-person
+director — even where ownership above them runs through other companies.
 
 ### 9.3 Intellectual property
 
@@ -428,9 +469,11 @@ operator. The proposed control is blunt and deliberate: `may_sign_contracts: nev
 DAO-specific legal entity is needed** for England and Wales, suggesting existing vehicles be reviewed
 instead.
 
-**INFERENCE.** The same answer, reached independently: English law's response to "can a non-human
-organisation be a legal person?" is to route it into an existing wrapper with identified humans.
-**A decade of DAO experimentation did not move this.**
+**INFERENCE.** The same answer, reached independently. Note the question is *not* whether a
+non-human organisation can be a legal person — companies are non-human legal persons already. The
+question is whether a **software-governed** organisation can be one, and English law's answer is to
+route it into an existing legal person with accountable humans rather than to create personality for
+the software. **A decade of DAO experimentation did not move this.**
 
 ### 9.9 Ownership models compared
 
