@@ -117,7 +117,9 @@ NOT_MODELLED_EXTRA = {
 # Deterministic, versioned, and keyed ONLY by structured state. No entity id appears in any of
 # these tables, so no sentence can be authored for one entity and bypass the engine result.
 
-_UNCERTAIN_LOW, _UNCERTAIN_HIGH = 0.35, 0.65
+#: The uncertain band is defined ONCE, in update.py. Never restate it — four copies of this
+#: threshold was a real defect found during VP-4 review.
+from .update import UNCERTAIN_HIGH as _UNCERTAIN_HIGH, UNCERTAIN_LOW as _UNCERTAIN_LOW
 
 
 def _view_words(credence: Optional[float]) -> str:

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from ..belief import cast
 from ..belief.projection import person_projection
+from ..belief.classification import classify_belief_outcome
 from ..belief.provenance import Origin
 from .history import (
     BeliefHistory,
@@ -79,18 +80,17 @@ def information_history_for(person_id: str) -> InformationHistory:
 
 
 def _classify(person_id: str) -> tuple[BeliefOutcome, str]:
-    """Classify the existing first-order result using proposition-level belief semantics only."""
+    """
+    Classify via the CANONICAL classifier. VP-4 keeps no threshold table of its own — an earlier
+    version hard-coded 0.65/0.35 here, which is exactly the duplication that lets one surface call a
+    person "accepted" while another calls them "unsure".
+    """
     proj = person_projection(person_id)
-    if not proj.received_the_claim:
-        return BeliefOutcome.retained_prior, "prior carried forward; not exposed"
-    if proj.still_unsure:
-        return BeliefOutcome.received_but_unsure, "in the uncertain band with low confidence"
-    c = proj.calculation.final_credence
-    if c > 0.65:
-        return BeliefOutcome.received_and_accepted, "moved above the uncertain band"
-    if c < 0.35:
-        return BeliefOutcome.received_and_rejected, "moved below the uncertain band"
-    return BeliefOutcome.received_but_unsure, "remained within the uncertain band"
+    return classify_belief_outcome(
+        received=proj.received_the_claim,
+        credence=proj.calculation.final_credence,
+        is_uncertain=proj.still_unsure,
+    )
 
 
 def belief_history_for(person_id: str) -> BeliefHistory:

@@ -29,6 +29,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
+from ..belief.classification import BeliefOutcome
 from ..belief.provenance import Origin
 from .schema import RelationshipType, resolve_person_ref
 
@@ -165,15 +166,8 @@ class InformationRecord(BaseModel):
 # ── Belief history ────────────────────────────────────────────────────────────────────────────────
 
 
-class BeliefOutcome(str, Enum):
-    never_received_through_tick = "NEVER_RECEIVED_THROUGH_TICK"
-    received_but_unsure = "RECEIVED_BUT_UNSURE"
-    received_and_rejected = "RECEIVED_AND_REJECTED"
-    received_and_accepted = "RECEIVED_AND_ACCEPTED"
-    retained_prior = "RETAINED_PRIOR"
-    unknown = "UNKNOWN"
-    unavailable = "UNAVAILABLE"
-    not_modelled = "NOT_MODELLED"
+# BeliefOutcome is the CANONICAL enum from the belief package — VP-4 defines no second
+# outcome vocabulary. Re-exported so existing imports keep working.
 
 
 class BeliefHistoryEntry(BaseModel):

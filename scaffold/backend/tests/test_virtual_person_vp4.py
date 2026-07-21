@@ -440,3 +440,68 @@ def test_51_all_belief_values_across_people_unchanged() -> None:
 
 def test_52_claim_boundary_present() -> None:
     assert "does not model a complete life history" in history_mod.CLAIM_BOUNDARY
+
+
+# ── canonical classification parity (pre-merge check) ─────────────────────────────────────────────
+
+
+def test_53_the_uncertain_band_is_defined_once() -> None:
+    """
+    A REAL DEFECT FOUND IN REVIEW. The 0.35/0.65 band had four separate definitions: update.py,
+    cohorts.py, projection.py and hard-coded literals in the VP-4 fixtures. Four copies of one
+    threshold is how the same person becomes "accepted" on one surface and "unsure" on another.
+    All four now resolve to the single canonical pair in update.py.
+    """
+    from app.simulation.belief import cohorts, projection
+    from app.simulation.belief.update import UNCERTAIN_HIGH, UNCERTAIN_LOW
+
+    assert (UNCERTAIN_LOW, UNCERTAIN_HIGH) == (0.35, 0.65)
+    assert (cohorts.UNCERTAIN_LOW, cohorts.UNCERTAIN_HIGH) == (UNCERTAIN_LOW, UNCERTAIN_HIGH)
+    assert (projection._UNCERTAIN_LOW, projection._UNCERTAIN_HIGH) == (UNCERTAIN_LOW, UNCERTAIN_HIGH)
+    # VP-4 keeps no threshold table of its own. Strip docstrings first: the module's own comment
+    # NAMES the old literals to explain why they were removed, and a naive scan flags that comment.
+    import ast, inspect
+    from app.simulation.person import vp4_fixtures
+    tree = ast.parse(inspect.getsource(vp4_fixtures))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Module)):
+            if ast.get_docstring(node) and node.body and isinstance(node.body[0], ast.Expr):
+                node.body[0].value = ast.Constant(value="")
+    code_only = ast.unparse(tree)
+    assert "0.65" not in code_only and "0.35" not in code_only
+
+
+def test_54_vp4_uses_the_canonical_classifier_object() -> None:
+    from app.simulation.belief.classification import BeliefOutcome as Canonical
+    from app.simulation.person.history import BeliefOutcome as ViaHistory
+    assert Canonical is ViaHistory, "VP-4 must not define a second outcome vocabulary"
+
+
+def test_55_belief_projection_and_belief_history_classify_identically() -> None:
+    """
+    The parity regression the founder asked for: the belief read-model and VP-4 history must never
+    disagree about the same frozen observation.
+    """
+    from app.simulation.belief.classification import classify_belief_outcome
+
+    for pid in PEOPLE:
+        proj = person_projection(pid)
+        from_projection, _ = classify_belief_outcome(
+            received=proj.received_the_claim,
+            credence=proj.calculation.final_credence,
+            is_uncertain=proj.still_unsure)
+        from_history = belief_history_for(pid).entries[0].classification
+        assert from_projection is from_history, f"{pid}: classification disagreement"
+
+
+def test_56_classifier_respects_the_engine_uncertainty_reading() -> None:
+    """`is_uncertain` wins: a surface can never settle what the engine called uncertain."""
+    from app.simulation.belief.classification import BeliefOutcome, classify_belief_outcome
+    out, _ = classify_belief_outcome(received=True, credence=0.9, is_uncertain=True)
+    assert out is BeliefOutcome.received_but_unsure
+    out, _ = classify_belief_outcome(received=True, credence=0.9, is_uncertain=False)
+    assert out is BeliefOutcome.received_and_accepted
+    out, _ = classify_belief_outcome(received=False, credence=0.35, is_uncertain=False)
+    assert out is BeliefOutcome.retained_prior
+    out, _ = classify_belief_outcome(received=True, credence=None, is_uncertain=False)
+    assert out is BeliefOutcome.unavailable
