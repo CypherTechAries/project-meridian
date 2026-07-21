@@ -28,9 +28,9 @@ from typing import Optional
 RULE_VERSION = "cohort-report-v1"
 RECONCILE_TOLERANCE = 1e-9
 
-#: Credence band read as genuine uncertainty rather than a weak lean.
-UNCERTAIN_LOW = 0.35
-UNCERTAIN_HIGH = 0.65
+#: Credence band read as genuine uncertainty rather than a weak lean. Defined ONCE in update.py
+#: and re-exported here for callers; never restated as a literal.
+from .update import UNCERTAIN_HIGH, UNCERTAIN_LOW
 
 
 class ExposureCoverage(str, Enum):
