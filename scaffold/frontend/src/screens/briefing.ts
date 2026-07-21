@@ -31,6 +31,7 @@ import {
 } from '../engine/presentation.ts'
 import type { PlainSection } from '../engine/presentation.ts'
 import { escapeHtml } from '../components/epistemic.ts'
+import { STARTERS } from './ask-meridian.ts'
 import { briefingMap } from '../components/briefing-viz.ts'
 
 /** The prototype's hardest limit, stated wherever a choice is shown. */
@@ -183,6 +184,28 @@ export function briefingView(run: RunResult): string {
     ${otherDecisions(others)}
 
     ${whereSection(run)}
+
+    <!-- 4 · What can I ask? ─────────────────────────────────────────────── -->
+    <section class="askprompt" aria-labelledby="lbl-ask">
+      <h2 class="askprompt__h" id="lbl-ask">You can ask about this</h2>
+      <p class="askprompt__p">Ask in your own words. This version can explain the situation but
+        cannot change it. For example:</p>
+      <ul class="askprompt__list">
+        ${STARTERS.slice(0, 3).map((q) => `<li>${escapeHtml(q)}</li>`).join('')}
+      </ul>
+      <button type="button" class="askprompt__go" data-mode="ask">Ask MERIDIAN</button>
+    </section>
+
+    <!-- 5 · What does MERIDIAN not know? ───────────────────────────────── -->
+    <section class="unknown" aria-labelledby="lbl-unknown">
+      <h2 class="unknown__h" id="lbl-unknown">What MERIDIAN does not know</h2>
+      <p class="unknown__p">This is one fictional scenario, not a forecast. MERIDIAN does not know
+        what will happen next, whether people would really behave this way, or anything about the
+        real world. It models a first-order change in what people believe, a current situation and a
+        declared decision — and nothing else.</p>
+      <p class="unknown__p">Where a value is not known it is marked unknown or unavailable, never
+        zero. Population groups are averages; the individuals inside them are not modelled.</p>
+    </section>
 
     <footer class="bfoot">
       <button type="button" class="bfoot__tech" data-mode="analysis">Open technical evidence</button>

@@ -18,6 +18,7 @@ import { initialSnapshot } from '../src/engine/client.ts'
 import type { RunResult } from '../src/engine/client.ts'
 import { NOTHING_EXECUTES } from '../src/screens/briefing.ts'
 import { plainDecision, plainSections, primaryDecision } from '../src/engine/presentation.ts'
+import { STARTERS } from '../src/screens/ask-meridian.ts'
 
 let root: HTMLElement
 const run: RunResult = initialSnapshot()
@@ -156,6 +157,40 @@ describe('4-8 · the story the screen tells', () => {
     // the choices are display only and claim no outcome
     const text = defaultText().toLowerCase()
     expect(text).not.toMatch(/this will (reduce|increase|cause)|outcome:|result:/)
+  })
+})
+
+describe('4a-5a · the five questions the interface must answer unprompted', () => {
+  /*
+   * The acceptance criteria are that a reader, with no prior explanation, can answer: what happened,
+   * why it matters, what needs attention, what they can ask, and what MERIDIAN does not know. A cold
+   * verification pass found questions 4 and 5 unanswered on the Briefing; these pin the fix.
+   */
+  it('Q4 · the Briefing says what can be asked, without opening Ask first', () => {
+    const sec = root.querySelector('.askprompt') as HTMLElement
+    expect(sec).not.toBeNull()
+    expect(sec.textContent).toContain('Ask in your own words')
+    const examples = [...sec.querySelectorAll('.askprompt__list li')].map((l) => l.textContent?.trim())
+    expect(examples.length).toBeGreaterThanOrEqual(3)
+    // the examples are the questions Ask MERIDIAN actually accepts — they cannot drift apart
+    for (const e of examples) expect(STARTERS).toContain(e!)
+  })
+
+  it('Q4a · the prompt offers a working route into Ask MERIDIAN', () => {
+    const go = root.querySelector('.askprompt__go') as HTMLElement
+    expect(go.tagName).toBe('BUTTON')
+    go.click()
+    expect(root.querySelector('[data-ask-form]')).not.toBeNull()
+  })
+
+  it('Q5 · the Briefing states what MERIDIAN does not know', () => {
+    const sec = root.querySelector('.unknown') as HTMLElement
+    expect(sec).not.toBeNull()
+    expect(sec.querySelector('.unknown__h')?.textContent).toContain('does not know')
+    const t = sec.textContent ?? ''
+    expect(t).toContain('not a forecast')
+    expect(t).toMatch(/never\s+zero/)
+    expect(t).toContain('averages')
   })
 })
 

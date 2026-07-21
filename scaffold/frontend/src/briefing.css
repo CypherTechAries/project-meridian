@@ -186,3 +186,28 @@
 }
 .techbar__back:hover { border-color: var(--cyan); }
 .techbar__back:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ── 4 · What can I ask ──────────────────────────────────────────────────── */
+/* The Briefing must answer "what can I ask?" without the reader opening Ask first. */
+.askprompt, .unknown {
+  padding: 22px 24px; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(16, 32, 48, 0.5), rgba(9, 18, 29, 0.5));
+  border: 1px solid #16324a;
+}
+.askprompt__h, .unknown__h {
+  margin: 0 0 10px; font-size: 20px; font-weight: 700; color: var(--t-hi); letter-spacing: -0.01em;
+}
+.askprompt__p, .unknown__p {
+  margin: 0 0 10px; font-size: 16.5px; line-height: 1.6; color: var(--t-mid); max-width: 60ch;
+}
+.unknown__p:last-child { margin-bottom: 0; }
+.askprompt__list { margin: 0 0 16px; padding-left: 20px; }
+.askprompt__list li {
+  font-size: 16px; line-height: 1.7; color: var(--t-mid); max-width: 60ch;
+}
+.askprompt__go {
+  font: 600 15px/1 inherit; padding: 13px 18px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--cyan); background: #0e2534; color: var(--t-hi);
+}
+.askprompt__go:hover { border-color: var(--cyan); background: #123048; }
+.askprompt__go:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
