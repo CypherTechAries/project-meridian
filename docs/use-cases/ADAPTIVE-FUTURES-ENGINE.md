@@ -107,6 +107,9 @@ research question, and the ten-part evaluation proposed.
 Related: [Narrative and Incentive Intelligence §20](../research/NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md),
 on supplying simulated information environments as inputs.
 
+[Real-Geography Scenarios](REAL-GEOGRAPHY-SCENARIOS.md) — real geography would constrain what
+varies, but it does **not** help with dispersion, which is this strand's actual blocker.
+
 ## Next proof required
 
 **One measurement, before any implementation:**

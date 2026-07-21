@@ -95,6 +95,10 @@ of twelve models** — because fiction is the intended form and no truth boundar
 The narrative research identified **fictional misinformation exercises** as one of two uses needing
 none of the risky capability: [Narrative and Incentive Intelligence §23](../research/NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md).
 
+[Real-Geography Scenarios](REAL-GEOGRAPHY-SCENARIOS.md) — real terrain would make an exercise
+recognisable to people who work in it, and this is the use where fiction is *expected*, so the
+truth boundary is least fraught.
+
 ## Next proof required
 
 **Someone paying for a scenario.** Not a pilot, not a letter of intent — a real exercise, run once,

@@ -1111,3 +1111,9 @@ comparable work is investigative journalism done by hand, it is a real possibili
 everything else, and no external product until the core product is understood by a first-time
 user.** Revisit the standalone question only if the first experiment shows the method beats a
 careful human, and only with legal advice on the four questions above.
+
+---
+
+**See also:** [Real Geography, Fictional Worlds](REAL-GEOGRAPHY-FICTIONAL-WORLDS.md) — the
+real-world data boundary in §6 applies to this strand too: static geographic data is a different
+category from changing public data, operational data, and real people.
