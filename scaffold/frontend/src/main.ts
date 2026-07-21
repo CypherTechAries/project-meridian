@@ -20,6 +20,8 @@ import { escapeHtml } from './components/epistemic.ts'
 
 import { commandCentre, decisionRail, laggedResponse, transitionStrip } from './screens/command-centre.ts'
 import { briefingView } from './screens/briefing.ts'
+import { ASK_ENDPOINT, askMeridianView } from './screens/ask-meridian.ts'
+import type { AskMessage, AskResponse } from './screens/ask-meridian.ts'
 
 /**
  * Depth mode. Briefing is the DEFAULT; Analysis holds the detailed dashboard.
@@ -29,8 +31,14 @@ import { briefingView } from './screens/briefing.ts'
  * VISIBLE rather than a keyboard shortcut, because a first-time user will not discover a shortcut
  * (usability rule 1).
  */
-export type Mode = 'briefing' | 'analysis'
+export type Mode = 'briefing' | 'analysis' | 'ask'
 let currentMode: Mode = 'briefing'
+
+/**
+ * Ask MERIDIAN session messages. Display context only — deliberately a module-level variable and
+ * NOT persisted anywhere, so a reload clears them. They were never state.
+ */
+let askMessages: AskMessage[] = []
 
 export const FICTION_DISCLOSURE = 'FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION'
 export const MIXED_DISCLOSURE =
@@ -38,6 +46,7 @@ export const MIXED_DISCLOSURE =
 
 const NAV = [
   { id: 'command', label: 'Command Centre', built: true },
+  { id: 'ask', label: 'Ask MERIDIAN', built: true },
   { id: 'society', label: 'Society Pulse', built: false },
   { id: 'timeline', label: 'Causal Timeline', built: false },
   { id: 'entities', label: 'Entity Dossiers', built: false },
@@ -124,10 +133,21 @@ function modeSwitch(mode: Mode): string {
       aria-pressed="${mode === 'briefing'}">Briefing</button>
     <button class="modesw__btn ${mode === 'analysis' ? 'is-on' : ''}" type="button" data-mode="analysis"
       aria-pressed="${mode === 'analysis'}">Analysis</button>
-  </div>`
+  </div>
+  <button class="asknav ${mode === 'ask' ? 'is-on' : ''}" type="button" data-mode="ask"
+     aria-pressed="${mode === 'ask'}" data-destination="ask"
+     title="Ask a question about this fictional scenario">Ask MERIDIAN</button>`
 }
 
 function shell(run: RunResult, mode: Mode): string {
+  if (mode === 'ask') {
+    // Briefing remains the landing screen, so Ask MERIDIAN always offers the way back to it.
+    return `${briefingDisclosure()}
+    ${topbar(run, mode)}
+    <main class="main main--ask" id="main" aria-label="Ask MERIDIAN">
+      ${askMeridianView(askMessages, run)}
+    </main>`
+  }
   if (mode === 'briefing') {
     return `${briefingDisclosure()}
     ${topbar(run, mode)}
@@ -303,10 +323,72 @@ function wireInspector(root: HTMLElement, run: RunResult): void {
   if (political) select(political.field)
 }
 
+/**
+ * Ask MERIDIAN interactions.
+ *
+ * READ ONLY. The single network call is a POST to the catalogue endpoint, which returns an
+ * explanation and changes nothing; there is no other request from this screen. If the call fails,
+ * the screen says the answer is UNAVAILABLE rather than inventing one — an absent answer is never
+ * shown as an empty or neutral one.
+ */
+function wireAsk(root: HTMLElement, run: RunResult): void {
+  const remount = (): void => mount(root, run, 'ask')
+
+  async function ask(question: string): Promise<void> {
+    const q = question.trim()
+    if (!q) return
+    askMessages = [...askMessages, { role: 'user', text: q }]
+    remount()
+    try {
+      const res = await fetch(ASK_ENDPOINT, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ question: q }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const response = (await res.json()) as AskResponse
+      askMessages = [...askMessages, { role: 'meridian', text: '', response }]
+    } catch {
+      askMessages = [
+        ...askMessages,
+        {
+          role: 'meridian',
+          text: 'Answer UNAVAILABLE — the engine could not be reached. Nothing has been assumed in its place.',
+        },
+      ]
+    }
+    remount()
+  }
+
+  root.querySelectorAll<HTMLElement>('.askstart, .askchip').forEach((b) => {
+    b.addEventListener('click', () => void ask(b.dataset.question ?? ''))
+  })
+  root.querySelector<HTMLFormElement>('[data-ask-form]')?.addEventListener('submit', (e) => {
+    e.preventDefault()
+    const input = root.querySelector<HTMLInputElement>('[data-ask-input]')
+    if (!input) return
+    const q = input.value
+    input.value = ''
+    void ask(q)
+  })
+  root.querySelector<HTMLElement>('[data-ask-reset]')?.addEventListener('click', () => {
+    askMessages = []
+    remount()
+  })
+  // Evidence opens the read-only route the answer was derived from. GET only.
+  root.querySelectorAll<HTMLElement>('.askev__b').forEach((b) => {
+    b.addEventListener('click', () => {
+      const d = b.dataset.destination
+      if (d) window.open(d, '_blank', 'noopener')
+    })
+  })
+}
+
 export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'briefing'): void {
   currentMode = mode
   root.innerHTML = shell(run, mode)
   if (mode === 'analysis') wireInspector(root, run)
+  if (mode === 'ask') wireAsk(root, run)
 
   // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.
   root.querySelectorAll<HTMLElement>('[data-mode]').forEach((btn) => {

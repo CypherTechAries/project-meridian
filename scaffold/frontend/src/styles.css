@@ -569,3 +569,85 @@ body {
   color: var(--d-narrative); font-weight: 700;
 }
 .insp__lag-note { margin: 5px 0 0; font-size: var(--fs-micro); color: var(--t-faint); line-height: 1.4; }
+
+/* ── Ask MERIDIAN (VP-6) ──────────────────────────────────────────────────────────────────────── */
+.ask { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: 0; }
+.ask__main { display: flex; flex-direction: column; min-width: 0; }
+.ask__thread { padding: 22px 24px; overflow-y: auto; flex: 1; }
+.ask__ctx { border-left: 1px solid var(--line); padding: 16px; background: var(--s-inset); }
+.ask__ctxh { font: 700 9px/1 var(--font); letter-spacing: 0.16em; color: var(--t-faint); margin: 0 0 12px; }
+.ask__ctxnote { font-size: 12px; color: var(--t-faint); line-height: 1.5; margin-top: 14px; }
+.askhome { text-align: center; padding: 40px 20px; }
+.askhome__h { font: 600 30px/1.15 var(--font); letter-spacing: -0.02em; margin: 0 0 10px; }
+.askhome__note { color: var(--t-low); font-size: 14.5px; max-width: 560px; margin: 0 auto 26px; }
+.askhome__lbl { font: 700 9.5px/1 var(--font); letter-spacing: 0.18em; color: #4fd18b;
+  text-align: left; margin: 0 0 12px; }
+.askhome__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; text-align: left; }
+.askstart { background: var(--s-panel); border: 1px solid rgba(79, 209, 139, 0.28); border-radius: 10px;
+  padding: 15px 17px; font: 500 14.5px/1.35 var(--font); color: var(--t-hi); cursor: pointer; text-align: left; }
+.askstart:focus-visible, .askchip:focus-visible, .askev__b:focus-visible { outline: 2px solid var(--cyan);
+  outline-offset: 2px; }
+.askmsg { margin-bottom: 20px; }
+.askmsg--u { background: var(--s-raised); border: 1px solid var(--line-strong);
+  border-radius: 12px 12px 3px 12px; padding: 12px 16px; font-size: 15px; max-width: 70%; margin-left: auto; }
+.askmsg__who { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.askmsg__av { width: 23px; height: 23px; border-radius: 6px; display: flex; align-items: center;
+  justify-content: center; font: 700 10px/1 var(--font); background: rgba(53, 200, 224, 0.14);
+  color: var(--cyan); border: 1px solid rgba(53, 200, 224, 0.35); }
+.askmsg__nm { font: 700 10px/1 var(--font); letter-spacing: 0.13em; color: var(--cyan); }
+.askmsg__auth { font-size: 11.5px; color: var(--t-faint); }
+.askmsg__ro { font: 700 8.5px/1 var(--font); letter-spacing: 0.12em; color: #4fd18b;
+  border: 1px solid rgba(79, 209, 139, 0.35); border-radius: 3px; padding: 4px 7px; }
+.askmsg__text { font-size: 16px; line-height: 1.6; margin: 0 0 14px; max-width: 760px; }
+.askc { background: var(--s-panel); border: 1px solid var(--line); border-radius: 9px;
+  padding: 14px 16px; margin-bottom: 11px; }
+.askc__t { font: 700 9px/1 var(--font); letter-spacing: 0.15em; color: var(--t-faint); margin: 0 0 11px; }
+.askc--boundary { border-style: dashed; border-color: var(--line-strong); }
+/*
+ * The canonical map is the Briefing's own component, RESIZED — never redrawn smaller and never
+ * cropped. `bmap` carries preserveAspectRatio="…slice", so the card is given the component's own
+ * 960x430 ratio; at any other ratio slice would silently cut the coastline labels off the edges.
+ */
+.askc__map { aspect-ratio: 960 / 430; height: auto; overflow: hidden;
+  border-radius: 7px; border: 1px solid var(--line);
+  background: linear-gradient(170deg, #0d2236, #071320); }
+.askc__map .bmap { width: 100%; height: 100%; display: block; }
+.askc__tags { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; padding: 0; margin: 0; }
+.askc__tags li { font-size: 11.5px; color: var(--t-faint); background: var(--s-inset);
+  border: 1px dashed var(--line-strong); border-radius: 20px; padding: 6px 10px; }
+.askc__rows { list-style: none; padding: 0; margin: 0; }
+.askc__rows li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--line); font-size: 13.5px; color: var(--t-mid); }
+.askc__abs { color: var(--t-faint); font-size: 11.5px; }
+.askc__note { font-size: 12.5px; color: var(--t-faint); line-height: 1.5; margin: 0 0 10px; }
+.askc__kv { display: grid; grid-template-columns: auto 1fr; gap: 7px 14px; font-size: 13px; margin: 0; }
+.askc__kv dt { color: var(--t-faint); } .askc__kv dd { color: var(--t-mid); margin: 0; }
+.askc__sel { font: 600 16px/1.3 var(--font); margin: 0 0 6px; }
+.askc__exec { font: 700 10px/1 var(--font); letter-spacing: 0.1em; color: #f0a742;
+  border: 1px solid rgba(240, 167, 66, 0.4); border-radius: 4px; padding: 7px 10px; display: inline-block; margin: 0; }
+.askc__blocked { font-size: 13px; color: var(--t-low); margin: 10px 0 0; }
+.askev { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 11px; }
+.askev__b { font: 600 11.5px/1 var(--font); padding: 9px 13px; border-radius: 6px;
+  border: 1px solid var(--line-strong); background: var(--s-raised); color: var(--t-low); cursor: pointer; }
+.asklim { list-style: none; padding: 0; margin: 0 0 11px; }
+.asklim li { font-size: 12px; color: var(--t-faint); line-height: 1.6; }
+.asklim li::before { content: '◈ '; color: var(--t-faint); }
+.askchips { display: flex; flex-wrap: wrap; gap: 8px; }
+.askchip { font: 600 12px/1 var(--font); padding: 9px 13px; border-radius: 20px;
+  border: 1px solid rgba(53, 200, 224, 0.4); background: rgba(53, 200, 224, 0.06);
+  color: var(--cyan); cursor: pointer; }
+.askform { display: flex; gap: 10px; padding: 13px 24px; border-top: 1px solid var(--line);
+  background: var(--s-inset); }
+.askform__in { flex: 1; background: var(--s-panel); border: 1px solid var(--line-strong);
+  border-radius: 9px; padding: 13px 15px; color: var(--t-hi); font-size: 14.5px; }
+.askform__send { padding: 13px 20px; border-radius: 9px; background: rgba(53, 200, 224, 0.12);
+  border: 1px solid rgba(53, 200, 224, 0.4); color: var(--cyan);
+  font: 700 11px/1 var(--font); letter-spacing: 0.12em; cursor: pointer; }
+.askform__reset { padding: 13px 16px; border-radius: 9px; background: var(--s-raised);
+  border: 1px solid var(--line-strong); color: var(--t-low); font: 600 11px/1 var(--font); cursor: pointer; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.asknav { display: inline-flex; align-items: center; margin-left: 10px; padding: 8px 13px;
+  border-radius: 6px; border: 1px solid rgba(53, 200, 224, 0.4); background: rgba(53, 200, 224, 0.07);
+  color: var(--cyan); font: 700 10.5px/1 var(--font); letter-spacing: 0.12em; text-decoration: none; }
+.asknav:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
