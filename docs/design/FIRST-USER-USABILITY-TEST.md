@@ -79,3 +79,58 @@ not tell what any of it meant.
 No simulation behaviour, belief calculation or Virtual Person calculation is changed by the work
 that follows. The engine produces exactly the values it produced before; only what is shown by
 default, and in what words, changes.
+
+---
+
+## Second pass — the defects the first pass left behind
+
+The first pass rebuilt the Briefing. Verifying it in a real browser, rather than in tests, found
+three things the tests could not see and one they had actively locked in place.
+
+### Ask MERIDIAN did not work at all
+
+Ask MERIDIAN posted to a **page-relative** path while the Briefing used an absolute one. In the dev
+server that means every question went to Vite on port 5173 instead of the backend on 8000 and came
+back as a 404 HTML page, which the screen honestly reported as UNAVAILABLE. So the interface told
+the truth, and the truth was that the headline feature was broken.
+
+**No test caught it.** One test asserted the endpoint equalled the relative path — it encoded the
+defect as the expected result. Both screens now resolve every request through a single shared API
+base (`src/engine/api.ts`), and the regression tests assert the two screens agree, that neither URL
+is page-relative, and that the requested origin is not the page's own.
+
+A second defect was introduced and caught during the same verification: a guard meant to reject
+non-catalogue responses keyed on `matched_intent`, which is legitimately `null` when the catalogue
+**declines** a question. That turned every honest "I cannot answer that" into a false claim that the
+engine was unreachable. Declining to answer is an answer; only a transport failure is UNAVAILABLE.
+
+### Technical evidence clipped text
+
+Measured, not eyeballed. At 1366×768 the technical-evidence screen had panels holding 312px of
+content in a 200px box, Key metrics labels truncated to `…`, causal stage names truncated, the
+transition strip cut off at the right edge, and a 667px scroll region nested inside a 248px card.
+
+The cause was the same viewport lock that caused the original cropping: the screen was forced to
+window height, so content had nowhere to go. It now grows and the page scrolls. Labels wrap instead
+of truncating. Measurement at all three sizes reports zero clipped elements, zero nested scroll
+boxes and no horizontal overflow. **The screen was not redesigned** — it remains secondary, behind a
+control, and out of the primary navigation.
+
+### The map
+
+Unchanged, and still behind "Show where this is happening". It now states its own limitation above
+the drawing: it is supporting evidence and has **not** passed the five-second comprehension test.
+Redesign is tracked as follow-up work. Nothing on the Briefing depends on reading it.
+
+### Politics reads "low" and "falling" during a blockade
+
+The engine value is unchanged and unsoftened. The section now states plainly that this is what this
+packaged fictional run shows at the point the scenario has reached — not a prediction of what comes
+next, and not a judgement about how a real government would handle a real crisis.
+
+## Still open
+
+- **The map redesign.**
+- **No second cold usability test has been run.** Everything above is mechanical verification. It
+  confirms the reported defects are gone; it cannot tell anyone that a ten-year-old could use this.
+  That test is required before this work is merged.

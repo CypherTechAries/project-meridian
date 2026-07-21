@@ -79,6 +79,16 @@
 .sec__dir--falling .sec__arrow { color: #4fc98a; }
 .sec__dir--steady .sec__arrow { color: var(--t-low); }
 
+/*
+ * Reading limit on a section. Set apart from the sentences by a rule, because it qualifies how the
+ * section should be read rather than adding to what it says. Quiet, but not hidden — it is not
+ * inside the evidence control, and it does not need a click.
+ */
+.sec__caveat {
+  margin: 12px 0 0; padding-left: 12px; border-left: 2px solid var(--line-strong);
+  font-size: 14.5px; line-height: 1.6; color: var(--t-low); max-width: 60ch;
+}
+
 /* ── Evidence controls ───────────────────────────────────────────────────── */
 /*
  * Every technical value on this screen lives inside one of these and nowhere else. Closed by
@@ -140,7 +150,14 @@
 .others__h { margin: 0 0 6px; font-size: 17px; font-weight: 600; color: var(--t-hi); line-height: 1.4; }
 .others__p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--t-mid); max-width: 60ch; }
 
-.where__note { margin: 0 0 14px; font-size: 14.5px; line-height: 1.55; color: var(--t-low); max-width: 60ch; }
+.where__note { margin: 0 0 10px; font-size: 14.5px; line-height: 1.55; color: var(--t-low); max-width: 60ch; }
+/* The known limitation sits above the drawing, not below it, so it is read first. */
+.where__limit {
+  margin: 0 0 14px; padding: 10px 12px; border-left: 2px solid var(--line-strong);
+  background: var(--s-inset); border-radius: 0 4px 4px 0;
+  font-size: 14px; line-height: 1.6; color: var(--t-low); max-width: 62ch;
+}
+.where__limit strong { color: var(--t-mid); }
 
 .bfoot {
   display: flex; flex-direction: column; gap: 10px; align-items: flex-start;

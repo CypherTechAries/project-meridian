@@ -369,6 +369,15 @@ export interface PlainSection {
   direction: PlainDirection | null
   /** What the direction applies to, named in ordinary words. */
   directionSubject: string | null
+  /**
+   * A plain-language limit on how the section should be read, where one is needed.
+   *
+   * Politics carries one. The engine currently reports pressure on the government as low and
+   * falling during a blockade, which reads as a judgement unless it is stated that this is one
+   * packaged fictional run at one point in time. The value is not softened or hidden — an
+   * inconvenient engine result is still a result.
+   */
+  caveat: string | null
   /** Chain fields behind the sentences — shown only inside the evidence control. */
   sources: string[]
   origin: 'engine' | 'fixture' | 'unavailable'
@@ -378,6 +387,21 @@ export interface PlainSection {
  * People, Economy, Politics — the part of the old interface the first-time user understood.
  * Kept, and rewritten so the sentences carry no numbers and no machinery.
  */
+/**
+ * The politics caveat.
+ *
+ * Three things it must say, in ordinary words: this is the state in this packaged fictional run;
+ * it is measured at the point the scenario has reached; and it is neither a prediction nor a
+ * verdict on any real crisis. It does not excuse or reinterpret the number.
+ */
+export function politicsCaveat(p: Projection): string {
+  const days = Math.max(1, Math.round(p.simulated_hours / 24))
+  const dayPhrase = days === 1 ? 'one day in' : `${days} days in`
+  return `That is what this packaged fictional run shows ${dayPhrase} — the situation at this point
+    in the story, not a prediction of what comes next and not a judgement about how any real
+    government would be handling a real crisis.`.replace(/\s+/g, ' ')
+}
+
 export function plainSections(run: RunResult): PlainSection[] {
   const p = run.projection
   const traj = run.trajectory
@@ -430,6 +454,7 @@ export function plainSections(run: RunResult): PlainSection[] {
       sentences: people,
       direction: plainDirection(household ?? employment),
       directionSubject: 'worry among households',
+      caveat: null,
       sources: ['cohorts[].value', 'chain.household_expectation_pressure', 'chain.employment_pressure'],
       origin,
     },
@@ -439,6 +464,7 @@ export function plainSections(run: RunResult): PlainSection[] {
       sentences: economy,
       direction: plainDirection(reroute),
       directionSubject: 'ships avoiding the strait',
+      caveat: null,
       sources: ['chain.rerouting_level', 'chain.port_activity_deficit'],
       origin,
     },
@@ -448,6 +474,7 @@ export function plainSections(run: RunResult): PlainSection[] {
       sentences: politics,
       direction: plainDirection(political),
       directionSubject: 'pressure on the government',
+      caveat: politicsCaveat(p),
       sources: ['chain.political_pressure', 'chain.narrative_attention', 'chain.collective_activity'],
       origin,
     },

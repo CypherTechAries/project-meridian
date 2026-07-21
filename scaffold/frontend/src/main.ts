@@ -369,15 +369,28 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ question: q }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      // A non-2xx is never an answer. A 404 in particular means the request did not reach the
+      // engine at all — that must show as UNAVAILABLE, not as a MERIDIAN reply.
+      if (!res.ok) throw new Error(`the engine returned HTTP ${res.status}`)
       const response = (await res.json()) as AskResponse
+      // A body that is not catalogue-shaped is not an answer, whatever the status code was — a dev
+      // server can return 200 with an HTML shell or a bare error object.
+      //
+      // The test is `supported` + `short_answer`, NOT `matched_intent`. A question the catalogue
+      // declines to answer is a real, valid response with `matched_intent: null`, and treating it
+      // as a transport failure would replace an honest "I cannot answer that" with a false claim
+      // that the engine was unreachable.
+      if (!response || typeof response.supported !== 'boolean' || typeof response.short_answer !== 'string') {
+        throw new Error('the response was not a MERIDIAN answer')
+      }
       askMessages = [...askMessages, { role: 'meridian', text: '', response }]
-    } catch {
+    } catch (e) {
+      const why = e instanceof Error ? e.message : 'the engine could not be reached'
       askMessages = [
         ...askMessages,
         {
           role: 'meridian',
-          text: 'Answer UNAVAILABLE — the engine could not be reached. Nothing has been assumed in its place.',
+          text: `Answer UNAVAILABLE — ${why}. Nothing has been assumed in its place.`,
         },
       ]
     }

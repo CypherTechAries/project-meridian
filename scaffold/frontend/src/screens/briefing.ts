@@ -62,6 +62,7 @@ function section(s: PlainSection): string {
     <h3 class="sec__h" id="sec-${s.id}">${escapeHtml(s.title)}</h3>
     ${s.sentences.map((t) => `<p class="sec__p">${escapeHtml(t)}</p>`).join('')}
     ${directionLine(s)}
+    ${s.caveat ? `<p class="sec__caveat">${escapeHtml(s.caveat)}</p>` : ''}
     <details class="ev">
       <summary class="ev__s">Show where this comes from</summary>
       <div class="ev__b">
@@ -140,6 +141,15 @@ function otherDecisions(options: OptionEntry[]): string {
  * present state of the diagram rather than pretending a restyle would fix it. Redrawing it remains
  * open work, recorded as a known limitation.
  */
+/**
+ * Stated next to the control, not buried in a document. A reader who opens the map is entitled to
+ * know it has not met the bar the rest of the screen was rebuilt to meet.
+ */
+export const MAP_LIMITATION =
+  'This map is supporting evidence and has not yet passed the five-second comprehension test — ' +
+  'a first-time reader cannot reliably explain it after five seconds. A redesign is tracked as ' +
+  'open work. Nothing on this screen depends on reading it.'
+
 function whereSection(run: RunResult): string {
   const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
   return `<details class="where">
@@ -147,6 +157,7 @@ function whereSection(run: RunResult): string {
     <div class="where__b">
       <p class="where__note">A fictional strait. This diagram is a simplified drawing of the
         situation, not a real coastline and not a map of any real place.</p>
+      <p class="where__limit"><strong>Known limitation.</strong> ${escapeHtml(MAP_LIMITATION)}</p>
       ${briefingMap(run, mapCallouts(run), days)}
     </div>
   </details>`

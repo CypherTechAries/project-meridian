@@ -23,6 +23,7 @@ import {
   classifyBoundaryStatus,
 } from '../src/screens/ask-meridian.ts'
 import type { AskResponse } from '../src/screens/ask-meridian.ts'
+import { API_BASE } from '../src/engine/api.ts'
 import { briefingMap } from '../src/components/briefing-viz.ts'
 import { mapCallouts } from '../src/engine/presentation.ts'
 
@@ -180,7 +181,10 @@ describe('answers', () => {
     const home = el(askHome())
     const first = home.querySelector('.askstart') as HTMLElement
     expect(first.dataset.question).toBe(STARTERS[0])
-    expect(ASK_ENDPOINT).toBe('/api/ask-meridian/query')
+    // This assertion previously required the endpoint to be page-relative, which is exactly the
+    // defect that made Ask MERIDIAN 404 in the real browser: the test locked the bug in place.
+    // It now requires the shared backend base. See tests/api-routing.test.ts.
+    expect(ASK_ENDPOINT).toBe(`${API_BASE}/api/ask-meridian/query`)
   })
 
   it('8 · a supported answer renders text and evidence components', () => {

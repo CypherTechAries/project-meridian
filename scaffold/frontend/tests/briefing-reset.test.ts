@@ -16,7 +16,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mount } from '../src/main.ts'
 import { initialSnapshot } from '../src/engine/client.ts'
 import type { RunResult } from '../src/engine/client.ts'
-import { NOTHING_EXECUTES } from '../src/screens/briefing.ts'
+import { MAP_LIMITATION, NOTHING_EXECUTES } from '../src/screens/briefing.ts'
 import { plainDecision, plainSections, primaryDecision } from '../src/engine/presentation.ts'
 import { STARTERS } from '../src/screens/ask-meridian.ts'
 
@@ -319,5 +319,41 @@ describe('16-17 · navigation through the real shell', () => {
     expect(root.textContent).toContain(run.projection.rule_pack_version)
     ;(bar.querySelector('.techbar__back') as HTMLElement).click()
     expect(root.querySelector('.briefing')).not.toBeNull()
+  })
+})
+
+/**
+ * Founder review items 3 and 4: the map keeps an honest limitation next to its control, and the
+ * politics section states what its inconvenient value is and is not.
+ */
+describe('18-19 · declared limits on the map and on politics', () => {
+  it('18 · the map control carries a stated limitation and the map stays closed by default', () => {
+    const where = root.querySelector('details.where') as HTMLDetailsElement
+    expect(where).not.toBeNull()
+    expect(where.open, 'the map must not display automatically').toBe(false)
+    const limit = where.querySelector('.where__limit') as HTMLElement
+    expect(limit).not.toBeNull()
+    expect(limit.textContent).toContain('five-second comprehension test')
+    expect(limit.textContent).toContain('supporting evidence')
+    // The wording is declared once, so the screen and the record cannot drift apart.
+    expect(limit.textContent).toContain(MAP_LIMITATION.slice(0, 60))
+  })
+
+  it('19 · politics states the value is this fictional run at this point, not a prediction', () => {
+    const politics = root.querySelector('.sec--politics') as HTMLElement
+    expect(politics).not.toBeNull()
+    const caveat = politics.querySelector('.sec__caveat') as HTMLElement
+    expect(caveat, 'the politics section must carry a reading limit').not.toBeNull()
+    const t = caveat.textContent ?? ''
+    expect(t).toContain('fictional run')
+    expect(t).toContain('not a prediction')
+    expect(t).toMatch(/not a judgement about how any real government/)
+    // It qualifies the value; it must not replace or soften it.
+    expect(politics.textContent).toContain('Pressure on the government is')
+  })
+
+  it('19a · only politics carries the caveat, so it reads as specific rather than boilerplate', () => {
+    const sections = plainSections(run)
+    expect(sections.filter((s) => s.caveat !== null).map((s) => s.id)).toEqual(['politics'])
   })
 })

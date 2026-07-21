@@ -16,10 +16,15 @@ import { escapeHtml } from '../components/epistemic.ts'
 import { briefingMap } from '../components/briefing-viz.ts'
 import { mapCallouts } from '../engine/presentation.ts'
 import type { RunResult } from '../engine/client.ts'
+import { ASK_PATH, apiUrl } from '../engine/api.ts'
 
 export const ASK_SPEAKER = 'ASK MERIDIAN'
 export const ASK_SPEAKER_AUTHORITY = 'Engine-grounded explanation · Read only'
-export const ASK_ENDPOINT = '/api/ask-meridian/query'
+/**
+ * Resolved through the shared API base — the same one the Briefing uses. Previously this was a
+ * bare relative path, which in the real browser posted to the Vite dev server and returned 404.
+ */
+export const ASK_ENDPOINT = apiUrl(ASK_PATH)
 
 /** The four starters shown on the home screen. No unexplained fictional name appears here. */
 export const STARTERS: readonly string[] = [

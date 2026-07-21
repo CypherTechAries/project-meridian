@@ -11,6 +11,7 @@
  */
 
 import snapshot from '../fixtures/engine-snapshot.json'
+import { RUN_PATH, apiUrl } from './api.ts'
 
 export type RunMode = 'baseline' | 'incident' | 'counterfactual'
 export type Connection = 'live' | 'snapshot' | 'unavailable'
@@ -105,7 +106,8 @@ export interface RunResult {
   error?: string
 }
 
-const API = 'http://localhost:8000/api/demo/kestral-strait/run'
+/** Resolved through the shared API base — the same one Ask MERIDIAN uses. See `api.ts`. */
+export const RUN_ENDPOINT = apiUrl(RUN_PATH)
 
 function fromSnapshot(connection: Connection, error?: string): RunResult {
   return { ...(snapshot as unknown as RunResult), connection, error }
@@ -116,7 +118,7 @@ export async function runDemonstration(
   ticks = 20,
 ): Promise<RunResult> {
   try {
-    const res = await fetch(API, {
+    const res = await fetch(RUN_ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ mode, ticks }),
