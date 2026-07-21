@@ -164,12 +164,13 @@ def _describe(state_field: Optional[FieldState], subject: str) -> str:
     # established" implies the LEVEL was not established, which is false and is the same class of
     # error as the contradiction this module was rewritten to fix.
     if state_field.direction is Direction.not_established:
-        return (f"{subject} is {level}; its direction is not established, because this run does "
-                f"not record that value at every tick.")
+        return (f"{subject} is {level}; which way it is moving is not established, because "
+                f"MERIDIAN does not record that value often enough to say.")
 
     sentence = f"{subject} is {level} and {_DIRECTION_WORD[state_field.direction]}"
     if state_field.near_peak:
-        sentence += ", though it remains close to the highest level it has reached in this run"
+        # "in this run" is internal vocabulary; a reader does not know what a run is.
+        sentence += ", though it is close to the highest it has been so far"
     return sentence + "."
 
 
@@ -235,7 +236,7 @@ def _economy() -> tuple[str, list[ResponseComponent], list[EvidenceLink]]:
 
 def _reaction() -> tuple[str, list[ResponseComponent], list[EvidenceLink]]:
     land = landscape_projection()
-    answer = ("The current packaged snapshot shows different reactions among the three named "
+    answer = ("This scenario shows different reactions among the three named "
               "fictional people. Organisations hold their own official positions. Population groups "
               "are represented by averages; MERIDIAN does not know how every individual inside those "
               "groups differs.")

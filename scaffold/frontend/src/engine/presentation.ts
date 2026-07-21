@@ -409,10 +409,15 @@ export interface PlainSection {
  */
 export function politicsCaveat(p: Projection): string {
   const days = Math.max(1, Math.round(p.simulated_hours / 24))
-  const dayPhrase = days === 1 ? 'one day in' : `${days} days in`
-  return `That is what this packaged fictional run shows ${dayPhrase} — the situation at this point
-    in the story, not a prediction of what comes next and not a judgement about how any real
-    government would be handling a real crisis.`.replace(/\s+/g, ' ')
+  // Words, not digits — the headline says "five days" and this sentence sat beside it saying "5".
+  const dayPhrase = days === 1 ? 'one day in' : `${dayWord(days)} days in`
+  // "packaged run" is internal vocabulary. A reader needs to know two things: this is made up,
+  // and it is a moment in a story rather than a forecast.
+  // "fictional" stays — it is a standing honesty requirement, and it is a word a reader owns.
+  // "packaged" and "run" go: they are internal vocabulary and carry no meaning for a first user.
+  return `That is what this fictional scenario shows ${dayPhrase} — the situation at this point in
+    the story, not a prediction of what happens next, and not a judgement about how a real
+    government would handle a real crisis.`.replace(/\s+/g, ' ')
 }
 
 export function plainSections(run: RunResult): PlainSection[] {
@@ -454,8 +459,10 @@ export function plainSections(run: RunResult): PlainSection[] {
     // Both facts, in one sentence. The level alone reads as "nothing much is happening"; the
     // near-peak fact alone reads as "pressure is severe". Ask MERIDIAN used to state only the
     // second, which is how the two screens ended up contradicting each other.
+    // "in this run" is internal vocabulary — a first-time reader does not know what a run is.
+    // "so far" says the same thing in words they already own.
     const near = political.near_peak
-      ? ', though that is close to the highest it has been in this run'
+      ? ' — but it is close to the highest it has been so far'
       : ''
     politics.push(`Pressure on the government is ${plainLevel(political)}${near}.`)
   }
@@ -481,7 +488,9 @@ export function plainSections(run: RunResult): PlainSection[] {
       title: 'Economy',
       sentences: economy,
       direction: plainDirection(reroute),
-      directionSubject: 'ships avoiding the strait',
+      // The direction line reads "<subject> is <direction>", so the subject must be a singular
+      // noun phrase. "ships avoiding the strait is falling" was simply ungrammatical.
+      directionSubject: 'the number of ships avoiding the strait',
       caveat: null,
       sources: ['chain.rerouting_level', 'chain.port_activity_deficit'],
       origin,

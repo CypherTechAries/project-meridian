@@ -78,7 +78,7 @@ describe('the shared state is present and is the source', () => {
     // "near its peak" alone reads as severe. The run supports both.
     const f = fieldState(run, 'political_pressure')!
     expect(f.near_peak).toBe(true)
-    expect(politics(run)).toMatch(/low.*close to the highest/)
+    expect(politics(run)).toMatch(/low.*close to the highest it has been so far/)
   })
 
   it('S5 · an unmeasured direction is not rendered as steady', () => {

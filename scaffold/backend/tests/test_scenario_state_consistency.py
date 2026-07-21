@@ -128,7 +128,7 @@ def test_ask_never_contradicts_the_shared_political_level(question, state):
     if "pressure on the government" not in text and "political pressure" not in text:
         return
     for banned in CONTRADICTING[political.level]:
-        # Whole words only. "highest level it has reached" is the near-peak fact and is TRUE;
+        # Whole words only. "highest it has been so far" is the near-peak fact and is TRUE;
         # "pressure is high" is the level claim and would be false. Substring matching cannot
         # tell them apart, and conflating them is how this defect started.
         assert not re.search(rf"\b{banned}\b", text), (
@@ -161,7 +161,7 @@ def test_ask_carries_the_near_peak_fact_when_the_state_holds_it(state):
     political = state.get("political_pressure")
     assert political.near_peak is True
     text = ask("Brief me on the current situation.").short_answer.lower()
-    assert "highest level it has reached" in text
+    assert "close to the highest it has been" in text
 
 
 def test_economy_answer_does_not_contradict_the_shared_state(state):
@@ -261,3 +261,43 @@ def test_scenario_state_skips_malformed_stages():
         "x", 1, {"stages": [{"field": "a", "value": "UNAVAILABLE"}], "simulated_hours": 24}, []
     )
     assert "a" not in built.fields
+
+
+# ── the wording a cold reader actually meets ──────────────────────────────────────────────────────
+
+
+# Internal vocabulary. Each of these is meaningful to the team and meaningless to a first-time
+# reader, which is the specific failure the usability reset exists to prevent. A first user does
+# not know what a "run" is, what "packaged" means, or what a "tick" or "snapshot" is.
+TELEMETRY_WORDS = [
+    "in this run",
+    "packaged run",
+    "packaged snapshot",
+    "packaged fictional run",
+    "per tick",
+    "at every tick",
+    "trajectory",
+    "projection",
+    "chain.",
+]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Brief me on the current situation.",
+        "How are the economy and supply chains reacting?",
+        "How are people and groups reacting?",
+        "What does MERIDIAN know — and what remains uncertain?",
+    ],
+)
+def test_starter_answers_avoid_internal_vocabulary(question):
+    """
+    The ANSWER a reader meets must not read like internal telemetry.
+
+    Scoped to `short_answer` deliberately. The `limitations` list is a technical disclosure and is
+    allowed to use precise terms; the sentence the reader meets first is not.
+    """
+    text = answer_question(question).short_answer.lower()
+    for word in TELEMETRY_WORDS:
+        assert word not in text, f"{question!r} answer contains internal vocabulary {word!r}"

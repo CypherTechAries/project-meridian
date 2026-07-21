@@ -339,15 +339,15 @@ describe('18-19 · declared limits on the map and on politics', () => {
     expect(limit.textContent).toContain(MAP_LIMITATION.slice(0, 60))
   })
 
-  it('19 · politics states the value is this fictional run at this point, not a prediction', () => {
+  it('19 · politics states the value is this fictional scenario at this point, not a prediction', () => {
     const politics = root.querySelector('.sec--politics') as HTMLElement
     expect(politics).not.toBeNull()
     const caveat = politics.querySelector('.sec__caveat') as HTMLElement
     expect(caveat, 'the politics section must carry a reading limit').not.toBeNull()
     const t = caveat.textContent ?? ''
-    expect(t).toContain('fictional run')
+    expect(t).toContain('fictional scenario')
     expect(t).toContain('not a prediction')
-    expect(t).toMatch(/not a judgement about how any real government/)
+    expect(t).toMatch(/not a judgement about how a real government/)
     // It qualifies the value; it must not replace or soften it.
     expect(politics.textContent).toContain('Pressure on the government is')
   })
