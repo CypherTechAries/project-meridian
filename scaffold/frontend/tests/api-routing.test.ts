@@ -26,7 +26,7 @@ beforeEach(() => {
   document.body.appendChild(root)
   // The Ask thread is module-level state in `main.ts`. Clear it through the real reset control, so
   // one test's messages cannot be mistaken for another test's answer.
-  mount(root, initialSnapshot(), 'ask')
+  mount(root, initialSnapshot())
   root.querySelector<HTMLElement>('[data-ask-reset]')?.click()
 })
 
@@ -58,16 +58,16 @@ function answer(): AskResponse {
   }
 }
 
-/** Open Ask MERIDIAN the way a user does, then click the first starter. */
+/**
+ * Ask a declared question the way a user does.
+ *
+ * The conversation is now the landing screen, so there is no navigation step: the suggestions sit
+ * under the composer beside the Briefing card.
+ */
 async function clickFirstStarter(): Promise<void> {
   mount(root, initialSnapshot())
-  const askNav = [...root.querySelectorAll<HTMLElement>('.navbtn')].find(
-    (b) => b.textContent?.includes('Ask MERIDIAN'),
-  )
-  expect(askNav, 'Ask MERIDIAN must be reachable from the Briefing').toBeTruthy()
-  askNav?.click()
-  const starter = root.querySelector<HTMLElement>('.askstart')
-  expect(starter, 'a starter question must be present').toBeTruthy()
+  const starter = root.querySelector<HTMLElement>('.asksug__b')
+  expect(starter, 'a suggested question must be present on the landing screen').toBeTruthy()
   starter?.click()
   // Let the fetch promise and the two re-mounts settle.
   await new Promise((r) => setTimeout(r, 0))

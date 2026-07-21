@@ -725,3 +725,63 @@ export function situationModel(run: RunResult): SituationModel {
       'locations, distances or routes.',
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * COMPACT IMPACT ROWS — R1/R2
+ *
+ * The three impact sections were 855px of the Briefing's 2,635px, and each carried a "Show where
+ * this comes from" disclosure whose body was raw field names (`chain.household_expectation_pressure`).
+ * Nobody who is not a backend developer needs that on a reading screen.
+ *
+ * A row is now one line, and its evidence route is A QUESTION rather than a panel. `askQuestion` is
+ * always a question the catalogue can actually answer — asking something it must decline would be
+ * a worse experience than the disclosure it replaces.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ImpactRow {
+  id: 'people' | 'economy' | 'politics'
+  title: string
+  /** One line. The first sentence of the section, which is the one that carries the state. */
+  line: string
+  direction: PlainDirection | null
+  directionSubject: string | null
+  /**
+   * The declared question that explains this row, or null where the catalogue has none.
+   *
+   * Politics is currently null: there is no catalogue question about political pressure or the
+   * government's response. That gap is issue #37, and it is left visible here rather than papered
+   * over by sending a question that would be declined.
+   */
+  askQuestion: string | null
+}
+
+const ROW_QUESTION: Record<ImpactRow['id'], string | null> = {
+  people: 'How are people and groups reacting?',
+  economy: 'How are the economy and supply chains reacting?',
+  politics: null,
+}
+
+export function impactRows(run: RunResult): ImpactRow[] {
+  return plainSections(run).map((s) => ({
+    id: s.id,
+    title: s.title,
+    line: s.sentences[0] ?? 'Not established in this scenario.',
+    direction: s.direction,
+    directionSubject: s.directionSubject,
+    askQuestion: ROW_QUESTION[s.id],
+  }))
+}
+
+/**
+ * The one sentence that must be readable in two seconds.
+ *
+ * Deliberately short and deliberately singular: what has happened, and what is being decided. If
+ * this cannot be read at a glance, no amount of detail below it helps.
+ */
+export function headlineAndAsk(run: RunResult): { headline: string; decision: string | null } {
+  const primary = primaryDecision(run.projection)
+  return {
+    headline: situationSummary(run).headline,
+    decision: primary ? plainDecision(primary).question : null,
+  }
+}

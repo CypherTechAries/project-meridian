@@ -259,3 +259,110 @@
 }
 .askprompt__go:hover { border-color: var(--cyan); background: #123048; }
 .askprompt__go:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * BRIEFING CARD — the thread's first answer
+ *
+ * The Briefing used to be a 2,635px screen whose decision sat below the fold. This is the same
+ * content in one card: headline, three one-line impact rows, the decision. Everything deeper is
+ * reached by asking, not by expanding.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+.bcard {
+  border: 1px solid var(--line-strong); border-radius: 12px; background: var(--s-panel);
+  padding: 20px 24px 18px; margin: 0 0 20px; max-width: 780px;
+}
+.bcard__hd { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bcard__badge {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: var(--s-void);
+  background: var(--cyan); border-radius: 3px; padding: 3px 7px;
+}
+.bcard__meta { font-size: 12px; color: var(--t-faint); letter-spacing: 0.03em; }
+
+/* The two-second read. Nothing above it, nothing competing with it. */
+.bcard__h { margin: 0 0 18px; font-size: 27px; line-height: 1.25; font-weight: 700; color: var(--t-hi); }
+
+.brows { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; }
+.brow {
+  display: grid; grid-template-columns: 86px minmax(0, 1fr) auto auto; align-items: baseline;
+  gap: 12px; padding: 10px 0; border-top: 1px solid var(--line);
+}
+.brow:last-child { border-bottom: 1px solid var(--line); }
+.brow__t { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-low); }
+.brow__l { font-size: 15px; line-height: 1.5; color: var(--t-mid); }
+/* Direction never relies on colour alone — the word is always beside the arrow. */
+.brow__d { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.brow__d--rising { color: #f0a742; }
+.brow__d--falling { color: #4fc98a; }
+.brow__d--steady { color: var(--t-low); }
+.brow__d--none { color: var(--t-faint); font-style: italic; font-weight: 400; }
+.brow__ask {
+  font-size: 12px; color: var(--cyan); background: none; border: 1px solid transparent;
+  border-radius: 4px; padding: 3px 7px; cursor: pointer; white-space: nowrap;
+}
+.brow__ask:hover { border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.08); }
+/* No control where the catalogue has no question — a button that always refuses is worse. */
+.brow__ask--none { color: var(--t-faint); cursor: default; }
+
+.bdec {
+  border-left: 3px solid var(--cyan); background: rgba(63, 208, 232, 0.05);
+  border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 16px;
+}
+.bdec__k { margin: 0 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--cyan); }
+.bdec__h { margin: 0 0 12px; font-size: 19px; line-height: 1.35; font-weight: 600; color: var(--t-hi); }
+.bdec__c { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.bdec__n { margin: 0; font-size: 12.5px; color: var(--t-low); font-style: italic; }
+
+.bcard__ft { display: flex; flex-wrap: wrap; gap: 8px; }
+.bcard__more {
+  font-size: 13px; color: var(--t-mid); background: var(--s-inset);
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 13px; cursor: pointer;
+}
+.bcard__more:hover { color: var(--t-hi); border-color: var(--cyan-dim); }
+.bcard__more--quiet { color: var(--t-faint); }
+
+/* Suggestions replace 598px of static "what you can ask" / "what we don't know" prose with
+   controls that actually ask a declared question. */
+.asksug { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 10px; }
+.asksug__b {
+  font-size: 13px; color: var(--t-mid); background: var(--s-panel);
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+.asksug__b:hover { color: var(--t-hi); border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.07); }
+
+/* ── Technical evidence: a table you look things up in ───────────────────── */
+.main--tech { display: block; overflow: visible; padding: 0; }
+.tt { padding: 20px var(--sp-4) 60px; max-width: 1180px; }
+.tt__bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.tt__lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-low); }
+.tt__filter {
+  flex: 1 1 260px; max-width: 420px; font: inherit; font-size: 14px; color: var(--t-hi);
+  background: var(--s-inset); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px 12px;
+}
+.tt__count { font-size: 12.5px; color: var(--t-faint); font-family: var(--f-num); }
+.tt__note { margin: 0 0 22px; font-size: 13px; line-height: 1.6; color: var(--t-low); max-width: 74ch; }
+.tt__g { margin-bottom: 30px; }
+.tt__gh { margin: 0 0 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--t-low); }
+.tt__t { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tt__t th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--t-faint); padding: 7px 10px; border-bottom: 1px solid var(--line-strong); white-space: nowrap;
+}
+.tt__t td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: var(--t-mid); vertical-align: top; }
+.tt__r:hover td { background: var(--s-inset); }
+.tt__name { color: var(--t-hi); }
+/* The identifier sits UNDER its plain name, so the table is searchable without leading with code. */
+.tt__id { display: block; font-family: var(--f-num); font-size: 11px; color: var(--t-faint); margin-top: 2px; }
+.tt__num { font-family: var(--f-num); color: var(--t-hi); white-space: nowrap; }
+.tt__mech { font-family: var(--f-num); font-size: 11.5px; color: var(--t-faint); }
+.tt__empty { font-size: 14px; color: var(--t-low); padding: 20px 0; }
+.tt__conf { font-family: var(--f-num); font-size: 11.5px; color: var(--t-faint); }
+.tt__limits { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line-strong); max-width: 80ch; }
+.tt__lim { margin: 0 0 22px; padding-left: 20px; }
+.tt__lim li { font-size: 13px; line-height: 1.7; color: var(--t-mid); }
+/* Crop safety: a screenshot of any one section must still declare the world is fictional. */
+.tt__gh .fmark {
+  margin-left: 10px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+  color: var(--cyan); border: 1px solid var(--cyan-dim); border-radius: 3px; padding: 2px 5px;
+}

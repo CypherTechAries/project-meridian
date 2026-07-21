@@ -14,6 +14,7 @@
 
 import { escapeHtml } from '../components/epistemic.ts'
 import { situationDiagram } from '../components/briefing-viz.ts'
+import { briefingCard } from './briefing-card.ts'
 import { situationModel } from '../engine/presentation.ts'
 import type { RunResult } from '../engine/client.ts'
 import { ASK_PATH, apiUrl } from '../engine/api.ts'
@@ -36,6 +37,9 @@ export const STARTERS: readonly string[] = [
 
 export const ASK_NOTE =
   'Ask in your own words. This version can explain the current fictional scenario but cannot change it.'
+
+/** Shown under the composer so a reader always knows what can be asked, without a wall of prompts. */
+export const ASK_HINT = 'Ask in your own words — or tap a suggestion.'
 
 /**
  * Absence vocabulary. These three tokens are the ONLY declared absence states, and they are matched
@@ -120,7 +124,16 @@ export interface AskResponse {
   execution_status: string
   run_integration: Record<string, unknown>
 }
-export interface AskMessage { role: 'user' | 'meridian'; text: string; response?: AskResponse }
+export interface AskMessage {
+  role: 'user' | 'meridian'
+  text: string
+  response?: AskResponse
+  /**
+   * `'briefing'` renders the Briefing card rather than a catalogue answer. The thread opens with
+   * one, because the Briefing is now the first answer rather than a separate screen.
+   */
+  kind?: 'briefing' | 'diagram'
+}
 
 /**
  * Canonical situation diagram. The SAME `situationDiagram` the Briefing renders, at a smaller
@@ -293,13 +306,53 @@ export function askHome(): string {
  * real canonical map rather than a placeholder. It is optional only so the screen degrades honestly
  * before a run has loaded.
  */
+/**
+ * The context panel.
+ *
+ * Rendered ONLY when there is something worth putting in it. It previously always drew the
+ * canonical diagram, which at 320px was an illegible postage stamp — a weaker miniature imitation
+ * of a good component, which is precisely what the design rule forbids. The diagram belongs
+ * full-width in the thread, where "How this fits together" puts it.
+ *
+ * The canonical-map component is excluded here for the same reason: it cannot be read in a rail.
+ */
+function ctxPanel(latest: AskResponse | undefined, run?: RunResult): string {
+  const shown = (latest?.components ?? [])
+    .filter((c) => c.component_type !== 'CanonicalMapCard')
+    .slice(0, 2)
+  if (shown.length === 0) return ''
+  return `<aside class="ask__ctx" aria-label="Current context">
+    <h2 class="ask__ctxh">CURRENT CONTEXT</h2>
+    ${shown.map((c) => component(c, run)).join('')}
+    <p class="ask__ctxnote">This panel follows the answer. Session messages are display context
+      only — they are not saved and do not change the simulation.</p>
+  </aside>`
+}
+
 export function askMeridianView(messages: AskMessage[] = [], run?: RunResult): string {
   const latest = [...messages].reverse().find((m) => m.response)?.response
-  return `<section class="ask" aria-label="Ask MERIDIAN">
+  const hasCtx = (latest?.components ?? []).some((c) => c.component_type !== 'CanonicalMapCard')
+  return `<section class="ask${hasCtx ? '' : ' ask--wide'}" aria-label="Ask MERIDIAN">
     <div class="ask__main">
       <div class="ask__thread" role="log" aria-live="polite" aria-label="Conversation">
         ${messages.length === 0 ? askHome() : messages.map((m) =>
-          m.role === 'user'
+          m.kind === 'diagram'
+            ? (run
+                ? `<article class="askmsg askmsg--m askmsg--diagram" data-diagram-answer>
+                     <header class="askmsg__who">
+                       <span class="askmsg__av" aria-hidden="true">M</span>
+                       <span class="askmsg__nm">${escapeHtml(ASK_SPEAKER)}</span>
+                       <span class="askmsg__ro">READ ONLY</span>
+                     </header>
+                     ${situationDiagram(situationModel(run))}
+                   </article>`
+                : '<article class="askmsg askmsg--m askmsg--unavailable"><p class="askmsg__text">Diagram UNAVAILABLE — no run state is loaded.</p></article>')
+            : m.kind === 'briefing'
+            ? (run
+                ? briefingCard(run)
+                : `<article class="askmsg askmsg--m askmsg--unavailable"><p class="askmsg__text">
+                     Briefing UNAVAILABLE — no run state is loaded.</p></article>`)
+            : m.role === 'user'
             ? `<p class="askmsg askmsg--u"><span class="visually-hidden">You asked: </span>${escapeHtml(m.text)}</p>`
             : m.response
               ? answer(m.response, run)
@@ -315,21 +368,20 @@ export function askMeridianView(messages: AskMessage[] = [], run?: RunResult): s
                 </article>`,
         ).join('')}
       </div>
+      ${messages.filter((m) => m.role === 'user').length === 0
+        ? `<div class="asksug" aria-label="Suggested questions">
+             ${STARTERS.map((q) => `<button type="button" class="asksug__b"
+               data-ask-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('')}
+           </div>`
+        : ''}
       <form class="askform" data-ask-form>
         <label class="visually-hidden" for="ask-input">Ask a question</label>
         <input id="ask-input" class="askform__in" type="text" autocomplete="off"
-               placeholder="Ask anything…" data-ask-input>
+               placeholder="Ask anything about this scenario…" data-ask-input>
         <button type="submit" class="askform__send">SEND</button>
         <button type="button" class="askform__reset" data-ask-reset>Clear</button>
       </form>
     </div>
-    <aside class="ask__ctx" aria-label="Current context">
-      <h2 class="ask__ctxh">CURRENT CONTEXT</h2>
-      ${latest && latest.components.length
-        ? latest.components.slice(0, 2).map((c) => component(c, run)).join('')
-        : canonicalMapCard(run)}
-      <p class="ask__ctxnote">This panel follows the answer. Session messages are display context
-        only — they are not saved and do not change the simulation.</p>
-    </aside>
+    ${ctxPanel(latest, run)}
   </section>`
 }
