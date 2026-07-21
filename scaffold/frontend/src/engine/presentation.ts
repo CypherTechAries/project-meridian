@@ -15,7 +15,7 @@
  * the Kestral screenshot; change the run and the sentences change or disappear.
  */
 
-import type { OptionEntry, Projection, RunResult, TrajectoryPoint } from './client.ts'
+import type { FieldState, OptionEntry, Projection, RunResult, TrajectoryPoint } from './client.ts'
 import { stageByField } from './client.ts'
 
 export type DirectionWord = 'RISING' | 'EASING' | 'STABLE'
@@ -205,26 +205,23 @@ function dayWord(n: number): string {
 
 /** Two or three numbered map callouts, each gated on a field that establishes it. */
 export function mapCallouts(run: RunResult): string[] {
-  const p = run.projection
-  const traj = run.trajectory
   const out: string[] = []
-  const port = deriveTrend(p, traj, 'port_activity_deficit')
-  const reroute = deriveTrend(p, traj, 'rerouting_level')
-  const political = deriveTrend(p, traj, 'political_pressure')
+  const port = fieldState(run, 'port_activity_deficit')
+  const reroute = fieldState(run, 'rerouting_level')
+  const political = fieldState(run, 'political_pressure')
   if (port && port.value > 0.3) out.push('Port activity disrupted')
   if (reroute && reroute.value > 0.5) out.push('Carriers rerouted south')
-  if (political && (political.direction === 'RISING' || political.nearPeak)) out.push('Political pressure persists')
+  if (political && (political.direction === 'RISING' || political.near_peak)) out.push('Political pressure persists')
   return out.slice(0, 3)
 }
 
 export function situationSummary(run: RunResult): SituationSummary {
   const p = run.projection
-  const traj = run.trajectory
   const days = Math.max(1, Math.round(p.simulated_hours / 24))
-  const insurer = deriveTrend(p, traj, 'insurer_risk')
-  const rerouting = deriveTrend(p, traj, 'rerouting_level')
-  const employment = deriveTrend(p, traj, 'employment_pressure')
-  const political = deriveTrend(p, traj, 'political_pressure')
+  const insurer = fieldState(run, 'insurer_risk')
+  const rerouting = fieldState(run, 'rerouting_level')
+  const employment = fieldState(run, 'employment_pressure')
+  const political = fieldState(run, 'political_pressure')
 
   const parts: string[] = []
   parts.push(
@@ -233,7 +230,7 @@ export function situationSummary(run: RunResult): SituationSummary {
       : `No incident is active.`,
   )
 
-  const upstreamEasing = [insurer, rerouting].filter((t) => t?.direction === 'EASING').length
+  const upstreamEasing = [insurer, rerouting].filter((t) => t?.direction === 'FALLING').length
   if (upstreamEasing >= 2) parts.push('Insurers and carriers are beginning to stabilise,')
   else if (upstreamEasing === 1) parts.push('Upstream disruption is partly stabilising,')
   else parts.push('Upstream disruption continues,')
@@ -241,7 +238,7 @@ export function situationSummary(run: RunResult): SituationSummary {
   // Only claims the chain supports: employment exposure and sustained political pressure.
   const tail: string[] = []
   if (employment && employment.value > 0.2) tail.push('port and employment exposure has increased')
-  if (political && (political.direction === 'RISING' || political.nearPeak)) {
+  if (political && (political.direction === 'RISING' || political.near_peak)) {
     tail.push('and narrative and collective activity continue to sustain political pressure')
   }
   parts.push(tail.length ? `but ${tail.join(' ')}.` : 'and downstream effects remain limited.')
@@ -309,25 +306,43 @@ export function primaryDecision(p: Projection) {
  * where the run does not establish something, the sentence is omitted rather than invented.
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * THE FACTS COME FROM THE BACKEND.
+ *
+ * `run.state` is the single authoritative reading of the packaged run, computed once in
+ * `backend/app/simulation/scenario_state.py` and shared by every surface. Ask MERIDIAN reads the
+ * same object. The frontend chooses WORDS for that state; it does not decide what the state is.
+ *
+ * This exists because the two surfaces contradicted each other. Ask asserted "political pressure
+ * is still high" as hand-written prose while the Briefing derived "low" and "falling" from the run.
+ * Prose cannot follow the engine. Only one of them was reading anything.
+ */
+export function fieldState(run: RunResult, field: string): FieldState | null {
+  return run.state?.fields?.[field] ?? null
+}
+
 /** Ordinary words for a direction. Never "peaked", "lagged", "post-peak" or "retention". */
 export type PlainDirection = 'rising' | 'falling' | 'steady'
 
-export function plainDirection(t: DerivedTrend | null): PlainDirection | null {
-  if (!t) return null
-  if (t.direction === 'RISING') return 'rising'
-  // A value that has turned over counts as falling even when the five-tick window reads STABLE,
-  // because "steady" would hide a turn the run genuinely shows.
-  if (t.direction === 'EASING' || t.postPeak) return 'falling'
-  if (t.direction === 'STABLE') return 'steady'
+export function plainDirection(f: FieldState | null): PlainDirection | null {
+  if (!f) return null
+  if (f.direction === 'RISING') return 'rising'
+  if (f.direction === 'FALLING') return 'falling'
+  if (f.direction === 'STEADY') return 'steady'
+  // NOT_ESTABLISHED: the backend could not measure a direction. Say nothing rather than "steady",
+  // which would claim we looked and found no movement.
   return null
 }
 
 /** How much of something there is, in words a reader already owns. Never a decimal. */
-export function plainLevel(v: number): string {
-  if (v >= 0.66) return 'high'
-  if (v >= 0.33) return 'moderate'
-  if (v > 0) return 'low'
-  return 'none recorded'
+export function plainLevel(f: FieldState | null): string {
+  if (!f) return 'not established'
+  switch (f.level) {
+    case 'HIGH': return 'high'
+    case 'MODERATE': return 'moderate'
+    case 'LOW': return 'low'
+    case 'NONE': return 'none recorded'
+  }
 }
 
 /**
@@ -339,18 +354,16 @@ export function plainLevel(v: number): string {
  * high and has only just started to come down. Readability may not be bought with a false clause.
  */
 export function crisisLede(run: RunResult): string[] {
-  const p = run.projection
-  const traj = run.trajectory
   const out: string[] = []
 
-  const reroute = deriveTrend(p, traj, 'rerouting_level')
+  const reroute = fieldState(run, 'rerouting_level')
   if (reroute && reroute.value > 0.5) out.push('Most ships are going the long way round.')
   else if (reroute && reroute.value > 0) out.push('Some ships are going the long way round.')
 
-  const port = deriveTrend(p, traj, 'port_activity_deficit')
+  const port = fieldState(run, 'port_activity_deficit')
   if (port && port.value > 0.3) out.push('Work at the coastal ports has fallen.')
 
-  const political = deriveTrend(p, traj, 'political_pressure')
+  const political = fieldState(run, 'political_pressure')
   const dir = plainDirection(political)
   if (political && dir === 'rising') out.push('Pressure on the government is building.')
   else if (political && dir === 'falling') out.push('Pressure on the government has started to come down.')
@@ -404,15 +417,14 @@ export function politicsCaveat(p: Projection): string {
 
 export function plainSections(run: RunResult): PlainSection[] {
   const p = run.projection
-  const traj = run.trajectory
   const origin: PlainSection['origin'] = run.connection === 'unavailable' ? 'unavailable' : 'engine'
 
-  const household = deriveTrend(p, traj, 'household_expectation_pressure')
-  const employment = deriveTrend(p, traj, 'employment_pressure')
-  const reroute = deriveTrend(p, traj, 'rerouting_level')
-  const port = deriveTrend(p, traj, 'port_activity_deficit')
-  const political = deriveTrend(p, traj, 'political_pressure')
-  const attention = deriveTrend(p, traj, 'narrative_attention')
+  const household = fieldState(run, 'household_expectation_pressure')
+  const employment = fieldState(run, 'employment_pressure')
+  const reroute = fieldState(run, 'rerouting_level')
+  const port = fieldState(run, 'port_activity_deficit')
+  const political = fieldState(run, 'political_pressure')
+  const attention = fieldState(run, 'narrative_attention')
   const top = topCohort(p)
 
   const people: string[] = []
@@ -439,7 +451,13 @@ export function plainSections(run: RunResult): PlainSection[] {
 
   const politics: string[] = []
   if (political) {
-    politics.push(`Pressure on the government is ${plainLevel(political.value)}.`)
+    // Both facts, in one sentence. The level alone reads as "nothing much is happening"; the
+    // near-peak fact alone reads as "pressure is severe". Ask MERIDIAN used to state only the
+    // second, which is how the two screens ended up contradicting each other.
+    const near = political.near_peak
+      ? ', though that is close to the highest it has been in this run'
+      : ''
+    politics.push(`Pressure on the government is ${plainLevel(political)}${near}.`)
   }
   if (attention && attention.value > 0.1) {
     // No causal clause here. "which keeps that pressure on" was both an unestablished claim and a

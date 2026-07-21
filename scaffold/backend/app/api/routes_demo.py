@@ -54,6 +54,7 @@ from ..safety import (
 from ..simulation.engine import MeridianModel
 from ..simulation.mechanisms import CHAIN
 from ..simulation.projection import project_causal_slice
+from ..simulation.scenario_state import ScenarioState, scenario_state
 
 router = APIRouter(prefix="/api/demo", tags=["demonstration"])
 
@@ -96,6 +97,10 @@ class DemoRunResponse(BaseModel):
     ticks: int
     seed: int
     projection: dict[str, Any]
+    # The single authoritative reading of this run: per-field level, direction and peak position.
+    # Every surface that makes a factual claim about the run reads THIS, so two surfaces cannot
+    # describe the same number differently. See `simulation/scenario_state.py`.
+    state: dict[str, Any]
     # B5-07: structured fictional-world metadata, present on every response so a machine reader
     # cannot miss the world's status or have to infer it from prose.
     fictional_world: dict[str, Any]
@@ -171,16 +176,36 @@ def run_demonstration(req: DemoRunRequest) -> DemoRunResponse:
             "political_pressure": round(c.political_pressure, 6),
         })
 
+    projection = project_causal_slice(model.state, model.transition_log)
     return DemoRunResponse(
         contract_version=CONTRACT_VERSION,
         mode=req.mode,
         disabled_mechanism=disabled,
         ticks=req.ticks,
         seed=DEMO_SEED,
-        projection=project_causal_slice(model.state, model.transition_log),
+        projection=projection,
+        state=scenario_state(DEMO_SCENARIO_ID, DEMO_SEED, projection, trajectory).model_dump(),
         fictional_world=fictional_world_metadata(scenario, DEMO_SCENARIO_ID),
         trajectory=trajectory,
         limitations=list(_LIMITATIONS),
+    )
+
+
+def packaged_run_state() -> ScenarioState:
+    """
+    The authoritative state of the DEFAULT packaged run.
+
+    Executes exactly what `run_demonstration` executes for a default request — same scenario, same
+    seed, same tick count, same code path for the projection and the trajectory. Any surface that
+    is not serving a specific request (Ask MERIDIAN, for one) reads the scenario through here, so
+    it cannot end up describing a different run from the one the Briefing is showing.
+
+    This is deliberately NOT a second copy of the values. It is the same computation.
+    """
+    default = DemoRunRequest()
+    response = run_demonstration(default)
+    return scenario_state(
+        DEMO_SCENARIO_ID, DEMO_SEED, response.projection, response.trajectory
     )
 
 

@@ -93,6 +93,33 @@ export interface Projection {
   not_implemented: string[]
 }
 
+/**
+ * One field of the backend's authoritative scenario state.
+ *
+ * THIS IS THE FACT. The frontend does not decide whether political pressure is low or falling; it
+ * reads that here and chooses words for it. See `backend/app/simulation/scenario_state.py`.
+ */
+export interface FieldState {
+  field: string
+  value: number
+  level: 'NONE' | 'LOW' | 'MODERATE' | 'HIGH'
+  direction: 'RISING' | 'FALLING' | 'STEADY' | 'NOT_ESTABLISHED'
+  peak_value: number
+  peak_tick: number
+  peak_retention: number
+  near_peak: boolean
+  post_peak: boolean
+  direction_measured: boolean
+}
+
+export interface ScenarioState {
+  scenario_id: string
+  seed: number
+  ticks: number
+  simulated_hours: number
+  fields: Record<string, FieldState>
+}
+
 export interface RunResult {
   connection: Connection
   contract_version: string
@@ -101,6 +128,11 @@ export interface RunResult {
   ticks: number
   seed: number
   projection: Projection
+  /**
+   * The shared authoritative state. Optional only because an old recorded snapshot may predate it;
+   * where it is absent the plain-language layer says so rather than inventing a level.
+   */
+  state?: ScenarioState
   trajectory: TrajectoryPoint[]
   limitations: string[]
   error?: string

@@ -18,6 +18,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..belief.projection import landscape_projection
+from ..scenario_state import Direction, FieldState, Level, packaged_scenario_state
 from ..person.projection import RUN_INTEGRATION, dossier, roster
 from ..belief.cast import SCENARIO_ID
 from ..person.vp4_fixtures import PEOPLE
@@ -119,6 +120,64 @@ def resolve_person(question: str, person_ref: Optional[str] = None) -> tuple[Opt
 # ── answer builders (compose from read models only) ───────────────────────────────────────────────
 
 
+"""
+FACTUAL CLAIMS COME FROM THE SHARED STATE, NOT FROM PROSE.
+
+Every sentence below that asserts something about the run reads `packaged_scenario_state()` — the
+same computation the Briefing displays. The helpers here turn that state into Ask's own wording.
+
+The rule: this module owns HOW a fact is said. It does not own WHAT the fact is. A hand-written
+claim about a chain value is a bug, because it cannot follow the engine when the engine moves.
+"""
+
+# Ask's own vocabulary for the shared level and direction. The Briefing words the same state
+# differently, and that is allowed — what is not allowed is a different underlying fact.
+_LEVEL_WORD = {
+    Level.high: "high",
+    Level.moderate: "moderate",
+    Level.low: "low",
+    Level.none: "not recorded",
+}
+_DIRECTION_WORD = {
+    Direction.rising: "still rising",
+    Direction.falling: "beginning to come down",
+    Direction.steady: "holding steady",
+    Direction.not_established: "not established over the recorded run",
+}
+
+
+def _describe(state_field: Optional[FieldState], subject: str) -> str:
+    """
+    One field, described from the shared state.
+
+    Reports the absolute level AND the position relative to the field's own peak when they differ,
+    because reporting only one is how the original contradiction happened: political pressure is
+    simultaneously low on a 0-1 scale and within 3% of the highest it has reached in this run.
+    Saying only "low" hides the second fact; saying only "still high" states the second as if it
+    were the first, which is what Ask used to do, and it was wrong.
+    """
+    if state_field is None:
+        return f"{subject} is UNAVAILABLE in this packaged run."
+    level = _LEVEL_WORD[state_field.level]
+
+    # An unmeasured direction is reported as its own clause. Reading it as "is moderate and not
+    # established" implies the LEVEL was not established, which is false and is the same class of
+    # error as the contradiction this module was rewritten to fix.
+    if state_field.direction is Direction.not_established:
+        return (f"{subject} is {level}; its direction is not established, because this run does "
+                f"not record that value at every tick.")
+
+    sentence = f"{subject} is {level} and {_DIRECTION_WORD[state_field.direction]}"
+    if state_field.near_peak:
+        sentence += ", though it remains close to the highest level it has reached in this run"
+    return sentence + "."
+
+
+def _uncapitalise(sentence: str) -> str:
+    """Join a derived sentence onto a clause already in progress, without touching its content."""
+    return sentence[:1].lower() + sentence[1:] if sentence else sentence
+
+
 def _boundary_component() -> ResponseComponent:
     return ResponseComponent(
         component_type=ComponentType.model_boundary,
@@ -128,8 +187,12 @@ def _boundary_component() -> ResponseComponent:
 
 def _brief() -> tuple[str, list[ResponseComponent], list[EvidenceLink]]:
     land = landscape_projection()
-    answer = ("The Kestral Strait remains blocked. Shipping is rerouting, port work has fallen, and "
-              "political pressure is still high. " + land.exposure_statement)
+    state = packaged_scenario_state()
+    # Derived, not authored. "political pressure is still high" used to be hard-coded here; the
+    # engine's value is 0.15 on a 0-1 scale, so it was simply untrue, and no test could see it.
+    answer = ("The Kestral Strait remains blocked. Shipping is rerouting and port work has fallen. "
+              + _describe(state.get("political_pressure"), "Pressure on the government")
+              + " " + land.exposure_statement)
     comps = [
         ResponseComponent(component_type=ComponentType.executive_summary, title="Current situation",
                           body={"claim": land.claim.claim_text,
@@ -145,10 +208,17 @@ def _brief() -> tuple[str, list[ResponseComponent], list[EvidenceLink]]:
 
 
 def _economy() -> tuple[str, list[ResponseComponent], list[EvidenceLink]]:
+    state = packaged_scenario_state()
+    # The causal ORDER is a property of the declared chain and is safe to state as prose. The
+    # STATE of each link is not, and is read from the shared state.
     answer = ("Higher insurance costs pushed carriers onto longer routes, port activity fell, and "
-              "employment exposure and household concern followed. Political pressure lags its "
-              "causes and is still near its peak while upstream stages have begun to ease. "
-              "MERIDIAN models no financial-market or stock-price data.")
+              "employment exposure and household concern followed. "
+              + _describe(state.get("rerouting_level"), "Carrier rerouting") + " "
+              + _describe(state.get("port_activity_deficit"), "The shortfall in port activity") + " "
+              + "Political pressure lags its causes, and "
+              + _uncapitalise(_describe(state.get("political_pressure"),
+                                        "pressure on the government"))
+              + " MERIDIAN models no financial-market or stock-price data.")
     comps = [
         ResponseComponent(component_type=ComponentType.economy_chain, title="How the effects travelled",
                           body={"stages": ["incident", "insurer risk", "carrier rerouting",

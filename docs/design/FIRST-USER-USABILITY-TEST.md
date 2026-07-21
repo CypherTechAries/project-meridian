@@ -134,3 +134,56 @@ next, and not a judgement about how a real government would handle a real crisis
 - **No second cold usability test has been run.** Everything above is mechanical verification. It
   confirms the reported defects are gone; it cannot tell anyone that a ten-year-old could use this.
   That test is required before this work is merged.
+
+---
+
+## Third pass — the two screens contradicted each other
+
+Real-browser verification found the Briefing and Ask MERIDIAN making **different factual claims about
+the same run**. The Briefing said political pressure was low and falling. Ask said it was "still
+high". Both were describing the same deterministic 20-tick run, in the same session.
+
+### Why it happened
+
+The Briefing **derived** its claim from the run. Ask **did not derive its claim from anything** — the
+sentence was hand-written in `ask/answer.py` and shipped as prose. This was never two derivations
+disagreeing; it was one derivation and one authored string. A string cannot follow the engine when
+the engine moves, and no test could see the drift because no test compared the two surfaces.
+
+Underneath it sat a second mistake. Political pressure at the end of the run is **0.1495 on a 0–1
+scale** — which is genuinely LOW — and **97% of the highest it has been in this run** — which is
+genuinely NEAR ITS PEAK. Both statements are true. They measure different things. Reported as though
+they were the same measure, they read as a flat contradiction.
+
+### The fix
+
+A single authoritative reading of the packaged run now lives in
+`backend/app/simulation/scenario_state.py`. It reports `level` and `near_peak` as **separate**
+fields, so a surface cannot state one while implying the other. It computes no simulation value and
+changes no engine behaviour.
+
+- The run endpoint returns it, so the Briefing does not re-derive it.
+- Ask reads the **same object** through the same default run, so it cannot describe a different run.
+- The frontend's plain-language layer reads it. With the shared state absent it **withholds the
+  claim** rather than falling back to a private calculation, because a silent fallback would
+  recreate the second source of truth.
+- Both surfaces now state both facts: low, falling, and still close to its own peak.
+
+Each surface still owns its **wording**. The shared layer owns the **fact**.
+
+### Also fixed by the same work
+
+A field the trajectory does not record — `port_activity_deficit`, `premium_pressure` — previously
+had its direction silently computed from a series of zeros and reported as steady. It is now
+`NOT_ESTABLISHED`, and the interface says the direction is not established rather than claiming it
+looked and found no movement.
+
+### Known, not fixed
+
+**The Briefing and Ask use two different population taxonomies.** The Briefing's People section reads
+the projection's cohorts (`coastal-creole-fishing`, `urban-professional-vantaran`, …). Ask reads the
+belief landscape's groups (`Port workers`, `Coastal households`, …). These are different group sets
+from different models in the same scenario. They do not contradict each other — they are different
+quantities over different populations — but a reader who asks "how are people reacting?" gets a
+different list of groups from the one the Briefing shows. Unifying them means changing scenario data,
+which is out of scope here and needs a founder decision.
