@@ -1,7 +1,24 @@
 # Coordinated amplification and bot methodologies
 
 Part of the [Narrative and Incentive Intelligence](NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md) research
-strand. **Research only. No detection capability is implemented or proposed for implementation.**
+strand. Derived use case: [Narrative Supply-Chain Analysis](../use-cases/NARRATIVE-SUPPLY-CHAIN-ANALYSIS.md).
+
+> ## This is not a committed MERIDIAN capability
+>
+> Read this document as a survey of what the field can and cannot do — **not as a design, not as a
+> plan, and not as a normal next milestone.**
+>
+> - **Coordination detection is not a committed MERIDIAN capability.**
+> - It carries **substantial false-positive and methodological risk** — documented below.
+> - It **may be unsuitable for implementation at all**, and the project may decide never to build it.
+> - It must **never be treated as proof of intent or control.**
+> - Any finding naming a real actor would require **human review before publication**, without
+>   exception.
+> - **None of the strongest proposed uses of this research requires it.**
+>
+> MERIDIAN today detects no bots, identifies no coordinated campaigns, and ingests nothing from the
+> web. The honest reading of the evidence below is that the burden is on anyone proposing to build
+> this to show why — not on anyone declining to.
 
 ---
 
@@ -274,5 +291,8 @@ sit with that before claiming confidence.
    source independence and ownership — where the evidence base is stronger and the harm potential
    lower?
 
-**Question 6 is genuine.** Our current reading is that the answer may be no, and the main report's
-recommendation reflects that.
+**Question 6 is genuine, and the report's answer leans no.** The provenance half of this strand —
+claim lineage, source independence, ownership, omission — has a stronger evidence base, a lower harm
+potential, and addresses the mechanism (narrative laundering) that coordination detection cannot see
+by construction. **Building the behavioural half is a choice that would need justifying, and it is
+not a milestone this research recommends.**

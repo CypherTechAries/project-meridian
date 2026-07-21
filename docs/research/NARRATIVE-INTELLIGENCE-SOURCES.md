@@ -3,6 +3,19 @@
 **All URLs accessed 21 July 2026.** This register records what was verified, how, and — as
 importantly — **what was not**. Read the verification column before citing anything.
 
+> ## Legal research status
+>
+> **PROVISIONAL LEGAL RESEARCH — DO NOT RELY ON WITHOUT SPECIALIST REVIEW.**
+>
+> For every legal claim this register records four things: **what was verified**, **what was not**,
+> **what source type supports the current wording**, and **what must be re-checked before anything is
+> implemented or published**. Section 4 carries the per-source detail and section 5 the explicit
+> non-verification list.
+>
+> The single largest gap: **ico.org.uk returned HTTP 403 to every retrieval attempt**, so *every*
+> ICO position in this research rests on search extracts and law-firm commentary. Those claims are
+> marked **PRIMARY-SOURCE VERIFICATION REQUIRED** at their point of use in the main report.
+
 **Verification levels:** **PRIMARY** (document fetched and read) · **PRIMARY-PARTIAL** (partly read;
 paywall, preview or extraction limit) · **SECONDARY** (via a reliable secondary source) ·
 **METADATA** (existence and identifiers confirmed only) · **NOT VERIFIED** (**do not cite**)
@@ -112,7 +125,11 @@ Core AMLD6 provisions due **10 July 2026**. **~39 of ~104 jurisdictions have ful
 
 ## 4 · Legal
 
-| Source | Level | Class | Claim used | Limitations |
+> **Every row in this table is PROVISIONAL LEGAL RESEARCH.** Rows marked PRIMARY had their statutory
+> or judgment text read directly. All others rest on secondary sources. **No row in this table has
+> been reviewed by a qualified professional.**
+
+| Source | Level | Class | Claim used | Limitations · **re-check before use** |
 |---|---|---|---|---|
 | UK GDPR Art 9; ICO *What is special category data?* | SECONDARY | REGULATOR GUIDANCE | Inferring with "reasonable degree of certainty" engages Art 9; processing **with intent to infer** engages it "irrespective of statistical confidence" | **ICO returned HTTP 403 to all fetches** — via search extracts only. **Re-verify by direct reading** |
 | DPA 2018 Sch 1 Pt 2 **para 13** | PRIMARY | SETTLED LAW | Journalism condition — **only where the subject matter is wrongdoing** | Requires appropriate policy document. **Our brief cited para 24 in error** |

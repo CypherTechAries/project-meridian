@@ -2,10 +2,37 @@
 
 **Research report. Nothing here is implemented and nothing here is a commitment.**
 
-MERIDIAN does not read the web, does not ingest any real source, holds no information about any real
-person or organisation, and has no capability described in this document. This report investigates
-whether it *should* eventually, what would have to be true first, and where the idea becomes
-dangerous.
+> ## What MERIDIAN does today
+>
+> - **MERIDIAN performs no narrative intelligence.**
+> - **It does not ingest the web.**
+> - **It contains no information about any real person or any real organisation.**
+> - **It does not detect bots.**
+> - **It does not identify coordinated campaigns.**
+> - **It does not calculate truth scores.**
+> - **It does not generate allegations.**
+>
+> Nothing in this document describes a capability that exists. It investigates whether some of it
+> *should* exist eventually, what would have to be true first, and where the idea becomes dangerous.
+
+> ## Coordination detection is not a committed capability
+>
+> This report examines coordination and bot detection, and **recommends against treating either as a
+> milestone.** They carry substantial false-positive and methodological risk, are blind to the most
+> effective operations, and **are not required by any of the strongest proposed uses.**
+>
+> **The project may decide never to build this capability.** Nothing here should be read as a plan
+> to. Where such analysis is discussed, it must never be treated as proof of intent or control, and
+> any finding naming a real actor would require human review before it went anywhere.
+
+> ## Legal research status
+>
+> **PROVISIONAL LEGAL RESEARCH — DO NOT RELY ON WITHOUT SPECIALIST REVIEW.**
+>
+> Several legal positions here rest on secondary sources because the primary source could not be
+> retrieved — **every ICO position in particular**, since ico.org.uk returned HTTP 403 to every
+> attempt. Claims in that condition are marked **PRIMARY-SOURCE VERIFICATION REQUIRED** at the point
+> of use. This is research, not legal advice.
 
 Every claim is labelled:
 
@@ -30,6 +57,8 @@ Companion documents:
 [NARRATIVE-INTELLIGENCE-RISK-REGISTER.md](NARRATIVE-INTELLIGENCE-RISK-REGISTER.md) ·
 [NARRATIVE-INTELLIGENCE-SOURCES.md](NARRATIVE-INTELLIGENCE-SOURCES.md) ·
 [product concept note](../design/NARRATIVE-INTELLIGENCE-CONCEPT.md)
+
+**Derived use case:** [Narrative Supply-Chain Analysis](../use-cases/NARRATIVE-SUPPLY-CHAIN-ANALYSIS.md) — the public-facing name for this strand.
 
 ---
 
@@ -159,6 +188,13 @@ phrasing is "identified", not "exist".
 ## 6. Ownership and funding
 
 Full analysis in [OWNERSHIP-FUNDING-AND-INCENTIVES.md](OWNERSHIP-FUNDING-AND-INCENTIVES.md).
+
+> **Ownership, investment, funding, access or shared interests can explain possible incentives and
+> dependencies. They do not by themselves prove editorial control, common intent or organised
+> coordination.**
+>
+> A shared investor across a portfolio is a shared investor. It is not evidence that the investor
+> directs what any of those organisations say, and it is not evidence that they act together.
 
 **The finding that governs everything else:**
 
@@ -320,6 +356,11 @@ cannot.**
 ---
 
 ## 11. Coordinated amplification
+
+> **NOT A COMMITTED CAPABILITY.** This section reports what the field can and cannot do. It is not a
+> plan, and it is not a milestone. On the evidence below, MERIDIAN may reasonably decide never to
+> build coordination or bot detection at all — and **none of the strongest proposed uses requires
+> it.**
 
 Full treatment in
 [COORDINATED-AMPLIFICATION-AND-BOT-METHODOLOGIES.md](COORDINATED-AMPLIFICATION-AND-BOT-METHODOLOGIES.md).
@@ -486,6 +527,14 @@ Event → Claims → Sources → Organisations → Owners and Funders → Amplif
 
 ## 17. Legal and ethical boundaries
 
+> **PROVISIONAL LEGAL RESEARCH — DO NOT RELY ON WITHOUT SPECIALIST REVIEW.**
+>
+> Statutory text cited here was read directly from legislation.gov.uk. **Regulator positions,
+> case-law rationes and policy characterisations were largely read via secondary sources**, and
+> **every ICO position failed primary retrieval**. Individual claims carry their own marker. The
+> [sources register](NARRATIVE-INTELLIGENCE-SOURCES.md) records verification level per source and
+> lists what must be re-checked before anything is implemented or published.
+
 **A report of what sources say, not legal advice.** Verification status in
 [NARRATIVE-INTELLIGENCE-SOURCES.md](NARRATIVE-INTELLIGENCE-SOURCES.md). Several important points are
 **genuinely unresolved in UK law** — not merely unresearched — and are marked.
@@ -494,8 +543,12 @@ Event → Claims → Sources → Organisations → Owners and Funders → Amplif
 
 **(a) Recording political opinions about named people is probably special category data.**
 
-**CURRENT LAW / REGULATOR GUIDANCE.** "Political opinions" are an Article 9 special category. The
-ICO's reported test is that inferring special category information **"with a reasonable degree of
+**REGULATOR GUIDANCE — PRIMARY-SOURCE VERIFICATION REQUIRED.** *ico.org.uk returned HTTP 403 to
+every retrieval attempt; the ICO positions below come from search extracts and law-firm commentary,
+not from reading the ICO's own page. Re-verify before relying on any of this.*
+
+"Political opinions" are an Article 9 special category — that much is statutory and settled. The
+ICO's **reported** test is that inferring special category information **"with a reasonable degree of
 certainty"** engages Article 9 — and, decisively, that processing data **with the intention of
 making such inferences** engages it **"irrespective of the level of statistical confidence."**
 
@@ -530,8 +583,8 @@ be **incompatible** with those purposes. Public interest must be assessed with r
 Editorial Guidelines, the Ofcom Broadcasting Code or the Editors' Code — **codes written for
 broadcasters and newspapers, which an analytics vendor cannot straightforwardly apply.**
 
-> **OPEN QUESTION, and the biggest untested assumption in this strand:** whether a **commercial
-> subscription analytics product** can claim the special-purposes exemption. **No UK judgment
+> **OPEN QUESTION — PROVISIONAL LEGAL RESEARCH — DO NOT RELY ON WITHOUT SPECIALIST REVIEW.**
+> Whether a **commercial subscription analytics product** can claim the special-purposes exemption. **No UK judgment
 > applies para 26 to a commercial data product.** A subscription feed sold to clients is materially
 > different from publication. This should not be relied on without advice.
 
@@ -541,7 +594,9 @@ that is in draft.
 
 **(c) Defamation defences require a human to have held a belief.**
 
-**CURRENT LAW, and structurally unfavourable to automation.**
+**CURRENT LAW (statutory text verified) + INFERENCE as to application.** The statutory wording below
+was read directly. **Its application to machine-generated output is untested — no UK judgment
+decides it — and the reading here is ours. PROVISIONAL: DO NOT RELY ON WITHOUT SPECIALIST REVIEW.**
 
 - **s.3 honest opinion** is defeated if the claimant shows **the defendant did not hold the opinion**
   (s.3(5)). **A software system holds no opinion.** Where the statement was made by another and
@@ -555,7 +610,8 @@ that is in draft.
 to evidence, the belief** before any adverse assertion about a named person reaches a third party.
 That is not a nice-to-have review step; it is what the defence is made of.
 
-**And it does not stay fixed.** ***Banks v Cadwalladr*** [2023] EWCA Civ 219 establishes that a s.4
+**And it does not stay fixed. (Case read via secondary sources — PRIMARY-SOURCE VERIFICATION
+REQUIRED.)** ***Banks v Cadwalladr*** [2023] EWCA Civ 219 establishes that a s.4
 defence **does not endure forever**: where publication continues and circumstances materially
 change, the defendant must make out s.4 **afresh for the continuing publication**. **Every day an
 assertion remains queryable in a database is continuing publication.** A system that does not ingest
@@ -575,7 +631,9 @@ of private information, and neither is the source having been public.** Recordin
 a named person is under investigation before charge is a **hard design rule**, not a risk to
 balance.
 
-**News ingestion requires licences.** **CURRENT LAW, settled as of 18 March 2026.** CDPA s.29A
+**News ingestion requires licences.** **CURRENT LAW — statute verified; the March 2026 policy report
+was read via the gov.uk summary rather than the full document, so treat the policy characterisation
+as PRIMARY-SOURCE VERIFICATION REQUIRED.** CDPA s.29A
 permits text and data mining only for **non-commercial research**, with lawful access. The
 Government's March 2026 report confirmed it **will not** introduce a broad exception, and that the
 previously preferred opt-out approach is no longer preferred. **There is no UK exception a
@@ -612,9 +670,12 @@ hiring, funding, partnership or platform decisions, it is arguably met — and t
 the system on the market is within the prohibited conduct even where the deployer inflicts the
 detriment.**
 
-> **OPEN QUESTION, highest consequence in this strand.** The "unrelated context" limb is untested,
-> there is no CJEU authority, and we could not verify whether the Commission's guidance addresses
-> research or journalistic uses at all.
+> **OPEN QUESTION, highest consequence in this strand. PROVISIONAL LEGAL RESEARCH — DO NOT RELY ON
+> WITHOUT SPECIALIST REVIEW.** The "unrelated context" limb is untested, there is no CJEU authority,
+> the Commission guidance was read via secondary summaries only, and **we did not verify the AI Act's
+> territorial scope** or whether the guidance carves out research or journalistic uses at all. Given
+> the penalty exposure, this needs specialist advice before any individual-level feature is designed,
+> not after.
 
 **PRODUCT PROPOSAL.** This is a further, independent reason for the rule in §16: **no per-individual
 influence score, ever.** Not as a design preference — as the cleanest way to stay outside the most
@@ -804,6 +865,32 @@ analysis; incentive assessment; adversarial testing; analyst review; legal and e
 **MERIDIAN does not perform narrative intelligence. It does not ingest, analyse or store any real
 information about any real person or organisation.** Nothing in this report should be quoted as
 suggesting otherwise.
+
+---
+
+## 22a. What to preserve for future design
+
+**PRODUCT PROPOSAL — design directions, not current capabilities. No schema, no implementation.**
+
+Whatever happens to this strand as a product, the research surfaced concepts MERIDIAN's own entity
+and simulation model may eventually need — and which are far cheaper to design in than to retrofit:
+
+| Concept | Why it may be needed |
+|---|---|
+| **Claim lineage** | A claim that travels and changes is a better model of information than a static fact |
+| **Independent-origin tracking** | An organisation that "confirmed" something from three sources may have confirmed it once |
+| **Source dependence** | Who relies on whom, structurally |
+| **Information exposure** | Who received what, when — MERIDIAN already has this |
+| **Corrections, and delayed corrections** | A correction arriving too late is a distinct and consequential event |
+| **Competing narratives** | Two internally consistent accounts coexisting, unresolved |
+| **Omission and coverage gaps** | What was never said, distinguished from what was denied |
+| **Organisation-specific incentives** | What an organisation stands to gain or lose, per organisation |
+| **Subject-specific trust** | Trust varies by topic and by how a source behaved before — MERIDIAN has a form of this |
+| **Versioned assessment history** | What we thought, when, and on what basis — never rewritten |
+
+**INFERENCE.** Every one of these is implementable **entirely inside the fiction**, with no real
+ingestion, no real names and no legal exposure. That is the recommendation in §26 restated as a
+design list: the valuable part of this research is available now, in the simulation, at no risk.
 
 ---
 

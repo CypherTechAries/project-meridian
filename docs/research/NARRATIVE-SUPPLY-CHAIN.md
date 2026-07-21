@@ -2,6 +2,7 @@
 
 Part of the [Narrative and Incentive Intelligence](NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md) research
 strand. **Research only. Nothing here is implemented.**
+Derived use case: [Narrative Supply-Chain Analysis](../use-cases/NARRATIVE-SUPPLY-CHAIN-ANALYSIS.md).
 
 ---
 

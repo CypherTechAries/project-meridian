@@ -2,6 +2,7 @@
 
 Part of the [Narrative and Incentive Intelligence](NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md) research
 strand. **Research only. Nothing is implemented, so no risk here has been observed in this system.**
+Derived use case: [Narrative Supply-Chain Analysis](../use-cases/NARRATIVE-SUPPLY-CHAIN-ANALYSIS.md).
 
 These are reasoned risks with proposed controls, and the controls are untested. Residual uncertainty
 is stated for each, because **several of these have no adequate control** and a register implying

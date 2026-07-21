@@ -4,6 +4,7 @@ Part of the [Narrative and Incentive Intelligence](NARRATIVE-AND-INCENTIVE-INTEL
 strand. **Research only. Nothing here is implemented, and nothing here is a plan to collect data.**
 
 Sources and verification status: [NARRATIVE-INTELLIGENCE-SOURCES.md](NARRATIVE-INTELLIGENCE-SOURCES.md).
+Derived use case: [Narrative Supply-Chain Analysis](../use-cases/NARRATIVE-SUPPLY-CHAIN-ANALYSIS.md).
 
 ---
 
@@ -14,8 +15,17 @@ claim is being made, look at who benefits, who pays, and who depends on whom.
 
 The limit is equally important and is the whole reason this document exists:
 
-> **A financial connection is evidence of an incentive. It is not evidence of coordination, and it
-> is not evidence that anybody did anything.**
+> **Ownership, investment, funding, access or shared interests can explain possible incentives and
+> dependencies. They do not by themselves prove editorial control, common intent or organised
+> coordination.**
+>
+> A financial connection is evidence of an incentive. It is not evidence of coordination, and it is
+> not evidence that anybody did anything.
+>
+> **A shared investor across a portfolio is a shared investor.** It is not evidence that the investor
+> directs what any of those organisations say, that they share an agenda, or that they act together.
+> Language implying otherwise — "X's portfolio companies all push Y" — is the exact failure this
+> document exists to prevent.
 
 A system that cannot hold that distinction produces conspiracy theories with citations. That is
 worse than producing nothing, because the citations make it persuasive.

@@ -1,7 +1,12 @@
 # Narrative and incentive intelligence — concept note
 
-**Status: RESEARCH ONLY.** Nothing described here exists. MERIDIAN does not read the web, does not
-analyse real sources, and does not hold any information about real people or organisations. This
+**Status: RESEARCH ONLY.** Nothing described here exists.
+**Public name: Narrative Supply-Chain Analysis.** "Narrative and incentive intelligence" is the
+internal research-strand name.
+
+MERIDIAN performs no narrative intelligence, does not ingest the web, contains no information about
+any real person or organisation, does not detect bots, does not identify coordinated campaigns, does
+not calculate truth scores, and does not generate allegations. This
 note explains the idea and where it might eventually fit; the detailed research is in
 [docs/research/NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md](../research/NARRATIVE-AND-INCENTIVE-INTELLIGENCE.md).
 
@@ -58,7 +63,8 @@ unfalsifiable at once.
 evidence that anybody coordinated anything. Seven relationship categories — from direct control down
 to mere correlation — are kept apart, and only one of them supports a coordination claim.
 
-**Not a bot detector.** The published record here is poor: the tool underpinning most "X% of
+**Not a bot detector — and coordination detection is not a committed capability.** The project may
+decide never to build it; none of the strongest uses needs it. The published record here is poor: the tool underpinning most "X% of
 discourse is bots" research has documented precision as low as 24–59%, and no live data since 2023.
 The honest claim is about **observed behaviour**, not about what an account *is*.
 
