@@ -24,8 +24,8 @@ import {
 } from '../src/screens/ask-meridian.ts'
 import type { AskResponse } from '../src/screens/ask-meridian.ts'
 import { API_BASE } from '../src/engine/api.ts'
-import { briefingMap } from '../src/components/briefing-viz.ts'
-import { mapCallouts } from '../src/engine/presentation.ts'
+import { situationDiagram } from '../src/components/briefing-viz.ts'
+import { situationModel } from '../src/engine/presentation.ts'
 
 function el(html: string): HTMLElement {
   const d = document.createElement('div')
@@ -198,20 +198,20 @@ describe('answers', () => {
    * The map card previously emitted an EMPTY div that nothing ever painted into, and asserting on
    * its data attribute alone did not catch that. These tests assert drawn content.
    */
-  it('9 · the canonical map is the real Briefing component, drawn', () => {
+  it('9 · the canonical diagram is the real Briefing component, drawn', () => {
     const run = initialSnapshot()
     const v = el(askMeridianView([], run))
     const map = v.querySelector('[data-canonical-map]') as HTMLElement
     expect(map.dataset.canonicalMap).toBe('briefing-canonical-map')
     // byte-identical to what the Briefing draws: the same component, not a redraw
-    const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
-    const expected = el(briefingMap(run, mapCallouts(run), days))
+    const expected = el(situationDiagram(situationModel(run)))
     expect(map.innerHTML.trim()).toBe(expected.innerHTML.trim())
     expect(map.querySelector('svg')).not.toBeNull()
-    expect(map.querySelectorAll('path, circle').length).toBeGreaterThan(5)
+    // the real diagram, with its consequence bands actually drawn
+    expect(map.querySelectorAll('[data-stage]').length).toBeGreaterThan(3)
   })
 
-  it('9a · with no run the map says UNAVAILABLE rather than showing an empty frame', () => {
+  it('9a · with no run the diagram says UNAVAILABLE rather than showing an empty frame', () => {
     const v = el(askMeridianView([]))
     const map = v.querySelector('[data-canonical-map]') as HTMLElement
     expect(map.dataset.canonicalMap).toBe('unavailable')

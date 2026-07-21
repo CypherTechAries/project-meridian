@@ -588,3 +588,140 @@ export function plainDecision(o: OptionEntry): PlainDecision {
   return { optionId: o.option_id, question: copy.question, context: copy.context,
            choices: copy.choices, standing, described: true }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * SITUATION MODEL — the facts the situation diagram may show
+ *
+ * Issue #33. MERIDIAN's engine has NO SPATIAL MODEL: no coordinates, no geometry, no port entities,
+ * and political pressure is a single scalar with no location. A map would therefore have to invent
+ * placement for two of the five questions a reader must be able to answer.
+ *
+ * So the diagram shows STRUCTURE, not geography — the causal chain the engine actually models,
+ * arranged by relationship. This model is what it may draw. Anything absent from here must not
+ * appear on screen.
+ *
+ * "Northshore" and "Southport" are deliberately NOT here. They were hard-coded in the old map
+ * component and are not scenario entities; they were part of the mock, not engine truth.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface SituationStage {
+  id: string
+  /** Short heading, plain words. */
+  title: string
+  /** One sentence stating what is happening. */
+  sentence: string
+  /** Plain level word, or null where the run does not establish one. */
+  level: string | null
+  /** 0..1 for the magnitude bar. Null where there is no value to show. */
+  magnitude: number | null
+  direction: PlainDirection | null
+  /** The run's own recorded values, for the change-over-time line. Empty when not recorded. */
+  series: number[]
+  /** Stated when `series` is empty, so an absent line is never read as a flat one. */
+  seriesNote: string | null
+}
+
+export interface SituationGroup {
+  name: string
+  /** 0..1, this group's own pressure value. */
+  value: number
+  /** Whole per cent of the population. Never a decimal. */
+  sharePercent: number
+}
+
+export interface SituationModel {
+  days: number
+  blockadeActive: boolean
+  stages: SituationStage[]
+  groups: SituationGroup[]
+  groupsNote: string
+  decision: PlainDecision | null
+  otherChoices: number
+  executionNote: string
+  /** Rendered on the diagram. The reader is told what kind of picture this is. */
+  kindNote: string
+}
+
+const NOT_RECORDED =
+  'MERIDIAN does not record that value at every step, so no change line is shown.'
+
+/**
+ * Declared once, here, because both the Briefing and the situation diagram state it. `briefing.ts`
+ * re-exports it so existing importers are unaffected; a second copy of this sentence is exactly the
+ * duplication the shared-state work removed.
+ */
+export const NOTHING_EXECUTES = 'Decision support only — nothing will be executed.'
+
+function stageFrom(
+  run: RunResult, id: string, field: string, title: string, sentence: string,
+): SituationStage {
+  const f = fieldState(run, field)
+  const series = run.trajectory
+    .map((t) => t[field])
+    .filter((v): v is number => typeof v === 'number')
+  return {
+    id,
+    title,
+    sentence,
+    level: f ? plainLevel(f) : null,
+    magnitude: f ? Math.min(1, Math.max(0, f.value)) : null,
+    direction: plainDirection(f),
+    series,
+    seriesNote: series.length >= 2 ? null : NOT_RECORDED,
+  }
+}
+
+/**
+ * The five questions this must answer, through layout and relationship:
+ * what is blocked · who is affected · what pressure is building (NOT as a place) ·
+ * what trade-offs are visible · what changed over time.
+ */
+export function situationModel(run: RunResult): SituationModel {
+  const p = run.projection
+  const days = Math.max(1, Math.round(p.simulated_hours / 24))
+
+  const stages: SituationStage[] = []
+
+  stages.push(
+    stageFrom(run, 'shipping', 'rerouting_level', 'Ships take the long way round',
+      'Shipping is avoiding the strait, taking a longer route.'),
+  )
+  stages.push(
+    stageFrom(run, 'ports', 'port_activity_deficit', 'Less cargo, less work',
+      'Less cargo arrives, so there is less work at the ports.'),
+  )
+  stages.push(
+    stageFrom(run, 'pressure', 'political_pressure', 'Pressure on the government',
+      'People are paying attention, and the government feels it.'),
+  )
+
+  // Top three groups by their own pressure value. Named exactly as the scenario declares them —
+  // no paraphrase, no invented group, and no location, because groups have none.
+  const groups: SituationGroup[] = p.cohorts
+    .slice()
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3)
+    .map((c) => ({
+      name: c.label.replace(/-/g, ' '),
+      value: Math.min(1, Math.max(0, c.value)),
+      sharePercent: Math.round(c.population_share * 100),
+    }))
+
+  const primary = primaryDecision(p)
+
+  return {
+    days,
+    blockadeActive: p.incident_active,
+    stages,
+    groups,
+    groupsNote:
+      'Bar length is how much each group is affected. These are averages — MERIDIAN does not ' +
+      'model the individuals inside them.',
+    decision: primary ? plainDecision(primary) : null,
+    otherChoices: Math.max(0, p.government_options.length - (primary ? 1 : 0)),
+    executionNote: NOTHING_EXECUTES,
+    kindNote:
+      'This shows how one thing led to another — not where anything is. MERIDIAN does not model ' +
+      'locations, distances or routes.',
+  }
+}

@@ -13,8 +13,8 @@
  */
 
 import { escapeHtml } from '../components/epistemic.ts'
-import { briefingMap } from '../components/briefing-viz.ts'
-import { mapCallouts } from '../engine/presentation.ts'
+import { situationDiagram } from '../components/briefing-viz.ts'
+import { situationModel } from '../engine/presentation.ts'
 import type { RunResult } from '../engine/client.ts'
 import { ASK_PATH, apiUrl } from '../engine/api.ts'
 
@@ -123,9 +123,10 @@ export interface AskResponse {
 export interface AskMessage { role: 'user' | 'meridian'; text: string; response?: AskResponse }
 
 /**
- * Canonical map. The SAME `briefingMap` the Briefing renders, at a smaller displayed size — never a
- * simplified redraw, and never an empty placeholder box. A weaker miniature imitation of a good
- * existing component is not an acceptable substitute for resizing the real one.
+ * Canonical situation diagram. The SAME `situationDiagram` the Briefing renders, at a smaller
+ * displayed size — never a simplified redraw, and never an empty placeholder box. A weaker
+ * miniature imitation of a good existing component is not an acceptable substitute for resizing
+ * the real one.
  *
  * Without a run there is no engine state to draw, so the card says so rather than showing an empty
  * frame that a reader could mistake for a map with nothing on it.
@@ -133,16 +134,15 @@ export interface AskMessage { role: 'user' | 'meridian'; text: string; response?
 function canonicalMapCard(run?: RunResult): string {
   if (!run) {
     return `<figure class="askc askc--map" data-component="CanonicalMapCard">
-      <figcaption class="askc__t">Kestral Strait ${statusPill('UNAVAILABLE')}</figcaption>
-      <p class="askc__abs" data-canonical-map="unavailable">Map UNAVAILABLE — no run state is loaded.</p>
+      <figcaption class="askc__t">How this fits together ${statusPill('UNAVAILABLE')}</figcaption>
+      <p class="askc__abs" data-canonical-map="unavailable">Diagram UNAVAILABLE — no run state is loaded.</p>
     </figure>`
   }
-  const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
   return `<figure class="askc askc--map" data-component="CanonicalMapCard">
-    <figcaption class="askc__t">Kestral Strait <span class="m m--e" title="engine result">E</span></figcaption>
+    <figcaption class="askc__t">How this fits together <span class="m m--e" title="engine result">E</span></figcaption>
     <div class="askc__map" data-canonical-map="briefing-canonical-map"
-         aria-label="Fictional map of the Kestral Strait, the same component the Briefing View uses.">
-      ${briefingMap(run, mapCallouts(run), days)}
+         aria-label="Situation diagram for the fictional Kestral Strait scenario, the same component the Briefing View uses.">
+      ${situationDiagram(situationModel(run))}
     </div>
   </figure>`
 }

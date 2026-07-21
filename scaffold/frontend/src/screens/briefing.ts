@@ -22,20 +22,24 @@
 
 import type { OptionEntry, RunResult } from '../engine/client.ts'
 import {
+  NOTHING_EXECUTES,
   crisisLede,
-  mapCallouts,
   plainDecision,
   plainSections,
   primaryDecision,
+  situationModel,
   situationSummary,
 } from '../engine/presentation.ts'
 import type { PlainSection } from '../engine/presentation.ts'
 import { escapeHtml } from '../components/epistemic.ts'
 import { STARTERS } from './ask-meridian.ts'
-import { briefingMap } from '../components/briefing-viz.ts'
+import { situationDiagram } from '../components/briefing-viz.ts'
 
-/** The prototype's hardest limit, stated wherever a choice is shown. */
-export const NOTHING_EXECUTES = 'Decision support only — nothing will be executed.'
+/**
+ * The prototype's hardest limit, stated wherever a choice is shown.
+ * Re-exported; the single definition lives in `engine/presentation.ts`, which the diagram also reads.
+ */
+export { NOTHING_EXECUTES }
 
 /**
  * Direction, in one ordinary word plus a shape that does not depend on colour.
@@ -133,32 +137,30 @@ function otherDecisions(options: OptionEntry[]): string {
 }
 
 /**
- * The map, behind a control.
+ * The situation diagram, behind a control.
  *
- * Observation 7: the map looked artificial and did not help. The founder offered two remedies —
- * redraw it so a new reader can explain it in five seconds, or take it off the top level and put it
- * behind "Show where this is happening". This takes the second, because it is honest about the
- * present state of the diagram rather than pretending a restyle would fix it. Redrawing it remains
- * open work, recorded as a known limitation.
- */
-/**
- * Stated next to the control, not buried in a document. A reader who opens the map is entitled to
- * know it has not met the bar the rest of the screen was rebuilt to meet.
+ * Observation 7 recorded that the map looked artificial and did not help. It has now been replaced
+ * rather than restyled: MERIDIAN has no spatial model, so a map had to invent placement for facts
+ * the scenario does not hold. What sits here shows how one thing led to another (issue #33).
+ *
+ * It stays behind a control and stays out of the default view until a cold reader has actually
+ * passed the five-second test. The limitation below is stated next to the control, not buried in a
+ * document — a reader who opens it is entitled to know it has not met that bar yet.
  */
 export const MAP_LIMITATION =
-  'This map is supporting evidence and has not yet passed the five-second comprehension test — ' +
-  'a first-time reader cannot reliably explain it after five seconds. A redesign is tracked as ' +
-  'open work. Nothing on this screen depends on reading it.'
+  'This diagram is supporting evidence and has not yet passed the five-second comprehension test — ' +
+  'no first-time reader has been asked to explain it yet. It replaces a map, because MERIDIAN does ' +
+  'not model locations, distances or routes. Nothing on this screen depends on reading it.'
 
 function whereSection(run: RunResult): string {
-  const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
   return `<details class="where">
-    <summary class="where__s">Show where this is happening</summary>
+    <summary class="where__s">Show how this fits together</summary>
     <div class="where__b">
-      <p class="where__note">A fictional strait. This diagram is a simplified drawing of the
-        situation, not a real coastline and not a map of any real place.</p>
+      <p class="where__note">A fictional scenario. This is a diagram of how one thing led to
+        another — <strong>not a map</strong>. MERIDIAN does not model locations, distances or
+        routes, so nothing here is anywhere.</p>
       <p class="where__limit"><strong>Known limitation.</strong> ${escapeHtml(MAP_LIMITATION)}</p>
-      ${briefingMap(run, mapCallouts(run), days)}
+      ${situationDiagram(situationModel(run))}
     </div>
   </details>`
 }

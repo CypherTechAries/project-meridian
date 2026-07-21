@@ -167,28 +167,59 @@
 
 /* ── Map ─────────────────────────────────────────────────────────────────── */
 /*
- * Retained unchanged and moved behind "Show where this is happening". Given the component's own
- * 960x430 ratio so its preserveAspectRatio="slice" crops nothing at any window width.
+/*
+ * SITUATION DIAGRAM — not a map.
+ *
+ * Height is intrinsic: the SVG viewBox grows with the number of bands, and `preserveAspectRatio`
+ * is xMidYMin meet, so nothing is ever cropped. A fixed aspect-ratio here would reintroduce the
+ * clipping the usability reset removed.
  */
-.bmap { display: block; width: 100%; aspect-ratio: 960 / 430; border-radius: 8px; }
-.bmap__coast { stroke: #5a86a8; stroke-width: 1.6; }
-.bmap__swell path { fill: none; stroke: rgba(120, 180, 215, 0.055); stroke-width: 1.2; }
-.bmap__zone { stroke: #ff5c6a; stroke-opacity: 0.75; stroke-width: 1.6; }
-.bmap__ship path { fill: #ff8b93; }
-.bmap__zone-t { fill: #ff7b85; font-size: 15px; font-weight: 800; letter-spacing: 0.13em; }
-.bmap__zone-s { fill: #cf7d86; font-size: 12.5px; letter-spacing: 0.04em; }
-.bmap__place { fill: #cfe2f2; font-size: 19px; font-weight: 700; letter-spacing: 0.3em; }
-.bmap__strait { fill: #7fa8c6; font-size: 15px; letter-spacing: 0.34em; }
-.rt { fill: none; stroke-linecap: round; }
-.rt--blocked { stroke: #f0a742; stroke-width: 2.2; stroke-dasharray: 9 8; }
-.rt--reroute { stroke: #3fd0e8; stroke-dasharray: 10 8; }
-.cal__lead { stroke: rgba(150, 200, 230, 0.35); stroke-width: 1.1; stroke-dasharray: 3 3; }
-.cal__pill { fill: rgba(8, 20, 32, 0.9); stroke: #2b5876; stroke-width: 1; }
-.cal__num-bg { fill: none; stroke: #3fd0e8; stroke-width: 1.4; }
-.cal__num { fill: #7fe4f5; font-size: 12px; font-weight: 700; }
-.cal__txt { fill: #d8e7f4; font-size: 13px; }
-.lgd__bg { fill: rgba(6, 16, 26, 0.86); stroke: #1d3a55; stroke-width: 1; }
-.lgd__t { fill: #9fb8cc; font-size: 11.5px; }
+.bmap { display: block; width: 100%; height: auto; border-radius: 8px; background: #0a1622; }
+
+.sd__title { fill: #cfe2f2; font-size: 15px; font-weight: 800; letter-spacing: 0.14em; }
+.sd__kind { fill: #7f9db4; font-size: 13px; }
+.sd__foot { fill: #6f8ba1; font-size: 12.5px; }
+
+/* The origin band: what is blocked. Distinct from the consequences below it. */
+.sd__origin { fill: rgba(255, 92, 106, 0.09); stroke: rgba(255, 92, 106, 0.45); stroke-width: 1.2; }
+.sd__origin-t { fill: #ff8b93; font-size: 18px; font-weight: 800; letter-spacing: 0.11em; }
+.sd__origin-s { fill: #d8b3b7; font-size: 14.5px; }
+
+.sd__band-bg { fill: rgba(20, 38, 54, 0.62); stroke: #22405a; stroke-width: 1; }
+.sd__band-t { fill: #dceaf6; font-size: 16px; font-weight: 700; }
+.sd__band-s { fill: #a8c0d3; font-size: 14px; }
+.sd__note { fill: #7d97ab; font-size: 12.5px; }
+
+.sd__lvl { fill: #dceaf6; font-size: 14.5px; font-weight: 600; }
+.sd__lvl--none { fill: #7d97ab; font-weight: 400; font-style: italic; }
+/* Direction never relies on colour alone — the word is always present beside the arrow. */
+.sd__dir { font-size: 13px; font-weight: 600; }
+.sd__dir--rising { fill: #f0a742; }
+.sd__dir--falling { fill: #4fc98a; }
+.sd__dir--steady { fill: #9fb8cc; }
+
+.sd__bar-bg { fill: rgba(120, 170, 210, 0.16); }
+.sd__bar { fill: #3fd0e8; }
+
+.sd__spark { fill: none; stroke: #7fe4f5; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.sd__spark-end { fill: #7fe4f5; }
+/* The turn, marked. The line covers the whole scenario; the direction word covers the recent
+   window. Without this the two read as a contradiction. */
+.sd__spark-peak { fill: none; stroke: #f0a742; stroke-width: 1.4; }
+.sd__spark-peakl { fill: #c99150; font-size: 10px; letter-spacing: 0.04em; }
+.sd__sparkl { fill: #6f8ba1; font-size: 11.5px; }
+.sd__sparkl--none { font-style: italic; }
+
+.sd__grp { fill: #dceaf6; font-size: 14px; text-transform: capitalize; }
+.sd__grp-share { fill: #8fa8bc; font-size: 13px; }
+
+.sd__decision { fill: rgba(63, 208, 232, 0.07); stroke: rgba(63, 208, 232, 0.4); stroke-width: 1.2; }
+.sd__choice { fill: #a9dced; font-size: 14px; font-weight: 600; }
+.sd__exec { fill: #8fb0c4; font-size: 13px; font-style: italic; }
+
+/* The flow between bands: consequence, not distance. */
+.sd__flow { stroke: #3a6180; stroke-width: 1.6; }
+.sd__flow-head { fill: #3a6180; }
 
 /* ── Technical evidence notice ───────────────────────────────────────────── */
 /* Shown above the former Analysis screen so it never reads as the normal experience. */
