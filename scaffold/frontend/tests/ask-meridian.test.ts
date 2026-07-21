@@ -7,17 +7,20 @@
  * presented as implemented.
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '../src/main.ts'
 import { initialSnapshot } from '../src/engine/client.ts'
 import {
+  ABSENCE_TOKENS,
   ASK_ENDPOINT,
   ASK_NOTE,
   ASK_SPEAKER,
   ASK_SPEAKER_AUTHORITY,
   STARTERS,
+  UNDECLARED_STATUS,
   askHome,
   askMeridianView,
+  classifyBoundaryStatus,
 } from '../src/screens/ask-meridian.ts'
 import type { AskResponse } from '../src/screens/ask-meridian.ts'
 import { briefingMap } from '../src/components/briefing-viz.ts'
@@ -271,6 +274,85 @@ describe('answers', () => {
         expect(h.querySelector('.m--u')).toBeNull()
       }
     }
+  })
+
+  /*
+   * STATUS-PILL MAPPING · explicit and exhaustive.
+   *
+   * The mapping has no catch-all. An unrecognised shape renders a visible STATUS UNDECLARED pill
+   * and reports itself, because labelling an UNKNOWN — or any component shape added later — as
+   * UNAVAILABLE would misstate what MERIDIAN actually has.
+   */
+  describe('status-pill mapping', () => {
+    const card = (title: string, body: Record<string, unknown>): AskResponse => ({
+      ...decisionResponse(),
+      components: [{ component_type: 'ModelBoundaryCard', title, body }],
+    })
+    const pillOf = (r: AskResponse): HTMLElement =>
+      el(askMeridianView([{ role: 'meridian', text: '', response: r }]))
+        .querySelector('[data-component="ModelBoundaryCard"] .pill') as HTMLElement
+
+    it('11f · a model-boundary card renders NOT MODELLED', () => {
+      const p = pillOf(card('What MERIDIAN does not model', { not_modelled: ['intelligence'] }))
+      expect(p.dataset.status).toBe('NOT_MODELLED')
+      expect(p.textContent).toContain('NOT MODELLED')
+      expect(p.dataset.declared).toBe('true')
+      // and the classifier agrees, independent of the render
+      expect(classifyBoundaryStatus({ not_modelled: ['intelligence'] }))
+        .toEqual({ status: 'NOT MODELLED', declared: true })
+    })
+
+    it('11g · an unavailable-data card renders UNAVAILABLE', () => {
+      const body = { population_group_breakdown: 'UNAVAILABLE', cohort_confidence: 'NOT_MODELLED' }
+      const p = pillOf(card('Unavailable data', body))
+      expect(p.dataset.status).toBe('UNAVAILABLE')
+      expect(p.dataset.declared).toBe('true')
+      expect(classifyBoundaryStatus(body)).toEqual({ status: 'UNAVAILABLE', declared: true })
+    })
+
+    it('11h · explicitly unknown content renders UNKNOWN, not UNAVAILABLE', () => {
+      const body = { provenance: 'UNKNOWN', cohort_confidence: 'NOT_MODELLED' }
+      expect(classifyBoundaryStatus(body)).toEqual({ status: 'UNKNOWN', declared: true })
+      expect(pillOf(card('Unknown provenance', body)).dataset.status).toBe('UNKNOWN')
+    })
+
+    it('11i · an unexpected shape cannot silently render UNAVAILABLE', () => {
+      const shapes: Array<Record<string, unknown>> = [
+        {},                                   // empty
+        { note: 'some future prose' },        // unrecognised string
+        { not_modelled: [] },                 // declared key, but nothing declared in it
+        { not_modelled: 'intelligence' },     // wrong type
+        { count: 0 },                         // zero is not an absence declaration
+        { value: '' },                        // empty string is not an absence declaration
+        { value: null },                      // null is not an absence declaration
+        { value: false },                     // false is not an absence declaration
+        { value: 'unavailable' },             // lower case is not the declared token
+      ]
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      for (const body of shapes) {
+        const c = classifyBoundaryStatus(body)
+        expect(c.declared).toBe(false)
+        expect(c.status).toBe(UNDECLARED_STATUS)
+        const p = pillOf(card('Something new', body))
+        expect(p.dataset.status).not.toBe('UNAVAILABLE')
+        expect(p.dataset.declared).toBe('false')
+        expect(p.textContent).toContain(UNDECLARED_STATUS)
+      }
+      // The development signal fires for every unrecognised shape. Twice per shape, because the
+      // view renders the same component in the thread and again in the context panel.
+      expect(spy).toHaveBeenCalledTimes(shapes.length * 2)
+      for (const [message] of spy.mock.calls) {
+        expect(String(message)).toContain('undeclared boundary component shape')
+      }
+      spy.mockRestore()
+    })
+
+    it('11j · every declared token maps to a distinct status', () => {
+      expect(ABSENCE_TOKENS).toEqual(['UNKNOWN', 'UNAVAILABLE', 'NOT_MODELLED'])
+      expect(classifyBoundaryStatus({ a: 'UNKNOWN' }).status).toBe('UNKNOWN')
+      expect(classifyBoundaryStatus({ a: 'UNAVAILABLE' }).status).toBe('UNAVAILABLE')
+      expect(classifyBoundaryStatus({ a: 'NOT_MODELLED' }).status).toBe('NOT MODELLED')
+    })
   })
 
   it('11d · boundary status is a word, with screen-reader text, not colour alone', () => {

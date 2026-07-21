@@ -32,6 +32,67 @@ export const STARTERS: readonly string[] = [
 export const ASK_NOTE =
   'Ask in your own words. This version can explain the current fictional scenario but cannot change it.'
 
+/**
+ * Absence vocabulary. These three tokens are the ONLY declared absence states, and they are matched
+ * exactly, as strings. An empty string, a zero, a null or any other falsy value is not an absence
+ * declaration and must never be read as one — a missing value is not the same as a value of nothing.
+ */
+export const ABSENCE_TOKENS = ['UNKNOWN', 'UNAVAILABLE', 'NOT_MODELLED'] as const
+
+/** Shown when a component shape is not one this renderer declares. Never silently UNAVAILABLE. */
+export const UNDECLARED_STATUS = 'STATUS UNDECLARED'
+
+export type BoundaryStatus = 'NOT MODELLED' | 'UNAVAILABLE' | 'UNKNOWN' | typeof UNDECLARED_STATUS
+
+export interface BoundaryClassification {
+  status: BoundaryStatus
+  /** False when the shape is unrecognised. The caller renders the fallback and reports it. */
+  declared: boolean
+}
+
+/**
+ * Explicit, exhaustive status mapping for a boundary card.
+ *
+ * There is deliberately NO catch-all. An earlier version mapped "a declared not_modelled list" to
+ * NOT MODELLED and *everything else* to UNAVAILABLE, which would have labelled an UNKNOWN card — or
+ * any component shape added later — as UNAVAILABLE without anyone noticing. Absence states are not
+ * interchangeable, so an unrecognised shape is reported rather than guessed.
+ *
+ * Precedence among declared tokens runs UNKNOWN → UNAVAILABLE → NOT_MODELLED: the least certain
+ * state present wins, so a card containing an UNKNOWN is never presented as merely UNAVAILABLE.
+ */
+export function classifyBoundaryStatus(body: Record<string, unknown>): BoundaryClassification {
+  // 1 · a declared model-boundary list
+  const list = body.not_modelled
+  if (Array.isArray(list) && list.length > 0 && list.every((i) => typeof i === 'string')) {
+    return { status: 'NOT MODELLED', declared: true }
+  }
+
+  // 2 · declared absence tokens appearing as values, matched exactly
+  const entries = Object.entries(body)
+  if (entries.length > 0) {
+    const tokens = new Set(
+      entries
+        .map(([, v]) => v)
+        .filter((v): v is string => typeof v === 'string')
+        .filter((v) => (ABSENCE_TOKENS as readonly string[]).includes(v)),
+    )
+    if (tokens.has('UNKNOWN')) return { status: 'UNKNOWN', declared: true }
+    if (tokens.has('UNAVAILABLE')) return { status: 'UNAVAILABLE', declared: true }
+    if (tokens.has('NOT_MODELLED')) return { status: 'NOT MODELLED', declared: true }
+  }
+
+  // 3 · no declared shape matched
+  return { status: UNDECLARED_STATUS, declared: false }
+}
+
+/** The status pill. A word, with screen-reader text, never colour alone and never a bare symbol. */
+function statusPill(status: BoundaryStatus, declared = true): string {
+  return `<span class="pill pill--boundary${declared ? '' : ' pill--undeclared'}"
+    data-status="${status.replace(/ /g, '_')}" data-declared="${declared}">
+    <span class="visually-hidden">Status: </span>${escapeHtml(status)}</span>`
+}
+
 export interface AskComponent {
   component_type: string
   title: string
@@ -67,9 +128,7 @@ export interface AskMessage { role: 'user' | 'meridian'; text: string; response?
 function canonicalMapCard(run?: RunResult): string {
   if (!run) {
     return `<figure class="askc askc--map" data-component="CanonicalMapCard">
-      <figcaption class="askc__t">Kestral Strait
-        <span class="pill pill--boundary" data-status="UNAVAILABLE">
-          <span class="visually-hidden">Status: </span>UNAVAILABLE</span></figcaption>
+      <figcaption class="askc__t">Kestral Strait ${statusPill('UNAVAILABLE')}</figcaption>
       <p class="askc__abs" data-canonical-map="unavailable">Map UNAVAILABLE — no run state is loaded.</p>
     </figure>`
   }
@@ -92,14 +151,22 @@ function canonicalMapCard(run?: RunResult): string {
  * colour to do so.
  */
 function boundaryCard(c: AskComponent): string {
-  const items = (c.body.not_modelled as string[] | undefined) ?? []
-  const extras = Object.entries(c.body).filter(([k]) => k !== 'not_modelled')
-  // A declared not-modelled list is a modelling boundary; anything else here is a missing value.
-  const status = items.length ? 'NOT MODELLED' : 'UNAVAILABLE'
+  // Only a validated list of strings is rendered as tags. A malformed `not_modelled` — a bare
+  // string, say — is not coerced into one; it falls through to the key/value rendering and to the
+  // undeclared status, rather than crashing the render or being displayed as if it were declared.
+  const raw = c.body.not_modelled
+  const items = Array.isArray(raw) && raw.every((i) => typeof i === 'string') ? (raw as string[]) : []
+  const extras = Object.entries(c.body).filter(([k]) => k !== 'not_modelled' || items.length === 0)
+  const { status, declared } = classifyBoundaryStatus(c.body)
+  if (!declared) {
+    // Visible fallback, plus a development signal. Never resolved silently to an absence state.
+    console.error(
+      `Ask MERIDIAN: undeclared boundary component shape for "${c.title}".`,
+      Object.keys(c.body),
+    )
+  }
   return `<section class="askc askc--boundary" data-component="ModelBoundaryCard">
-    <h4 class="askc__t">${escapeHtml(c.title)}
-      <span class="pill pill--boundary" data-status="${status.replace(' ', '_')}">
-        <span class="visually-hidden">Status: </span>${status}</span></h4>
+    <h4 class="askc__t">${escapeHtml(c.title)} ${statusPill(status, declared)}</h4>
     ${items.length ? `<ul class="askc__tags">${items.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>` : ''}
     ${extras.length ? `<dl class="askc__kv">${extras
       .map(([k, v]) => `<dt>${escapeHtml(k.replace(/_/g, ' '))}</dt><dd>${escapeHtml(String(v))}</dd>`)

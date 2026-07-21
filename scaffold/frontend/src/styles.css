@@ -631,8 +631,9 @@ body {
   font-size: 11px; font-weight: 600; letter-spacing: 0.09em; line-height: 1;
   padding: 5px 9px; border-radius: 4px; white-space: nowrap;
   border: 1px solid var(--line-strong); background: var(--s-inset); color: var(--t-mid); }
-.pill--boundary[data-status="NOT_MODELLED"] { border-style: dashed; }
-.pill--boundary[data-status="UNAVAILABLE"] { border-style: dashed; }
+.pill--boundary { border-style: dashed; }
+/* An unrecognised shape must look wrong, not like a normal absence state. */
+.pill--undeclared { border-style: solid; border-color: var(--warn, #d98b3a); color: var(--warn, #d98b3a); }
 
 /*
  * Group rows. The absence statement is a legible status line, not metadata: --t-mid rather than
