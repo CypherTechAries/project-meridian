@@ -36,6 +36,36 @@ function mountAt(mode: 'ask' | 'analysis' = 'ask', r: RunResult = run): HTMLElem
   return el
 }
 
+
+/**
+ * Text a reader can actually SEE.
+ *
+ * Content inside a closed `<details>` is not on the default view — that is the whole mechanism of
+ * progressive disclosure. `textContent` cannot tell the difference, so these rules would otherwise
+ * forbid ever attaching evidence to a claim, which is precisely what the interface now does.
+ *
+ * The companion assertion is that the detail really is CLOSED. Both halves are needed: this helper
+ * alone would let anything hide in an open disclosure.
+ */
+function visibleText(node: Element | null): string {
+  if (!node) return ''
+  let out = ''
+  const walk = (n: Node): void => {
+    if (n.nodeType === 3) { out += n.nodeValue ?? ''; return }
+    if (n.nodeType !== 1) return
+    const el = n as Element
+    if (el.tagName === 'DETAILS' && !(el as HTMLDetailsElement).open) {
+      const s = el.querySelector('summary')
+      if (s) walk(s)
+      return
+    }
+    if (el.classList.contains('visually-hidden') || el.classList.contains('u-sr')) return
+    for (const c of Array.from(el.childNodes)) walk(c)
+  }
+  walk(node)
+  return out
+}
+
 beforeEach(() => {
   root = mountAt()
 })
@@ -182,10 +212,11 @@ describe('honest scope', () => {
     }
   })
 
-  it('offers only destinations that exist', () => {
-    const labels = [...root.querySelectorAll('.navbar .navbtn')].map((b) => b.textContent?.trim())
-    expect(labels).toHaveLength(2)
-    for (const l of labels) expect(l).toBeTruthy()
+  it('offers no destination that is not worth being one', () => {
+    // "Exact numbers" was half the primary navigation. A first-time reader cannot say why those
+    // values matter or what decision they help with, so it is no longer a destination at all.
+    expect(root.querySelectorAll('.navbar .navbtn')).toHaveLength(0)
+    expect(root.textContent).not.toMatch(/Exact numbers/)
   })
 })
 
@@ -221,11 +252,21 @@ describe('engine values reach the screen', () => {
 
 describe('detail never leaks upward', () => {
   it('the conversation shows no engine identifier, mechanism id or exact decimal', () => {
-    const t = root.textContent ?? ''
+    // VISIBLE text: evidence attached to a claim sits behind a closed control, and a closed
+    // control is not the default view. The companion assertion below proves it is really closed.
+    const t = visibleText(root)
     expect(t).not.toMatch(/chain\.[a-z_]+/)
     expect(t).not.toMatch(/M-[A-Z]+-[A-Z]+/)
     expect(t).not.toMatch(/@\d+\.\d+\.\d+/)
     expect(t).not.toMatch(/\b\d+\.\d{3,}\b/)
+  })
+
+  it('claim evidence is attached but closed, so detail is opt-in rather than absent', () => {
+    for (const d of root.querySelectorAll<HTMLDetailsElement>('details')) expect(d.open).toBe(false)
+    const ev = root.querySelector<HTMLDetailsElement>('[data-evidence="politics"]')!
+    expect(ev).not.toBeNull()
+    ev.open = true
+    expect(visibleText(ev)).toMatch(/M-[A-Z]+/)
   })
 
   it('the exact numbers live in the technical view, and only there', () => {
@@ -245,7 +286,8 @@ describe('structure and accessibility basics', () => {
   it('renders the landmark regions', () => {
     expect(root.querySelector('main')).not.toBeNull()
     expect(root.querySelector('[role="region"]')).not.toBeNull()
-    expect(root.querySelector('nav')).not.toBeNull()
+    // No <nav>: there is no primary navigation to landmark. The conversation is the product.
+    expect(root.querySelector('[role="log"]')).not.toBeNull()
   })
 
   it('gives the situation diagram a descriptive text alternative', () => {

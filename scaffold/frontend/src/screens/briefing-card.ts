@@ -21,42 +21,56 @@
 
 import type { RunResult } from '../engine/client.ts'
 import { escapeHtml } from '../components/epistemic.ts'
-import { NOTHING_EXECUTES, headlineAndAsk, impactRows, plainDecision, primaryDecision } from '../engine/presentation.ts'
+import {
+  NOTHING_EXECUTES, ROW_FIELD, claimEvidence, headlineAndAsk, impactRows, plainDecision,
+  primaryDecision,
+} from '../engine/presentation.ts'
 import type { ImpactRow } from '../engine/presentation.ts'
 
 const ARROW: Record<string, string> = { rising: '↑', falling: '↓', steady: '→' }
 
 /**
- * One impact row.
+ * One impact row, with the evidence for its own claim behind one control.
  *
- * THE ROW IS THE CONTROL. A repeated "Explain this" button on every row read as clutter, so the
- * whole row is the affordance and the label appears on hover or focus. It is a real `<button>`, so
- * keyboard access and screen-reader semantics come for free rather than being bolted on.
+ * EVIDENCE IS CLAIM-DRIVEN. A reader sees "pressure is low" and can ask to see exactly that: the
+ * value, which way it is moving, where it came from, when it last changed, and the mechanism that
+ * set it. They are never asked to browse a table of eighteen engine values to find it.
  *
- * "Ask about this" rather than "Explain this", because it describes what actually happens: a
- * question is sent to MERIDIAN.
+ * EVERY ROW HAS THE SAME CONTROL. That is deliberate. An earlier version made the row itself a
+ * button that asked a catalogue question — which worked for People and Economy and had to be inert
+ * for Politics, because the catalogue has no question about the government (issue #37). Two rows
+ * that behaved and one that did not is exactly the inconsistency that makes an interface feel
+ * broken. "Show evidence" works for every claim, so the affordance is uniform.
  *
- * Where the catalogue has no question — politics, today — the row is NOT a control. A row that
- * reliably produces a refusal is worse than a row that does nothing. That gap is issue #37 and it
- * is meant to be visible.
+ * #37 is NOT hidden by this: there is still no way to ask MERIDIAN about politics, and no helper
+ * offers one. The gap is in the catalogue, where it belongs, rather than dressed as a dead control.
  */
-function row(r: ImpactRow): string {
-  const inner = `<span class="brow__t">${escapeHtml(r.title)}</span>
-    <span class="brow__l">${escapeHtml(r.line)}</span>
-    ${r.direction && r.directionSubject
-      ? `<span class="brow__d brow__d--${r.direction}">
-           <span aria-hidden="true">${ARROW[r.direction] ?? ''}</span>
-           <span class="visually-hidden">${escapeHtml(r.directionSubject)} is </span>${escapeHtml(r.direction)}</span>`
-      : '<span class="brow__d brow__d--none">not established</span>'}`
-
-  if (!r.askQuestion) {
-    return `<li><div class="brow brow--static" data-row="${escapeHtml(r.id)}">${inner}
-      <span class="brow__ask brow__ask--none">&nbsp;</span></div></li>`
-  }
-  return `<li><button type="button" class="brow brow--ask" data-row="${escapeHtml(r.id)}"
-      data-ask-question="${escapeHtml(r.askQuestion)}"
-      aria-label="Ask MERIDIAN about ${escapeHtml(r.title.toLowerCase())}">${inner}
-    <span class="brow__ask" aria-hidden="true">Ask about this →</span></button></li>`
+function row(r: ImpactRow, run: RunResult): string {
+  const ev = claimEvidence(run, ROW_FIELD[r.id])
+  return `<li class="brow-i">
+    <div class="brow" data-row="${escapeHtml(r.id)}">
+      <span class="brow__t">${escapeHtml(r.title)}</span>
+      <span class="brow__l">${escapeHtml(r.line)}</span>
+      ${r.direction && r.directionSubject
+        ? `<span class="brow__d brow__d--${r.direction}">
+             <span aria-hidden="true">${ARROW[r.direction] ?? ''}</span>
+             <span class="visually-hidden">${escapeHtml(r.directionSubject)} is </span>${escapeHtml(r.direction)}</span>`
+        : '<span class="brow__d brow__d--none">not established</span>'}
+    </div>
+    ${ev
+      ? `<details class="bev" data-evidence="${escapeHtml(r.id)}">
+           <summary class="bev__s">Show evidence</summary>
+           <dl class="bev__b">
+             <dt>Exact value</dt><dd class="bev__num">${escapeHtml(ev.value)}</dd>
+             <dt>Level</dt><dd>${escapeHtml(ev.level)}</dd>
+             <dt>Direction</dt><dd>${escapeHtml(ev.direction)}</dd>
+             <dt>Origin</dt><dd>${escapeHtml(ev.origin)}</dd>
+             <dt>Last changed</dt><dd>${escapeHtml(ev.lastChanged)}</dd>
+             <dt>Mechanism</dt><dd class="bev__num">${escapeHtml(ev.mechanism)}</dd>
+           </dl>
+         </details>`
+      : ''}
+  </li>`
 }
 
 /**
@@ -70,7 +84,6 @@ export function briefingCard(run: RunResult): string {
   const rows = impactRows(run)
   const primary = primaryDecision(run.projection)
   const d = primary ? plainDecision(primary) : null
-  const others = run.projection.government_options.length - (primary ? 1 : 0)
 
   return `<article class="bcard" data-briefing-card aria-label="Situation briefing">
     <header class="bcard__hd">
@@ -80,8 +93,7 @@ export function briefingCard(run: RunResult): string {
 
     <h1 class="bcard__h">${escapeHtml(headline)}</h1>
 
-    <p class="brows__hint">Select any row to ask MERIDIAN about it.</p>
-    <ul class="brows">${rows.map(row).join('')}</ul>
+    <ul class="brows">${rows.map((r) => row(r, run)).join('')}</ul>
 
     ${d
       ? `<section class="bdec" aria-labelledby="bdec-h">
@@ -98,13 +110,13 @@ export function briefingCard(run: RunResult): string {
       : `<section class="bdec"><h2 class="bdec__h">No decision is waiting.</h2>
            <p class="bdec__n" data-nothing-executes>${escapeHtml(NOTHING_EXECUTES)}</p></section>`}
 
+    <!--
+      ONE next action. The first answer is not a dossier: the causal chain, the group breakdown and
+      the model boundaries are all opened FROM here, not stacked into it.
+    -->
     <footer class="bcard__ft">
-      <button type="button" class="bcard__more" data-ask-question="Brief me on the current situation.">Tell me more</button>
-      <button type="button" class="bcard__more" data-show-diagram>How this fits together</button>
-      ${others > 0
-        ? `<button type="button" class="bcard__more" data-ask-question="Brief me on the current situation.">${others} other decision${others === 1 ? '' : 's'}</button>`
-        : ''}
-      <button type="button" class="bcard__more bcard__more--quiet" data-mode="analysis">Exact numbers</button>
+      <button type="button" class="bcard__more bcard__more--go" data-show-diagram>
+        Show how this fits together</button>
     </footer>
   </article>`
 }

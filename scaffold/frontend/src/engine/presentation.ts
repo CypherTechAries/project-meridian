@@ -806,3 +806,175 @@ export function headlineAndAsk(run: RunResult): { headline: string; decision: st
     decision: primary ? plainDecision(primary).question : null,
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * COMPACT CAUSAL ANSWER
+ *
+ * The situation diagram showed six bands, each with a title, a sentence, a level, a bar, a
+ * sparkline and captions — roughly thirty pieces of information at once. It was a report wearing a
+ * diagram's clothes, and a reader lost interest before taking any of it in.
+ *
+ * THE PRODUCT RULE: MERIDIAN should be easier than having a normal conversation. One sentence,
+ * then no more than three supporting points, then detail ONLY when deliberately asked for.
+ *
+ * So the default answer is four short blocks a reader can skim by heading alone. The full chain,
+ * the group breakdown and the exact values are all still there — behind controls.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** The most steps that may appear before a reader asks for more. Three. Not "about three". */
+export const MAX_INITIAL_STEPS = 3
+
+export interface CompactCausal {
+  /** One sentence. If a reader reads nothing else, they read this. */
+  shortAnswer: string
+  /** At most MAX_INITIAL_STEPS. Plain sentences, in order, no numbers and no levels. */
+  steps: string[]
+  /** True when the engine's chain is longer than what is shown — so the control is honest. */
+  hasMoreSteps: boolean
+  totalSteps: number
+  /** One sentence naming the hardest-hit group AND its absolute level, so neither reads alone. */
+  whoIsMostAffected: string | null
+  /** One sentence. What the government must decide. */
+  needsAttention: string | null
+}
+
+export function compactCausal(run: RunResult): CompactCausal {
+  const m = situationModel(run)
+  const reroute = fieldState(run, 'rerouting_level')
+  const port = fieldState(run, 'port_activity_deficit')
+  const political = fieldState(run, 'political_pressure')
+
+  // The short answer is assembled from what the run establishes, clause by clause. A clause the
+  // run does not support is omitted rather than softened.
+  const clauses: string[] = []
+  if (reroute && reroute.value > 0) clauses.push('forcing ships onto longer routes')
+  if (port && port.value > 0.3) clauses.push('reducing work at the ports')
+  if (political) clauses.push('creating pressure on the government')
+  const shortAnswer = m.blockadeActive
+    ? `The closed strait is ${clauses.length ? clauses.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'the only thing the run establishes so far'}.`
+    : 'No incident is active in this scenario.'
+
+  // Steps are the causal chain in ordinary words. The engine's chain is ten stages; three is what
+  // a reader gets before asking, and `hasMoreSteps` keeps the control from over-promising.
+  const all: string[] = []
+  if (m.blockadeActive) all.push('The strait closed.')
+  if (reroute && reroute.value > 0) all.push('Ships began taking a longer route.')
+  if (port && port.value > 0.3) all.push('Less cargo reached the ports, affecting work and households.')
+  if (political) all.push('Attention built, and pressure landed on the government.')
+
+  const top = m.groups[0]
+  const whoIsMostAffected = top
+    ? `The ${top.name} group is the most affected of the groups shown, although its current ` +
+      `impact level is still ${top.level}.`
+    : null
+
+  const needsAttention = m.decision
+    ? `The government must decide: ${m.decision.question.replace(/^Should /, 'whether to ').replace(/\?$/, '')}.`
+    : null
+
+  return {
+    shortAnswer,
+    steps: all.slice(0, MAX_INITIAL_STEPS),
+    hasMoreSteps: all.length > MAX_INITIAL_STEPS || run.projection.stages.length > all.length,
+    totalSteps: run.projection.stages.length,
+    whoIsMostAffected,
+    needsAttention,
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * GUIDED HELPERS
+ *
+ * Plain-language routes into the declared catalogue. They are HELPERS, not capabilities: every one
+ * maps to a question the catalogue already answers, so none can reliably refuse.
+ *
+ * "Help me understand the decision" is deliberately ABSENT. The catalogue has no question about
+ * the government's decision or political pressure — that is issue #37 — and a helper that always
+ * refuses would be worse than no helper.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface Helper {
+  label: string
+  question: string
+}
+
+export const HELPERS: readonly Helper[] = [
+  { label: 'Help me understand what is happening', question: 'Brief me on the current situation.' },
+  { label: 'Show me what this is doing to trade', question: 'How are the economy and supply chains reacting?' },
+  { label: 'Show me who is affected', question: 'How are people and groups reacting?' },
+  { label: 'Show me what MERIDIAN does not know', question: 'What does MERIDIAN know — and what remains uncertain?' },
+]
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * CLAIM EVIDENCE — technical detail, attached to the claim it supports
+ *
+ * A first-time reader cannot say why a table of eighteen engine values matters, what to look for,
+ * or what decision it helps them make. So the table stops being a destination. Evidence becomes
+ * claim-driven: a reader sees "pressure is low", asks to see why, and gets the exact value,
+ * direction, origin, last change and mechanism FOR THAT CLAIM — and nothing else.
+ *
+ * The full table survives as a secondary audit route. It is no longer one of the two main things
+ * the product offers.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ClaimEvidence {
+  field: string
+  label: string
+  value: string
+  level: string
+  direction: string
+  origin: string
+  lastChanged: string
+  mechanism: string
+}
+
+export function claimEvidence(run: RunResult, field: string): ClaimEvidence | null {
+  const stage = run.projection.stages.find((s) => s.field === field)
+  if (!stage) return null
+  const f = fieldState(run, field)
+  return {
+    field,
+    label: stage.label,
+    value: typeof stage.value === 'number' ? stage.value.toFixed(4) : String(stage.value),
+    level: f ? f.level : 'NOT ESTABLISHED',
+    // Never STEADY where nothing was measured — "we did not look" is a different claim.
+    direction: f ? (f.direction_measured ? f.direction : 'NOT MEASURED') : 'NOT ESTABLISHED',
+    origin: stage.origin ?? 'engine',
+    lastChanged: `tick ${stage.last_updated_tick ?? '—'}`,
+    mechanism: stage.provenance ?? '',
+  }
+}
+
+/** The chain field behind each impact row, so a row can show the evidence for its own claim. */
+export const ROW_FIELD: Record<ImpactRow['id'], string> = {
+  people: 'household_expectation_pressure',
+  economy: 'rerouting_level',
+  politics: 'political_pressure',
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THE FIVE-BEAT CHAIN
+ *
+ * The default causal view. Five short beats and nothing else: no bars, no sparklines, no decimals,
+ * no captions, no miniature charts. A reader takes it in at a glance or the answer has failed.
+ *
+ * Beat four states the RELATIVE fact and names its comparison set. It must never imply the
+ * absolute impact is high — the hardest-hit group sits at 0.33, which is LOW on the declared
+ * thresholds.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export function fiveBeatChain(run: RunResult): string[] {
+  const m = situationModel(run)
+  const reroute = fieldState(run, 'rerouting_level')
+  const port = fieldState(run, 'port_activity_deficit')
+  const top = m.groups[0]
+
+  const beats: string[] = []
+  if (m.blockadeActive) beats.push('The strait is closed')
+  if (reroute && reroute.value > 0) beats.push('Ships go the long way round')
+  if (port && port.value > 0.3) beats.push('Less work reaches the ports')
+  if (top) beats.push(`The ${top.name} group is affected most, though the level is still ${top.level}`)
+  if (m.decision) beats.push('The government must choose')
+  return beats
+}

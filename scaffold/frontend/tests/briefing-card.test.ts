@@ -21,8 +21,8 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mount } from '../src/main.ts'
 import { initialSnapshot } from '../src/engine/client.ts'
 import type { RunResult } from '../src/engine/client.ts'
-import { STARTERS } from '../src/screens/ask-meridian.ts'
-import { impactRows, plainDecision, primaryDecision } from '../src/engine/presentation.ts'
+import { HELPERS } from '../src/engine/presentation.ts'
+import { plainDecision, primaryDecision } from '../src/engine/presentation.ts'
 
 const run = initialSnapshot()
 let root: HTMLElement
@@ -37,6 +37,36 @@ beforeEach(() => {
 
 const card = (): HTMLElement => root.querySelector('[data-briefing-card]')!
 
+/**
+ * Text a reader can actually SEE.
+ *
+ * Content inside a closed `<details>` is not on the default view — that is the whole mechanism of
+ * progressive disclosure. `textContent` cannot tell the difference, so these rules would otherwise
+ * forbid ever attaching evidence to a claim, which is precisely what the interface now does.
+ *
+ * The companion assertion is that the detail really is CLOSED. Both halves are needed: this helper
+ * alone would let anything hide in an open disclosure.
+ */
+function visibleText(node: Element | null): string {
+  if (!node) return ''
+  let out = ''
+  const walk = (n: Node): void => {
+    if (n.nodeType === 3) { out += n.nodeValue ?? ''; return }
+    if (n.nodeType !== 1) return
+    const el = n as Element
+    if (el.tagName === 'DETAILS' && !(el as HTMLDetailsElement).open) {
+      const s = el.querySelector('summary')
+      if (s) walk(s)
+      return
+    }
+    if (el.classList.contains('visually-hidden') || el.classList.contains('u-sr')) return
+    for (const c of Array.from(el.childNodes)) walk(c)
+  }
+  walk(node)
+  return out
+}
+
+
 describe('1-3 · the landing state', () => {
   it('1 · the app opens on the conversation with the Briefing already answered', () => {
     expect(root.dataset.mode).toBe('ask')
@@ -50,10 +80,11 @@ describe('1-3 · the landing state', () => {
     expect(root.querySelector('[data-ask-input]')).not.toBeNull()
   })
 
-  it('3 · every navigation destination is a real button', () => {
-    const btns = [...root.querySelectorAll('.navbar .navbtn')]
-    expect(btns).toHaveLength(2)
-    for (const b of btns) expect(b.tagName).toBe('BUTTON')
+  it('3 · there is no primary navigation competing with the conversation', () => {
+    expect(root.querySelectorAll('.navbar .navbtn')).toHaveLength(0)
+    // The one next action on the card is a real button.
+    const go = root.querySelector('.bcard__ft button')!
+    expect(go.tagName).toBe('BUTTON')
   })
 })
 
@@ -100,55 +131,29 @@ describe('4-8 · the story the card tells', () => {
 })
 
 describe('Q4-Q5 · what can I ask, and what is not known', () => {
-  it('Q4 · suggestions are offered without opening anything first', () => {
+  it('Q4 · guided helpers are offered without opening anything first', () => {
     const chips = [...root.querySelectorAll('.asksug__b')].map((b) => b.textContent?.trim())
-    expect(chips.length).toBeGreaterThan(2)
-    // They must be questions the catalogue actually declares, not invented prompts.
-    for (const c of chips) expect(STARTERS).toContain(c)
+    expect(chips).toHaveLength(HELPERS.length)
+    // Plain-language labels, each routed to a question the catalogue can actually answer.
+    for (const h of HELPERS) expect(chips).toContain(h.label)
   })
 
   it('Q5 · what MERIDIAN does not know is ASKABLE, not recited', () => {
-    // This replaced 308px of static prose. The chip asks the declared question, so the answer
-    // comes from the catalogue rather than from copy that could drift out of date.
-    const chips = [...root.querySelectorAll('.asksug__b')].map((b) => b.textContent?.trim())
-    expect(chips.some((c) => /remains uncertain|does MERIDIAN know/i.test(c ?? ''))).toBe(true)
+    const qs = [...root.querySelectorAll<HTMLElement>('.asksug__b')].map((b) => b.dataset.askQuestion)
+    expect(qs.some((q) => /remains uncertain/i.test(q ?? ''))).toBe(true)
   })
 
-  it('Q4a · the ROW is the control, and only where a question exists', () => {
-    // One instruction, not a button on every row.
-    expect(root.querySelector('.brows__hint')?.textContent)
-      .toMatch(/select any row to ask meridian about it/i)
-
-    for (const r of impactRows(run)) {
-      const el = card().querySelector<HTMLElement>(`[data-row="${r.id}"]`)!
-      if (r.askQuestion) {
-        // A real button: keyboard operation and screen-reader semantics come for free.
-        expect(el.tagName, r.id).toBe('BUTTON')
-        expect(el.dataset.askQuestion).toBe(r.askQuestion)
-        expect(STARTERS).toContain(r.askQuestion)
-        // "Ask about this" describes what happens; "Explain this" did not.
-        expect(el.querySelector('.brow__ask')?.textContent).toMatch(/ask about this/i)
-        expect(el.getAttribute('aria-label')).toMatch(/^Ask MERIDIAN about /)
-      } else {
-        // Politics has no catalogue question yet (issue #37). A row that always refuses would be
-        // worse than an inert one, so the gap is left visible.
-        expect(el.tagName, r.id).not.toBe('BUTTON')
-        expect(el.className).toContain('brow--static')
-      }
+  it('Q4a · every row exposes the evidence for its own claim, uniformly', () => {
+    for (const id of ['people', 'economy', 'politics']) {
+      const ev = card().querySelector<HTMLDetailsElement>(`[data-evidence="${id}"]`)
+      expect(ev, id).not.toBeNull()
+      expect(ev!.open, id).toBe(false)
     }
-  })
-
-  it('Q4b · selecting a row asks the question rather than expanding a panel', () => {
-    const economy = card().querySelector<HTMLElement>('[data-row="economy"]')!
-    economy.click()
-    // The question appears in the thread as something the user asked.
-    expect(root.querySelector('.askmsg--u')?.textContent)
-      .toContain('How are the economy and supply chains reacting?')
   })
 })
 
 describe('9-12a · what may not appear at level 1', () => {
-  const text = (): string => root.textContent ?? ''
+  const text = (): string => visibleText(root)
 
   it('9 · raw rule-pack and scenario identifiers are absent', () => {
     expect(text()).not.toContain(run.projection.rule_pack_version)
@@ -170,6 +175,17 @@ describe('9-12a · what may not appear at level 1', () => {
     expect(text()).not.toMatch(/\b\d+\.\d+\b/)
   })
 
+  it('12b · the detail really is behind a CLOSED control, not merely hidden by the helper', () => {
+    // visibleText() only tells the truth if the disclosures are genuinely shut on load.
+    for (const d of root.querySelectorAll<HTMLDetailsElement>('details')) {
+      expect(d.open, d.querySelector('summary')?.textContent ?? '').toBe(false)
+    }
+    // And the detail exists — the evidence is attached, not deleted.
+    const ev = card().querySelector<HTMLDetailsElement>('[data-evidence="politics"]')!
+    ev.open = true
+    expect(visibleText(ev)).toMatch(/Mechanism/)
+  })
+
   it('12a · banned engine vocabulary is absent', () => {
     for (const w of ['epistemic', 'provenance', 'projection', 'cohort', 'mechanism']) {
       expect(text().toLowerCase(), w).not.toContain(w)
@@ -177,11 +193,11 @@ describe('9-12a · what may not appear at level 1', () => {
   })
 
   it('13 · technical values remain reachable, one step away', () => {
-    // Formerly a disclosure under every section. Now one deliberate destination.
-    const toTech = root.querySelector<HTMLElement>('.navbar [data-mode="analysis"]')!
-    toTech.click()
-    expect(root.dataset.mode).toBe('analysis')
-    expect(root.textContent).toContain(run.projection.rule_pack_version)
+    // Claim-driven: the evidence for a specific claim, opened deliberately.
+    const ev = card().querySelector<HTMLDetailsElement>('[data-evidence="politics"]')!
+    ev.open = true
+    expect(ev.textContent).toMatch(/Exact value/)
+    expect(ev.textContent).toMatch(/Mechanism/)
   })
 })
 
@@ -205,7 +221,8 @@ describe('14-17 · shape and navigation', () => {
   })
 
   it('17 · the technical view offers the way back to the conversation', () => {
-    root.querySelector<HTMLElement>('.navbar [data-mode="analysis"]')!.click()
+    root.querySelector<HTMLElement>('[data-show-diagram]')!.click()
+    root.querySelector<HTMLElement>('[data-mode="analysis"]')!.click()
     const back = root.querySelector<HTMLElement>('.techbar__back')!
     expect(back).not.toBeNull()
     back.click()

@@ -269,7 +269,7 @@
  * ══════════════════════════════════════════════════════════════════════════════════════════════ */
 .bcard {
   border: 1px solid var(--line-strong); border-radius: 12px; background: var(--s-panel);
-  padding: 20px 24px 18px; margin: 0 0 20px; max-width: 780px;
+  padding: 20px 24px 18px; margin: 0 0 20px;
 }
 .bcard__hd { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .bcard__badge {
@@ -390,3 +390,137 @@
 /* Appears on hover or focus only, so eighteen rows do not read as eighteen buttons. */
 .tt__ask { font-size: 12px; color: var(--cyan); white-space: nowrap; opacity: 0; transition: opacity 90ms ease; }
 .tt__r--ask:hover .tt__ask, .tt__r--ask:focus-visible .tt__ask { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * CONVERSATION LAYOUT — single column, nothing beside it
+ *
+ * The permanent 320px context rail is gone. It compressed prose into four-word lines, reserved a
+ * large empty area that read as a missing image, competed with the answer, and turned the screen
+ * back into a dashboard. Evidence now sits inline, under the claim it supports, at a readable width.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+.ask { grid-template-columns: minmax(0, 1fr); }
+.ask__thread {
+  /* Bottom padding so the last message always scrolls CLEAR of the composer. Without it the
+     transcript ended flush against the suggestions and sliced the final card mid-button. */
+  padding: 26px 24px 72px;
+}
+/*
+ * Soft fade at the transcript's bottom edge, so content reads as continuing rather than cut.
+ * A real element pulled up over the thread's last 34px — a positioned pseudo-element drifted over
+ * the suggestion pills, which looked like a rendering fault.
+ */
+.ask__fade {
+  flex: 0 0 auto; height: 34px; margin-top: -34px; pointer-events: none; position: relative;
+  background: linear-gradient(to bottom, rgba(9, 18, 29, 0), rgba(9, 18, 29, 0.96));
+}
+.askmsg__text, .askmsg--u { max-width: 74ch; }
+
+/* Starter questions: opening state only, in normal flow, never over the transcript. */
+.asksug { padding: 0 24px 12px; flex: 0 0 auto; }
+.asksug__lbl { margin: 0 0 8px; font-size: 12.5px; color: var(--t-faint); }
+.asksug__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.asksug--later { padding: 0 24px 10px; }
+.asksug__more {
+  cursor: pointer; font-size: 12.5px; color: var(--t-faint); padding: 4px 0; list-style: none;
+}
+.asksug__more:hover { color: var(--t-mid); }
+.asksug--later .asksug__list { padding-top: 8px; }
+
+/* ── Claim evidence: the numbers, attached to the claim they support ─────── */
+.brow-i { border-top: 1px solid var(--line); padding: 4px 0; }
+.brow-i:last-child { border-bottom: 1px solid var(--line); }
+.brow { border: 0; padding: 8px 8px 4px; }
+.bev { padding: 0 8px 6px; }
+.bev__s {
+  cursor: pointer; font-size: 12px; color: var(--t-faint); padding: 3px 0;
+  list-style: none; display: inline-block;
+}
+.bev__s::-webkit-details-marker { display: none; }
+.bev__s:hover, .bev[open] .bev__s { color: var(--cyan); }
+.bev__b {
+  display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 3px 14px;
+  margin: 8px 0 4px; padding: 12px 14px; background: var(--s-inset);
+  border-left: 2px solid var(--line-strong); border-radius: 0 6px 6px 0;
+}
+.bev__b dt { font-size: 12px; color: var(--t-faint); }
+.bev__b dd { margin: 0; font-size: 12.5px; color: var(--t-mid); }
+.bev__num { font-family: var(--f-num); color: var(--t-hi); }
+
+/* ── The five-beat chain ─────────────────────────────────────────────────── */
+.ca { max-width: 720px; }
+.ca__chain { list-style: none; margin: 0 0 18px; padding: 0; }
+.ca__beat {
+  position: relative; padding: 12px 0 12px 30px; font-size: 16.5px; line-height: 1.5;
+  color: var(--t-mid);
+}
+/* The connector is the only ornament, and it carries the meaning: this led to that. */
+.ca__beat:not(:last-child)::after {
+  content: ''; position: absolute; left: 8px; top: 38px; bottom: -2px; width: 1px;
+  background: var(--line-strong);
+}
+.ca__beat::before {
+  content: ''; position: absolute; left: 5px; top: 20px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--line-strong);
+}
+.ca__beat--first { color: var(--t-hi); font-weight: 600; }
+.ca__beat--first::before { background: var(--cyan); }
+.ca__beat-t { display: block; }
+
+.ca__d { margin-top: 4px; }
+.ca__s {
+  cursor: pointer; font-size: 14px; color: var(--cyan); padding: 8px 14px; list-style: none;
+  border: 1px solid var(--line-strong); border-radius: 7px; display: inline-block;
+}
+.ca__s::-webkit-details-marker { display: none; }
+.ca__s:hover { border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.07); }
+.ca__db { padding: 20px 0 4px; }
+.ca__sec { margin-bottom: 28px; }
+.ca__h { margin: 0 0 10px; font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--t-low); }
+.ca__note { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--t-low); max-width: 68ch; }
+.ca__grp { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 8px; }
+.ca__grp th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--t-faint); padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--line-strong);
+}
+.ca__grp td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); color: var(--t-mid); }
+.ca__num { font-family: var(--f-num); }
+.ca__top { color: #f0a742; font-size: 12.5px; }
+.ca__deeper { margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ca__deeper-n { font-size: 12.5px; color: var(--t-faint); }
+.ca__btn {
+  font-size: 13px; color: var(--t-mid); background: var(--s-inset);
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 13px; cursor: pointer;
+}
+.ca__btn:hover { color: var(--t-hi); border-color: var(--cyan-dim); }
+.bcard__more--go { border-color: var(--cyan-dim); color: var(--t-hi); }
+
+/*
+ * ONE CENTRED READING COLUMN.
+ *
+ * With the rail removed the conversation was left-aligned against ~600px of empty screen, which
+ * reads exactly like the rail is still there. Nothing is reserved — the column is simply centred,
+ * and capped so prose never runs to an unreadable line length on a wide monitor.
+ */
+:root { --ask-col: 860px; }
+/*
+ * `.ask` is a flex item of `.main`. With one grid column it shrink-wrapped to its content, so the
+ * whole conversation hugged the left edge against ~1000px of empty screen — reading exactly like
+ * the removed rail was still there. It must fill its parent.
+ */
+.main--ask > .ask { flex: 1 1 auto; width: 100%; }
+/*
+ * `.ask__thread > *` ties with `.bcard` on specificity, and `.bcard`'s `margin` shorthand resets
+ * the auto margins. The extra class raises specificity so the column actually centres.
+ */
+.ask__thread > *, .ask__thread > .bcard, .asksug, .askform {
+  max-width: var(--ask-col); margin-left: auto; margin-right: auto; width: 100%;
+}
+
+/* "Show evidence" belongs with the claim, not adrift in the label column. */
+.brow-i { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.brow { grid-column: 1; }
+.bev { grid-column: 2; padding: 12px 8px 6px 0; text-align: right; }
+.bev[open] { grid-column: 1 / -1; text-align: left; padding-left: 8px; }
+.bev__b { max-width: 520px; }

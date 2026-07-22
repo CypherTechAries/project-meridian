@@ -109,15 +109,19 @@ function topbar(run: RunResult, mode: Mode = 'ask'): string {
  * ASK MERIDIAN IS A BUTTON. Observation 10: it read as a logo. It now sits beside Briefing, in the
  * same shape and weight as its sibling, with an icon and a real label.
  */
-function modeSwitch(mode: Mode): string {
-  const tab = (m: Mode, label: string, icon: string) =>
-    `<button class="navbtn${mode === m ? ' is-on' : ''}" type="button" data-mode="${m}"
-      aria-pressed="${mode === m}"><span class="navbtn__i" aria-hidden="true">${icon}</span><span
-      class="navbtn__l">${label}</span></button>`
-  return `<nav class="navbar" aria-label="Primary">
-    ${tab('ask', 'Ask MERIDIAN', '✦')}
-    ${tab('analysis', 'Exact numbers', '▦')}
-  </nav>`
+/**
+ * THERE IS NO PRIMARY NAVIGATION.
+ *
+ * "Exact numbers" used to sit here as one of two things the product offered. A first-time reader
+ * cannot say why those values matter, what to look for, or what decision the table helps them
+ * make — so offering it as half the product was a category error.
+ *
+ * The conversation is the product. Technical evidence is reached from a specific claim
+ * ("Show evidence" on a row) or from inside an explanation ("Show the exact evidence"), which is
+ * where it means something. The full table remains as a secondary audit route, not a destination.
+ */
+function modeSwitch(_mode: Mode): string {
+  return ''
 }
 
 function shell(run: RunResult, mode: Mode): string {
@@ -279,7 +283,18 @@ export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'ask'): vo
       void askFromTable(root, run, question)
     })
   }
-  if (mode === 'ask') wireAsk(root, run)
+  if (mode === 'ask') {
+    wireAsk(root, run)
+    /*
+     * SCROLL TO THE NEWEST MESSAGE.
+     *
+     * Without this a new answer lands below the fold and the control that produced it appears to
+     * have done nothing — which is exactly how it looked when "Show how this fits together" was
+     * first wired up. A conversation must always show what it just said.
+     */
+    const thread = root.querySelector<HTMLElement>('.ask__thread')
+    if (thread) thread.scrollTop = thread.scrollHeight
+  }
 
   // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.
   root.querySelectorAll<HTMLElement>('[data-mode]').forEach((btn) => {

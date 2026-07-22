@@ -13,9 +13,9 @@
  */
 
 import { escapeHtml } from '../components/epistemic.ts'
-import { situationDiagram } from '../components/briefing-viz.ts'
+import { causalAnswer } from './causal-answer.ts'
 import { briefingCard } from './briefing-card.ts'
-import { situationModel } from '../engine/presentation.ts'
+import { HELPERS } from '../engine/presentation.ts'
 import type { RunResult } from '../engine/client.ts'
 import { ASK_PATH, apiUrl } from '../engine/api.ts'
 
@@ -136,28 +136,21 @@ export interface AskMessage {
 }
 
 /**
- * Canonical situation diagram. The SAME `situationDiagram` the Briefing renders, at a smaller
- * displayed size — never a simplified redraw, and never an empty placeholder box. A weaker
- * miniature imitation of a good existing component is not an acceptable substitute for resizing
- * the real one.
+ * The canonical explanation of how the situation fits together.
  *
- * Without a run there is no engine state to draw, so the card says so rather than showing an empty
- * frame that a reader could mistake for a map with nothing on it.
+ * It renders the SAME compact causal answer used everywhere else — five beats, with detail behind
+ * one control. It is deliberately not a diagram in a card: a diagram shrunk into a component slot
+ * is a weaker miniature imitation of a good component, which the design rule forbids.
  */
 function canonicalMapCard(run?: RunResult): string {
   if (!run) {
     return `<figure class="askc askc--map" data-component="CanonicalMapCard">
       <figcaption class="askc__t">How this fits together ${statusPill('UNAVAILABLE')}</figcaption>
-      <p class="askc__abs" data-canonical-map="unavailable">Diagram UNAVAILABLE — no run state is loaded.</p>
+      <p class="askc__abs" data-canonical-map="unavailable">Explanation UNAVAILABLE — no run state is loaded.</p>
     </figure>`
   }
-  return `<figure class="askc askc--map" data-component="CanonicalMapCard">
-    <figcaption class="askc__t">How this fits together <span class="m m--e" title="engine result">E</span></figcaption>
-    <div class="askc__map" data-canonical-map="briefing-canonical-map"
-         aria-label="Situation diagram for the fictional Kestral Strait scenario, the same component the Briefing View uses.">
-      ${situationDiagram(situationModel(run))}
-    </div>
-  </figure>`
+  return `<div class="askc askc--map" data-component="CanonicalMapCard"
+       data-canonical-map="briefing-canonical-map">${causalAnswer(run)}</div>`
 }
 
 /**
@@ -307,44 +300,30 @@ export function askHome(): string {
  * before a run has loaded.
  */
 /**
- * The context panel.
+ * THE CONTEXT RAIL IS GONE.
  *
- * Rendered ONLY when there is something worth putting in it. It previously always drew the
- * canonical diagram, which at 320px was an illegible postage stamp — a weaker miniature imitation
- * of a good component, which is precisely what the design rule forbids. The diagram belongs
- * full-width in the thread, where "How this fits together" puts it.
+ * A permanent 320px rail beside the conversation compressed prose into four-word lines, left a
+ * large empty gap that read as a missing image, competed with the answer, and made the whole thing
+ * feel like a dashboard again. Evidence now sits INLINE, beneath the answer that needs it, at a
+ * readable width — and only when a reader opens it.
  *
- * The canonical-map component is excluded here for the same reason: it cannot be read in a rail.
+ * Nothing reserves layout space for content that is not present.
  */
-function ctxPanel(latest: AskResponse | undefined, run?: RunResult): string {
-  const shown = (latest?.components ?? [])
-    .filter((c) => c.component_type !== 'CanonicalMapCard')
-    .slice(0, 2)
-  if (shown.length === 0) return ''
-  return `<aside class="ask__ctx" aria-label="Current context">
-    <h2 class="ask__ctxh">CURRENT CONTEXT</h2>
-    ${shown.map((c) => component(c, run)).join('')}
-    <p class="ask__ctxnote">This panel follows the answer. Session messages are display context
-      only — they are not saved and do not change the simulation.</p>
-  </aside>`
-}
-
 export function askMeridianView(messages: AskMessage[] = [], run?: RunResult): string {
-  const latest = [...messages].reverse().find((m) => m.response)?.response
-  const hasCtx = (latest?.components ?? []).some((c) => c.component_type !== 'CanonicalMapCard')
-  return `<section class="ask${hasCtx ? '' : ' ask--wide'}" aria-label="Ask MERIDIAN">
+  const askedSomething = messages.some((m) => m.role === 'user')
+  return `<section class="ask" aria-label="Ask MERIDIAN">
     <div class="ask__main">
       <div class="ask__thread" role="log" aria-live="polite" aria-label="Conversation">
         ${messages.length === 0 ? askHome() : messages.map((m) =>
           m.kind === 'diagram'
             ? (run
-                ? `<article class="askmsg askmsg--m askmsg--diagram" data-diagram-answer>
+                ? `<article class="askmsg askmsg--m" data-diagram-answer>
                      <header class="askmsg__who">
                        <span class="askmsg__av" aria-hidden="true">M</span>
                        <span class="askmsg__nm">${escapeHtml(ASK_SPEAKER)}</span>
                        <span class="askmsg__ro">READ ONLY</span>
                      </header>
-                     ${situationDiagram(situationModel(run))}
+                     ${causalAnswer(run)}
                    </article>`
                 : '<article class="askmsg askmsg--m askmsg--unavailable"><p class="askmsg__text">Diagram UNAVAILABLE — no run state is loaded.</p></article>')
             : m.kind === 'briefing'
@@ -368,12 +347,34 @@ export function askMeridianView(messages: AskMessage[] = [], run?: RunResult): s
                 </article>`,
         ).join('')}
       </div>
-      ${messages.filter((m) => m.role === 'user').length === 0
-        ? `<div class="asksug" aria-label="Suggested questions">
-             ${STARTERS.map((q) => `<button type="button" class="asksug__b"
-               data-ask-question="${escapeHtml(q)}">${escapeHtml(q)}</button>`).join('')}
-           </div>`
-        : ''}
+      <!--
+        The fade sits exactly at the transcript's bottom edge, as its own element, so it cannot
+        drift over the suggestions or the composer as a positioned pseudo-element did.
+      -->
+      <div class="ask__fade" aria-hidden="true"></div>
+      <!--
+        STARTER QUESTIONS, in normal document flow directly above the composer, and ONLY in the
+        opening state. They never sit over the transcript, and they disappear the moment the reader
+        asks something, so they cannot permanently consume conversation space.
+
+        They are HELPERS: plain-language labels routed to questions the catalogue already answers,
+        so none of them can reliably refuse.
+      -->
+      ${askedSomething
+        ? `<details class="asksug asksug--later">
+             <summary class="asksug__more">Suggested questions</summary>
+             <div class="asksug__list">
+               ${HELPERS.map((h) => `<button type="button" class="asksug__b"
+                 data-ask-question="${escapeHtml(h.question)}">${escapeHtml(h.label)}</button>`).join('')}
+             </div>
+           </details>`
+        : `<div class="asksug" aria-label="Suggested questions">
+             <p class="asksug__lbl">Not sure where to start?</p>
+             <div class="asksug__list">
+               ${HELPERS.map((h) => `<button type="button" class="asksug__b"
+                 data-ask-question="${escapeHtml(h.question)}">${escapeHtml(h.label)}</button>`).join('')}
+             </div>
+           </div>`}
       <form class="askform" data-ask-form>
         <label class="visually-hidden" for="ask-input">Ask a question</label>
         <input id="ask-input" class="askform__in" type="text" autocomplete="off"
@@ -382,6 +383,6 @@ export function askMeridianView(messages: AskMessage[] = [], run?: RunResult): s
         <button type="button" class="askform__reset" data-ask-reset>Clear</button>
       </form>
     </div>
-    ${ctxPanel(latest, run)}
+
   </section>`
 }
