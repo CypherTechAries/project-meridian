@@ -524,3 +524,10 @@
 .bev { grid-column: 2; padding: 12px 8px 6px 0; text-align: right; }
 .bev[open] { grid-column: 1 / -1; text-align: left; padding-left: 8px; }
 .bev__b { max-width: 520px; }
+
+/* Scenario position: short, always visible, never behind a control. */
+.bcard__pos {
+  margin: -6px 0 6px; font-size: 14.5px; line-height: 1.5; color: var(--t-mid);
+  padding-left: 11px; border-left: 2px solid var(--cyan-dim);
+}
+.bcard__poscav { margin: 0 0 18px 13px; font-size: 13px; line-height: 1.55; color: var(--t-faint); max-width: 64ch; }

@@ -978,3 +978,61 @@ export function fiveBeatChain(run: RunResult): string[] {
   if (m.decision) beats.push('The government must choose')
   return beats
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * WHERE THE READER IS IN THE SCENARIO
+ *
+ * The founder test read the situation as "halfway into the simulation and things have slowed down".
+ * It is the LAST recorded point — day five of five, three ticks past the peak. The card said
+ * "Day 5" and never said day five *of what*, so there was no way to know.
+ *
+ * That misreading is not cosmetic: it produced the wrong explanation for why the options felt
+ * weak. A reader who cannot tell where they are cannot judge anything else on the screen.
+ *
+ * EVERY CLAUSE HERE IS DERIVED from the shared packaged state — the day, the horizon and the peak
+ * position. There is deliberately no second factual account: if the run changes, this changes with
+ * it, and a shorter run will not claim to be the end of the scenario.
+ *
+ * Changing the entry point itself is issue #41. This only states, honestly, where the entry point
+ * currently is.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ScenarioPosition {
+  /** One short line. Visible without expanding anything. */
+  line: string
+  /** The standing limit on how the whole card should be read. */
+  caveat: string
+}
+
+export const POSITION_CAVEAT =
+  'This describes the packaged fictional scenario up to this point. It does not predict what ' +
+  'happens next.'
+
+export function scenarioPosition(run: RunResult): ScenarioPosition | null {
+  const state = run.state
+  if (!state) return null
+
+  const days = Math.max(1, Math.round(state.simulated_hours / 24))
+  const dayPhrase = `${dayWord(days)} day${days === 1 ? '' : 's'}`
+
+  // Where in the arc. Only claimed as final when the run actually reached its declared horizon.
+  const where = state.is_final_recorded_tick
+    ? 'Final recorded day of this scenario.'
+    : `Day ${dayWord(days)} of an unfinished scenario — ${dayPhrase} recorded so far.`
+
+  // What political pressure has done, from the same shared field the Briefing and Ask both read.
+  const political = fieldState(run, 'political_pressure')
+  let arc = ''
+  if (political) {
+    if (political.post_peak && political.direction === 'FALLING') {
+      arc = ' Political pressure peaked earlier and is now falling.'
+    } else if (political.direction === 'RISING') {
+      arc = ' Political pressure is still rising.'
+    } else if (political.post_peak) {
+      arc = ' Political pressure has passed its highest point.'
+    }
+  }
+
+  return { line: where + arc, caveat: POSITION_CAVEAT }
+}

@@ -23,7 +23,7 @@ import type { RunResult } from '../engine/client.ts'
 import { escapeHtml } from '../components/epistemic.ts'
 import {
   NOTHING_EXECUTES, ROW_FIELD, claimEvidence, headlineAndAsk, impactRows, plainDecision,
-  primaryDecision,
+  primaryDecision, scenarioPosition,
 } from '../engine/presentation.ts'
 import type { ImpactRow } from '../engine/presentation.ts'
 
@@ -92,6 +92,20 @@ export function briefingCard(run: RunResult): string {
     </header>
 
     <h1 class="bcard__h">${escapeHtml(headline)}</h1>
+
+    <!--
+      WHERE THE READER IS. The founder test read this as "halfway into the simulation"; it is the
+      last recorded point, three ticks past the peak. Visible without expanding anything, because a
+      reader who misjudges the arc misjudges everything else on the card.
+      Every clause is derived from the shared packaged state. Changing the entry point is #41.
+    -->
+    ${(() => {
+      const pos = scenarioPosition(run)
+      return pos
+        ? `<p class="bcard__pos" data-scenario-position>${escapeHtml(pos.line)}</p>
+           <p class="bcard__poscav">${escapeHtml(pos.caveat)}</p>`
+        : ''
+    })()}
 
     <ul class="brows">${rows.map((r) => row(r, run)).join('')}</ul>
 

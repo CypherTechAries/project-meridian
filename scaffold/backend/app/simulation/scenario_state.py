@@ -103,6 +103,12 @@ class ScenarioState(BaseModel):
     scenario_id: str
     seed: int
     ticks: int
+    #: The horizon the scenario DECLARES. Held here so a surface can say where in the arc a reader
+    #: is without re-reading the projection, and so both surfaces cannot disagree about it.
+    horizon_ticks: int
+    #: True when the run has reached its declared horizon — i.e. this is the last recorded point.
+    #: Derived, never asserted: a shorter run must not claim to be the end of the scenario.
+    is_final_recorded_tick: bool
     simulated_hours: float
     fields: dict[str, FieldState] = Field(default_factory=dict)
 
@@ -212,10 +218,14 @@ def scenario_state(
         ]
         fields[field] = derive_field_state(field, float(raw), history)
 
+    horizon = int(projection.get("demonstration_horizon_ticks") or 0)
+    executed = len(trajectory)
     return ScenarioState(
         scenario_id=scenario_id,
         seed=seed,
-        ticks=len(trajectory),
+        ticks=executed,
+        horizon_ticks=horizon,
+        is_final_recorded_tick=bool(horizon) and executed >= horizon,
         simulated_hours=float(projection.get("simulated_hours") or 0.0),
         fields=fields,
     )

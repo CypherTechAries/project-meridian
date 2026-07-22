@@ -301,3 +301,36 @@ def test_starter_answers_avoid_internal_vocabulary(question):
     text = answer_question(question).short_answer.lower()
     for word in TELEMETRY_WORDS:
         assert word not in text, f"{question!r} answer contains internal vocabulary {word!r}"
+
+
+# ── scenario position: horizon and final-tick are derived, not asserted ────────────────────────────
+
+
+def test_state_carries_the_declared_horizon(run, state):
+    """
+    The interface says "final recorded day of this scenario". That claim needs the horizon, and it
+    must come from the same shared state both surfaces read — not from a second account.
+    """
+    assert state.horizon_ticks == run.projection["demonstration_horizon_ticks"]
+    assert state.ticks == run.projection["demonstration_horizon_ticks"]
+    assert state.is_final_recorded_tick is True
+
+
+def test_a_shorter_run_does_not_claim_to_be_the_end(run):
+    """A run stopped early must NOT report itself as the final recorded point."""
+    short = run_demonstration(DemoRunRequest(ticks=12))
+    assert short.state["ticks"] == 12
+    assert short.state["horizon_ticks"] == 20
+    assert short.state["is_final_recorded_tick"] is False
+
+
+def test_the_peak_the_interface_reports_is_the_peak_the_run_produced(state, run):
+    """
+    The founder read the situation as halfway through. It is three ticks past the peak, and the
+    sentence saying so must be checkable against the trajectory rather than trusted.
+    """
+    political = state.get("political_pressure")
+    series = [p["political_pressure"] for p in run.trajectory]
+    assert political.peak_tick == series.index(max(series)) + 1
+    assert political.peak_tick < len(series), "the peak must genuinely be in the past"
+    assert political.post_peak is True

@@ -292,8 +292,11 @@ export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'ask'): vo
      * have done nothing — which is exactly how it looked when "Show how this fits together" was
      * first wired up. A conversation must always show what it just said.
      */
+    // ONLY when a new answer has arrived. On first load the thread holds just the Briefing, and
+    // scrolling to its bottom skipped the headline and the scenario-position line on a short
+    // screen — the reader landed mid-card with no idea what they were looking at.
     const thread = root.querySelector<HTMLElement>('.ask__thread')
-    if (thread) thread.scrollTop = thread.scrollHeight
+    if (thread && askMessages.length > 1) thread.scrollTop = thread.scrollHeight
   }
 
   // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.
