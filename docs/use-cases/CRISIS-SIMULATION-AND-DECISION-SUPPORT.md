@@ -62,6 +62,14 @@ Verified against `main`:
   Briefing is a dashboard with a dominant map and a decision stack, and Analysis is the panel wall
   the first-time user could not read.*
 
+## The limitation to read first
+
+**Selected decisions do not yet change the run.** A submitted action is recorded and the tick loop
+never reads it, so the demonstration explains a packaged state and supports inspectable but
+unexecuted choices. The interface states this wherever a choice is shown. Closing it is
+[#42](https://github.com/CypherTechAries/project-meridian/issues/42), and it is the difference
+between a decision-support demonstration and a decision simulation.
+
 ## What is still missing
 
 - **A second scenario.** One exists. Whether a second loads and completes has never been tested.
