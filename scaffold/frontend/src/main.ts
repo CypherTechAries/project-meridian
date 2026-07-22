@@ -237,12 +237,48 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
   })
 }
 
+/**
+ * Send a question that originated outside the Ask screen (a technical-table row).
+ *
+ * The user message is appended by the caller before the mode switch, so the question is visible
+ * immediately rather than appearing only once the answer resolves.
+ */
+async function askFromTable(root: HTMLElement, run: RunResult, question: string): Promise<void> {
+  try {
+    const res = await fetch(ASK_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question }),
+    })
+    if (!res.ok) throw new Error(`the engine returned HTTP ${res.status}`)
+    const response = (await res.json()) as AskResponse
+    if (!response || typeof response.supported !== 'boolean' || typeof response.short_answer !== 'string') {
+      throw new Error('the response was not a MERIDIAN answer')
+    }
+    askMessages = [...askMessages, { role: 'meridian', text: '', response }]
+  } catch (e) {
+    const why = e instanceof Error ? e.message : 'the engine could not be reached'
+    askMessages = [...askMessages, {
+      role: 'meridian',
+      text: `Answer UNAVAILABLE — ${why}. Nothing has been assumed in its place.`,
+    }]
+  }
+  mount(root, run, 'ask')
+}
+
 export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'ask'): void {
   currentMode = mode
   // Releases the Analysis viewport lock on the reading screens — see #app in styles.css.
   root.dataset.mode = mode
   root.innerHTML = shell(run, mode)
-  if (mode === 'analysis') wireTechnicalTable(root)
+  if (mode === 'analysis') {
+    // Selecting a row returns to the conversation and asks. Evidence is a question, not a panel.
+    wireTechnicalTable(root, (question) => {
+      askMessages = [...askMessages, { role: 'user', text: question }]
+      mount(root, run, 'ask')
+      void askFromTable(root, run, question)
+    })
+  }
   if (mode === 'ask') wireAsk(root, run)
 
   // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.

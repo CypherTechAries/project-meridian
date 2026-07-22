@@ -145,17 +145,25 @@ export function situationDiagram(m: SituationModel): string {
   // 5 · who is affected
   parts.push(connector(y))
   y += gap
-  const gh = 66 + m.groups.length * 32
+  // TWO LABELLED FACTS, never one bar for both. A single bar cannot carry "how many people" and
+  // "how badly hit"; readers reasonably assume the longest bar is the biggest group, and here the
+  // hardest-hit group is the SMALLEST. The columns are headed so the two cannot be confused.
+  const gh = 92 + m.groups.length * 32
   parts.push(`<g class="sd__band" data-stage="groups">
     <rect class="sd__band-bg" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${gh}" rx="8"/>
     <text class="sd__band-t" x="${PAD_X + 20}" y="${y + 30}">Who this reaches</text>
+    <text class="sd__colh" x="${PAD_X + 300}" y="${y + 52}">Share of population</text>
+    <text class="sd__colh" x="520" y="${y + 52}">Impact on this group</text>
     ${m.groups
       .map((g, i) => {
-        const gy = y + 56 + i * 32
-        return `<g>
+        const gy = y + 78 + i * 32
+        return `<g data-group-row="${escapeHtml(g.name)}">
           <text class="sd__grp" x="${PAD_X + 20}" y="${gy + 8}">${escapeHtml(g.name)}</text>
-          <text class="sd__grp-share" x="${PAD_X + 300}" y="${gy + 8}">${g.sharePercent}% of people</text>
-          ${bar(g.value, 520, gy + 1, 170)}
+          <text class="sd__grp-share" x="${PAD_X + 300}" y="${gy + 8}">${g.sharePercent}%</text>
+          ${bar(g.value, 520, gy + 1, 150)}
+          <text class="sd__grp-lvl" x="682" y="${gy + 8}">${escapeHtml(g.level)}${
+            g.mostAffected ? '<tspan class="sd__grp-top"> · most affected</tspan>' : ''
+          }</text>
         </g>`
       })
       .join('')}

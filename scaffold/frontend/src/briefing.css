@@ -281,12 +281,25 @@
 /* The two-second read. Nothing above it, nothing competing with it. */
 .bcard__h { margin: 0 0 18px; font-size: 27px; line-height: 1.25; font-weight: 700; color: var(--t-hi); }
 
+.brows__hint { margin: 0 0 4px; font-size: 12.5px; color: var(--t-faint); }
 .brows { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; }
+/*
+ * THE ROW IS THE CONTROL. A repeated button on every row read as clutter; the label now appears on
+ * hover or focus. It is a real <button>, so keyboard and screen-reader support are inherent.
+ */
 .brow {
-  display: grid; grid-template-columns: 86px minmax(0, 1fr) auto auto; align-items: baseline;
-  gap: 12px; padding: 10px 0; border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: 86px minmax(0, 1fr) auto 108px; align-items: baseline;
+  gap: 12px; padding: 10px 8px;
+  width: 100%; text-align: left; background: none; font: inherit; color: inherit;
+  border-radius: 6px;
+  /* border:0 FIRST — a <button> carries a default border on all four sides, which made the
+     interactive rows read as outlined boxes beside the inert one. */
+  border: 0; border-top: 1px solid var(--line);
 }
-.brow:last-child { border-bottom: 1px solid var(--line); }
+.brows li:last-child .brow { border-bottom: 1px solid var(--line); }
+.brow--ask { cursor: pointer; }
+.brow--ask:hover, .brow--ask:focus-visible { background: rgba(63, 208, 232, 0.07); }
+.brow--ask:hover .brow__ask, .brow--ask:focus-visible .brow__ask { opacity: 1; }
 .brow__t { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-low); }
 .brow__l { font-size: 15px; line-height: 1.5; color: var(--t-mid); }
 /* Direction never relies on colour alone — the word is always beside the arrow. */
@@ -295,13 +308,13 @@
 .brow__d--falling { color: #4fc98a; }
 .brow__d--steady { color: var(--t-low); }
 .brow__d--none { color: var(--t-faint); font-style: italic; font-weight: 400; }
+/* Appears on hover or focus only. Opacity, not display, so the column never reflows. */
 .brow__ask {
-  font-size: 12px; color: var(--cyan); background: none; border: 1px solid transparent;
-  border-radius: 4px; padding: 3px 7px; cursor: pointer; white-space: nowrap;
+  font-size: 12px; color: var(--cyan); white-space: nowrap; text-align: right;
+  opacity: 0; transition: opacity 90ms ease;
 }
-.brow__ask:hover { border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.08); }
-/* No control where the catalogue has no question — a button that always refuses is worse. */
-.brow__ask--none { color: var(--t-faint); cursor: default; }
+/* No control where the catalogue has no question — a row that always refuses is worse. */
+.brow__ask--none { opacity: 0; }
 
 .bdec {
   border-left: 3px solid var(--cyan); background: rgba(63, 208, 232, 0.05);
@@ -366,3 +379,14 @@
   margin-left: 10px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
   color: var(--cyan); border: 1px solid var(--cyan-dim); border-radius: 3px; padding: 2px 5px;
 }
+.sd__colh { fill: #6f8ba1; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.sd__grp-lvl { fill: #a8c0d3; font-size: 13px; }
+.sd__grp-top { fill: #f0a742; font-weight: 600; }
+.tt__hint { margin: -14px 0 22px; font-size: 13px; color: var(--t-faint); max-width: 74ch; }
+.tt__r--ask { cursor: pointer; }
+.tt__r--ask:hover td, .tt__r--ask:focus-visible td { background: rgba(63, 208, 232, 0.07); }
+.tt__r--ask:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.tt__askc { width: 118px; text-align: right; }
+/* Appears on hover or focus only, so eighteen rows do not read as eighteen buttons. */
+.tt__ask { font-size: 12px; color: var(--cyan); white-space: nowrap; opacity: 0; transition: opacity 90ms ease; }
+.tt__r--ask:hover .tt__ask, .tt__r--ask:focus-visible .tt__ask { opacity: 1; }

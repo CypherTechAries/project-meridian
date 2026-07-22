@@ -12,7 +12,7 @@
  *
  * THREE DECLARED DEPTHS, and detail never leaks upward:
  *   1 · the sentence  — here
- *   2 · the explanation — Ask, by clicking "Explain this"
+ *   2 · the explanation — Ask, by selecting a row
  *   3 · the number    — technical evidence, and nowhere else
  *
  * The per-section "Show where this comes from" disclosures are gone. Their bodies were raw field
@@ -29,24 +29,34 @@ const ARROW: Record<string, string> = { rising: '↑', falling: '↓', steady: '
 /**
  * One impact row.
  *
- * "Explain this" sends a question the catalogue can answer. Where it has none — politics, today —
- * no button is offered, because a control that reliably produces a refusal is worse than no
- * control. That gap is issue #37 and it is meant to be visible.
+ * THE ROW IS THE CONTROL. A repeated "Explain this" button on every row read as clutter, so the
+ * whole row is the affordance and the label appears on hover or focus. It is a real `<button>`, so
+ * keyboard access and screen-reader semantics come for free rather than being bolted on.
+ *
+ * "Ask about this" rather than "Explain this", because it describes what actually happens: a
+ * question is sent to MERIDIAN.
+ *
+ * Where the catalogue has no question — politics, today — the row is NOT a control. A row that
+ * reliably produces a refusal is worse than a row that does nothing. That gap is issue #37 and it
+ * is meant to be visible.
  */
 function row(r: ImpactRow): string {
-  return `<li class="brow" data-row="${r.id}">
-    <span class="brow__t">${escapeHtml(r.title)}</span>
+  const inner = `<span class="brow__t">${escapeHtml(r.title)}</span>
     <span class="brow__l">${escapeHtml(r.line)}</span>
     ${r.direction && r.directionSubject
       ? `<span class="brow__d brow__d--${r.direction}">
            <span aria-hidden="true">${ARROW[r.direction] ?? ''}</span>
            <span class="visually-hidden">${escapeHtml(r.directionSubject)} is </span>${escapeHtml(r.direction)}</span>`
-      : '<span class="brow__d brow__d--none">not established</span>'}
-    ${r.askQuestion
-      ? `<button type="button" class="brow__ask" data-ask-question="${escapeHtml(r.askQuestion)}"
-          aria-label="Explain ${escapeHtml(r.title)}">Explain this</button>`
-      : '<span class="brow__ask brow__ask--none" title="No declared question covers this yet">—</span>'}
-  </li>`
+      : '<span class="brow__d brow__d--none">not established</span>'}`
+
+  if (!r.askQuestion) {
+    return `<li><div class="brow brow--static" data-row="${escapeHtml(r.id)}">${inner}
+      <span class="brow__ask brow__ask--none">&nbsp;</span></div></li>`
+  }
+  return `<li><button type="button" class="brow brow--ask" data-row="${escapeHtml(r.id)}"
+      data-ask-question="${escapeHtml(r.askQuestion)}"
+      aria-label="Ask MERIDIAN about ${escapeHtml(r.title.toLowerCase())}">${inner}
+    <span class="brow__ask" aria-hidden="true">Ask about this →</span></button></li>`
 }
 
 /**
@@ -70,6 +80,7 @@ export function briefingCard(run: RunResult): string {
 
     <h1 class="bcard__h">${escapeHtml(headline)}</h1>
 
+    <p class="brows__hint">Select any row to ask MERIDIAN about it.</p>
     <ul class="brows">${rows.map(row).join('')}</ul>
 
     ${d

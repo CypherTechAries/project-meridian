@@ -114,20 +114,36 @@ describe('Q4-Q5 · what can I ask, and what is not known', () => {
     expect(chips.some((c) => /remains uncertain|does MERIDIAN know/i.test(c ?? ''))).toBe(true)
   })
 
-  it('Q4a · a row offers a route into an answer, and only where one exists', () => {
-    const rows = impactRows(run)
-    for (const r of rows) {
-      const el = card().querySelector(`[data-row="${r.id}"] .brow__ask`)!
+  it('Q4a · the ROW is the control, and only where a question exists', () => {
+    // One instruction, not a button on every row.
+    expect(root.querySelector('.brows__hint')?.textContent)
+      .toMatch(/select any row to ask meridian about it/i)
+
+    for (const r of impactRows(run)) {
+      const el = card().querySelector<HTMLElement>(`[data-row="${r.id}"]`)!
       if (r.askQuestion) {
+        // A real button: keyboard operation and screen-reader semantics come for free.
         expect(el.tagName, r.id).toBe('BUTTON')
-        expect((el as HTMLElement).dataset.askQuestion).toBe(r.askQuestion)
+        expect(el.dataset.askQuestion).toBe(r.askQuestion)
         expect(STARTERS).toContain(r.askQuestion)
+        // "Ask about this" describes what happens; "Explain this" did not.
+        expect(el.querySelector('.brow__ask')?.textContent).toMatch(/ask about this/i)
+        expect(el.getAttribute('aria-label')).toMatch(/^Ask MERIDIAN about /)
       } else {
-        // Politics has no catalogue question yet (issue #37). A control that always refuses would
-        // be worse than none, so the gap is left visible.
+        // Politics has no catalogue question yet (issue #37). A row that always refuses would be
+        // worse than an inert one, so the gap is left visible.
         expect(el.tagName, r.id).not.toBe('BUTTON')
+        expect(el.className).toContain('brow--static')
       }
     }
+  })
+
+  it('Q4b · selecting a row asks the question rather than expanding a panel', () => {
+    const economy = card().querySelector<HTMLElement>('[data-row="economy"]')!
+    economy.click()
+    // The question appears in the thread as something the user asked.
+    expect(root.querySelector('.askmsg--u')?.textContent)
+      .toContain('How are the economy and supply chains reacting?')
   })
 })
 

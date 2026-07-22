@@ -623,10 +623,21 @@ export interface SituationStage {
 
 export interface SituationGroup {
   name: string
-  /** 0..1, this group's own pressure value. */
+  /** 0..1, how hard this group is hit. The bar length, and NOTHING else. */
   value: number
-  /** Whole per cent of the population. Never a decimal. */
+  /** Whole per cent of the population. Never a decimal, and never the bar. */
   sharePercent: number
+  /**
+   * Plain level word for `value`, on the same declared thresholds every other level uses.
+   *
+   * NOTE: at the packaged state the worst-hit group sits at 0.33, which is LOW on those
+   * thresholds. Labelling it "very high" would be a false absolute claim — the same conflation of
+   * absolute level with relative position that made the Briefing and Ask contradict each other.
+   * The relative fact is carried separately by `mostAffected`.
+   */
+  level: string
+  /** True for the hardest-hit group. This is the RELATIVE fact, kept apart from the level. */
+  mostAffected: boolean
 }
 
 export interface SituationModel {
@@ -644,6 +655,14 @@ export interface SituationModel {
 
 const NOT_RECORDED =
   'MERIDIAN does not record that value at every step, so no change line is shown.'
+
+/** The declared thresholds, applied to a bare 0..1 value. Same words, same boundaries, one place. */
+function levelWord(v: number): string {
+  if (v >= 0.66) return 'high'
+  if (v >= 0.33) return 'moderate'
+  if (v > 0) return 'low'
+  return 'none recorded'
+}
 
 /**
  * Declared once, here, because both the Briefing and the situation diagram state it. `briefing.ts`
@@ -701,10 +720,12 @@ export function situationModel(run: RunResult): SituationModel {
     .slice()
     .sort((a, b) => b.value - a.value)
     .slice(0, 3)
-    .map((c) => ({
+    .map((c, i) => ({
       name: c.label.replace(/-/g, ' '),
       value: Math.min(1, Math.max(0, c.value)),
       sharePercent: Math.round(c.population_share * 100),
+      level: levelWord(c.value),
+      mostAffected: i === 0,
     }))
 
   const primary = primaryDecision(p)
@@ -715,8 +736,8 @@ export function situationModel(run: RunResult): SituationModel {
     stages,
     groups,
     groupsNote:
-      'Bar length is how much each group is affected. These are averages — MERIDIAN does not ' +
-      'model the individuals inside them.',
+      'The bar is impact only — not how many people are in the group. These are averages; ' +
+      'MERIDIAN does not model the individuals inside them.',
     decision: primary ? plainDecision(primary) : null,
     otherChoices: Math.max(0, p.government_options.length - (primary ? 1 : 0)),
     executionNote: NOTHING_EXECUTES,
