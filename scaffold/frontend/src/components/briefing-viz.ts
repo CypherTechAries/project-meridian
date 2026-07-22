@@ -152,17 +152,21 @@ export function situationDiagram(m: SituationModel): string {
   parts.push(`<g class="sd__band" data-stage="groups">
     <rect class="sd__band-bg" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${gh}" rx="8"/>
     <text class="sd__band-t" x="${PAD_X + 20}" y="${y + 30}">Who this reaches</text>
-    <text class="sd__colh" x="${PAD_X + 300}" y="${y + 52}">Share of population</text>
-    <text class="sd__colh" x="520" y="${y + 52}">Impact on this group</text>
+    <text class="sd__colh" x="420" y="${y + 52}" text-anchor="end">Share of population</text>
+    <text class="sd__colh" x="440" y="${y + 52}">Impact on this group</text>
     ${m.groups
       .map((g, i) => {
         const gy = y + 78 + i * 32
         return `<g data-group-row="${escapeHtml(g.name)}">
           <text class="sd__grp" x="${PAD_X + 20}" y="${gy + 8}">${escapeHtml(g.name)}</text>
-          <text class="sd__grp-share" x="${PAD_X + 300}" y="${gy + 8}">${g.sharePercent}%</text>
-          ${bar(g.value, 520, gy + 1, 150)}
-          <text class="sd__grp-lvl" x="682" y="${gy + 8}">${escapeHtml(g.level)}${
-            g.mostAffected ? '<tspan class="sd__grp-top"> · most affected</tspan>' : ''
+          <text class="sd__grp-share" x="420" y="${gy + 8}" text-anchor="end">${g.sharePercent}%</text>
+          ${bar(g.value, 440, gy + 1, 130)}
+          <text class="sd__grp-lvl" x="582" y="${gy + 8}">${escapeHtml(g.level)}${
+            g.mostAffected
+              // "most affected" could be read as "badly affected". Naming the comparison set makes
+              // it impossible to mistake "highest here" for "high in absolute terms".
+              ? '<tspan class="sd__grp-top"> · highest impact among the groups shown</tspan>'
+              : ''
           }</text>
         </g>`
       })
