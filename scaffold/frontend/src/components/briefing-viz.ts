@@ -1,171 +1,213 @@
 /**
- * Briefing crisis visual and trend lines.
+ * Briefing situation diagram and trend lines.
  *
- * Original SVG throughout: atmospheric water, haze bands, dimensional invented landmasses with lit
- * coastal settlement points, a hatched blockade disc, and clearly differentiated original (blocked)
- * and rerouted flows with arrowheads.
+ * THIS IS NOT A MAP, AND DELIBERATELY SO (issue #33).
  *
- * NOT a real coastline, not a tile service, not traced from any real place. That is a safety
- * property (B5), not an aesthetic one.
+ * MERIDIAN's engine has no spatial model: no coordinates, no geometry, no port entities, and
+ * political pressure is a single scalar with no location. A map would have to invent placement for
+ * facts the scenario does not hold. The previous version did exactly that — invented coastlines,
+ * decorative settlement lights, and two place names ("Northshore", "Southport") that were
+ * hard-coded in this file and are not scenario entities. It failed its first cold usability test.
  *
- * Callouts are PASSED IN, already derived from engine state by `engine/presentation.ts`. This
- * module renders what it is given and invents nothing.
+ * What replaces it shows STRUCTURE: the causal chain the engine actually models, arranged by
+ * relationship. One thing led to another. Nothing is anywhere.
+ *
+ * The model is built by `engine/presentation.ts`. This module renders what it is given and invents
+ * nothing — no value, no group, no place, and no magnitude that is not in the model.
  */
 
-import type { RunResult } from '../engine/client.ts'
-import { stageByField } from '../engine/client.ts'
+import type { SituationModel, SituationStage } from '../engine/presentation.ts'
 import { escapeHtml } from './epistemic.ts'
 
-/**
- * Deterministic settlement lights.
- *
- * Seeded rather than random so the same run renders the same coastline every time — an unseeded
- * sprinkle would make screenshots differ between captures of identical state, which would quietly
- * contradict the project's determinism claim.
- */
-function lights(count: number, seed: number, path: (t: number) => [number, number]): string {
-  let x = seed
-  const out: string[] = []
-  for (let i = 0; i < count; i++) {
-    x = (x * 1103515245 + 12345) % 2147483648
-    const t = (x / 2147483648 + i / count) % 1
-    const [cx, cy] = path(t)
-    const r = 0.7 + ((x >> 7) % 10) / 12
-    const o = 0.22 + ((x >> 11) % 10) / 18
-    out.push(
-      `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(2)}" fill="#ffd9a0" opacity="${o.toFixed(2)}"/>`,
-    )
-  }
-  return out.join('')
+const W = 960
+const BAND_H = 92
+const PAD_X = 26
+
+/** Magnitude bar. Length is the value; the level word beside it carries the meaning in text. */
+function bar(value: number, x: number, y: number, w: number): string {
+  const fill = Math.max(2, Math.round(w * value))
+  return `<g aria-hidden="true">
+    <rect class="sd__bar-bg" x="${x}" y="${y}" width="${w}" height="8" rx="4"/>
+    <rect class="sd__bar" x="${x}" y="${y}" width="${fill}" height="8" rx="4"/>
+  </g>`
 }
 
-export function briefingMap(run: RunResult, callouts: string[], days: number): string {
-  const p = run.projection
-  const r = Math.min(1, Math.max(0, stageByField(p, 'rerouting_level')?.value ?? 0))
-  const blockade = p.incident_active
-  const rerouteOpacity = 0.6 + r * 0.4
-  const rerouteWidth = 2.2 + r * 1.6
-  const directOpacity = 0.25 + (1 - r) * 0.45
-
-  const northCoast = (t: number): [number, number] => [40 + t * 880, 106 - Math.sin(t * 5.2) * 18 - t * 10]
-  const southCoast = (t: number): [number, number] => [40 + t * 880, 328 + Math.sin(t * 4.4 + 1) * 16 + t * 6]
-
-  const anchors = [
-    { x: 214, y: 124, ax: 268, ay: 104 },
-    { x: 706, y: 100, ax: 620, ay: 172 },
-    { x: 470, y: 306, ax: 470, ay: 262 },
+/**
+ * The recorded values over time. No smoothing, no extrapolation, no forward projection.
+ * Absent rather than flat where the value is not recorded — a flat line would be a claim.
+ *
+ * THE PEAK IS MARKED, and that is not decoration. The line covers the whole scenario, while the
+ * direction word beside it describes the recent window. For political pressure those disagree on
+ * sight: the line climbs steeply and the label reads "falling", because the value rose for
+ * seventeen steps and has edged down since. Marking the turn is what makes both true statements
+ * legible at once — the same problem as reporting a level without its distance from its own peak.
+ */
+function spark(values: number[], x: number, y: number, w: number, h: number): string {
+  if (values.length < 2) return ''
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const span = hi - lo || 1
+  const at = (v: number, i: number): [number, number] => [
+    x + (i / (values.length - 1)) * w,
+    y + h - ((v - lo) / span) * h,
   ]
-  const pills = callouts
-    .map((c, i) => {
-      const a = anchors[i]
-      if (!a) return ''
-      const w = 40 + c.length * 6.8
-      return `<g class="cal">
-        <line class="cal__lead" x1="${a.x}" y1="${a.y}" x2="${a.ax}" y2="${a.ay}"/>
-        <g transform="translate(${(a.x - w / 2).toFixed(0)},${a.y - 15})">
-          <rect class="cal__pill" width="${w.toFixed(0)}" height="30" rx="15"/>
-          <circle class="cal__num-bg" cx="17" cy="15" r="10"/>
-          <text class="cal__num" x="17" y="19.5" text-anchor="middle">${i + 1}</text>
-          <text class="cal__txt" x="34" y="19.5">${escapeHtml(c)}</text>
-        </g>
-      </g>`
-    })
-    .join('')
+  const pts = values.map((v, i) => at(v, i).map((n) => n.toFixed(1)).join(',')).join(' ')
 
-  const swell = [176, 206, 236, 266]
-    .map((y) => `<path d="M0,${y} C160,${y - 12} 320,${y + 12} 480,${y} C640,${y - 12} 800,${y + 12} 960,${y}"/>`)
-    .join('')
+  const peakIndex = values.indexOf(hi)
+  const [px, py] = at(hi, peakIndex)
+  const [lx, ly] = at(values[values.length - 1] ?? 0, values.length - 1)
+  // Only worth marking when the peak is genuinely behind us; otherwise the peak IS the last point.
+  const turned = peakIndex < values.length - 1
 
-  return `<svg class="bmap" viewBox="0 0 960 430" preserveAspectRatio="xMidYMid slice" role="img"
-      aria-label="Fictional map of the Kestral Strait. ${
-        blockade
-          ? 'A blockade zone closes the centre of the strait and shipping is diverted south.'
-          : 'No incident is active.'
-      } Northshore lies to the north and Southport to the south. Invented geography, no real-world map data.">
-    <defs>
-      <linearGradient id="bw" x1="0" y1="0" x2="0.3" y2="1">
-        <stop offset="0%" stop-color="#0d2236"/><stop offset="45%" stop-color="#0a1a2a"/>
-        <stop offset="100%" stop-color="#071320"/>
-      </linearGradient>
-      <linearGradient id="bln" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#22394e"/><stop offset="100%" stop-color="#2d5271"/>
-      </linearGradient>
-      <linearGradient id="bls" x1="0" y1="1" x2="0" y2="0">
-        <stop offset="0%" stop-color="#22394e"/><stop offset="100%" stop-color="#2d5271"/>
-      </linearGradient>
-      <radialGradient id="bhot">
-        <stop offset="0%" stop-color="#ff5c6a" stop-opacity="0.40"/>
-        <stop offset="100%" stop-color="#ff5c6a" stop-opacity="0"/>
-      </radialGradient>
-      <radialGradient id="bhaze" cx="0.5" cy="0.5">
-        <stop offset="0%" stop-color="#5b86a8" stop-opacity="0.15"/>
-        <stop offset="100%" stop-color="#5b86a8" stop-opacity="0"/>
-      </radialGradient>
-      <filter id="bsoft"><feGaussianBlur stdDeviation="10"/></filter>
-      <marker id="bmA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse">
-        <path d="M0,1.5 L9,5 L0,8.5 z" fill="#3fd0e8"/>
-      </marker>
-      <marker id="bmB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-        <path d="M0,1.5 L9,5 L0,8.5 z" fill="#f0a742"/>
-      </marker>
-      <pattern id="bhatch" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-        <line x1="0" y1="0" x2="0" y2="9" stroke="#ff5c6a" stroke-opacity="0.42" stroke-width="1.6"/>
-      </pattern>
-    </defs>
-
-    <rect width="960" height="430" fill="url(#bw)"/>
-    <g opacity="0.6" filter="url(#bsoft)" aria-hidden="true">
-      <ellipse cx="250" cy="230" rx="270" ry="76" fill="url(#bhaze)"/>
-      <ellipse cx="740" cy="196" rx="240" ry="70" fill="url(#bhaze)"/>
-    </g>
-    <g class="bmap__swell" aria-hidden="true">${swell}</g>
-
-    <path fill="url(#bln)" d="M0,0 L960,0 L960,62 C880,76 830,104 770,110 C706,116 668,92 606,102
-      C548,112 512,134 448,126 C388,118 366,88 306,96 C246,104 206,128 142,118
-      C92,110 44,86 0,74 Z"/>
-    <path fill="url(#bls)" d="M0,430 L960,430 L960,344 C880,326 820,344 756,340 C692,336 654,310 592,316
-      C534,322 502,348 442,342 C382,336 350,306 288,314 C222,323 158,356 88,370 C56,376 26,378 0,380 Z"/>
-    <path class="bmap__coast" fill="none" d="M0,74 C44,86 92,110 142,118 C206,128 246,104 306,96
-      C366,88 388,118 448,126 C512,134 548,112 606,102 C668,92 706,116 770,110 C830,104 880,76 960,62"/>
-    <path class="bmap__coast" fill="none" d="M0,380 C26,378 56,376 88,370 C158,356 222,323 288,314
-      C350,306 382,336 442,342 C502,348 534,322 592,316 C654,310 692,336 756,340 C820,344 880,326 960,344"/>
-    <g aria-hidden="true">${lights(46, 7919, northCoast)}${lights(38, 104729, southCoast)}</g>
-
+  return `<g aria-hidden="true">
+    <polyline class="sd__spark" points="${pts}"/>
     ${
-      blockade
-        ? `<g>
-             <circle cx="470" cy="208" r="104" fill="url(#bhot)"/>
-             <circle class="bmap__zone" cx="470" cy="208" r="64" fill="url(#bhatch)"/>
-             <g transform="translate(470,192)" class="bmap__ship" aria-hidden="true">
-               <path d="M-14,4 L14,4 L10,12 L-10,12 Z"/><path d="M-1,4 L-1,-7 L8,-2.5 L-1,-2.5 Z"/>
-             </g>
-             <text class="bmap__zone-t" x="470" y="234" text-anchor="middle">BLOCKADE ZONE</text>
-             <text class="bmap__zone-s" x="470" y="250" text-anchor="middle">Active for ${days} day${days === 1 ? '' : 's'}</text>
-           </g>`
+      turned
+        ? `<circle class="sd__spark-peak" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.8"/>
+           <text class="sd__spark-peakl" x="${px.toFixed(1)}" y="${(py - 7).toFixed(1)}" text-anchor="middle">highest</text>`
         : ''
     }
+    <circle class="sd__spark-end" cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.6"/>
+  </g>`
+}
 
-    <path class="rt rt--blocked" marker-end="url(#bmB)" style="opacity:${directOpacity.toFixed(2)}"
-      d="M150,286 C300,302 380,272 470,262 C580,250 700,282 830,296"/>
-    <path class="rt rt--reroute" marker-end="url(#bmA)"
-      style="opacity:${rerouteOpacity.toFixed(2)};stroke-width:${rerouteWidth.toFixed(2)}"
-      d="M150,276 C300,244 380,190 470,182 C590,170 720,178 852,188"/>
+const ARROWS: Record<string, string> = { rising: '↑', falling: '↓', steady: '→' }
 
-    <text class="bmap__place" x="480" y="80" text-anchor="middle">NORTHSHORE</text>
-    <text class="bmap__place" x="480" y="366" text-anchor="middle">SOUTHPORT</text>
-    <text class="bmap__strait" x="150" y="222">KESTRAL STRAIT</text>
+function stageBand(s: SituationStage, y: number): string {
+  // The sentence needs room. At 470 the pressure sentence ran under the bar.
+  const barX = 520
+  const barW = 170
+  const sparkX = 726
+  return `<g class="sd__band" data-stage="${escapeHtml(s.id)}">
+    <rect class="sd__band-bg" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${BAND_H - 14}" rx="8"/>
+    <text class="sd__band-t" x="${PAD_X + 20}" y="${y + 30}">${escapeHtml(s.title)}</text>
+    <text class="sd__band-s" x="${PAD_X + 20}" y="${y + 54}">${escapeHtml(s.sentence)}</text>
+    ${
+      s.level !== null && s.magnitude !== null
+        ? `<text class="sd__lvl" x="${barX}" y="${y + 30}">${escapeHtml(s.level)}${
+            s.direction
+              ? ` <tspan class="sd__dir sd__dir--${s.direction}">${ARROWS[s.direction] ?? ''} ${escapeHtml(s.direction)}</tspan>`
+              : ''
+          }</text>
+           ${bar(s.magnitude, barX, y + 42, barW)}`
+        : `<text class="sd__lvl sd__lvl--none" x="${barX}" y="${y + 30}">not established</text>`
+    }
+    ${
+      s.series.length >= 2
+        ? `${spark(s.series, sparkX, y + 22, 170, 26)}
+           <text class="sd__sparkl" x="${sparkX}" y="${y + 64}">start of the scenario to now</text>`
+        : `<text class="sd__sparkl sd__sparkl--none" x="${sparkX}" y="${y + 36}">no change line —</text>
+           <text class="sd__sparkl sd__sparkl--none" x="${sparkX}" y="${y + 52}">not recorded each step</text>`
+    }
+  </g>`
+}
 
-    ${pills}
+function connector(y: number): string {
+  return `<g aria-hidden="true">
+    <line class="sd__flow" x1="${W / 2}" y1="${y}" x2="${W / 2}" y2="${y + 12}"/>
+    <path class="sd__flow-head" d="M${W / 2 - 5},${y + 10} L${W / 2},${y + 18} L${W / 2 + 5},${y + 10} Z"/>
+  </g>`
+}
 
-    <g class="lgd" transform="translate(22,268)">
-      <rect class="lgd__bg" width="246" height="82" rx="6"/>
-      <rect x="16" y="16" width="17" height="10" fill="url(#bhatch)" stroke="#ff5c6a" stroke-opacity="0.5"/>
-      <text class="lgd__t" x="42" y="25">Blockade zone</text>
-      <line x1="16" y1="45" x2="33" y2="45" class="rt rt--blocked" stroke-dasharray="5 4"/>
-      <text class="lgd__t" x="42" y="49">Original shipping route (blocked)</text>
-      <line x1="16" y1="67" x2="33" y2="67" class="rt rt--reroute" stroke-dasharray="5 4"/>
-      <text class="lgd__t" x="42" y="71">Rerouted shipping flow</text>
-    </g>
+/**
+ * The situation diagram.
+ *
+ * Reads top to bottom: what closed, what followed from it, who it reached, what pressure built, and
+ * what choice is open. **Position carries CONSEQUENCE, never location.**
+ */
+export function situationDiagram(m: SituationModel): string {
+  const gap = 20
+  let y = 66
+  const parts: string[] = []
+
+  // 1 · what is blocked
+  parts.push(`<g data-stage="origin">
+    <rect class="sd__origin" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${BAND_H - 14}" rx="8"/>
+    <text class="sd__origin-t" x="${PAD_X + 20}" y="${y + 32}">${
+      m.blockadeActive ? 'THE STRAIT IS CLOSED' : 'NO INCIDENT IS ACTIVE'
+    }</text>
+    <text class="sd__origin-s" x="${PAD_X + 20}" y="${y + 58}">${
+      m.blockadeActive
+        ? `A blockade has closed it for ${m.days} day${m.days === 1 ? '' : 's'}. Everything below follows from that.`
+        : 'Nothing below is being driven by an incident.'
+    }</text>
+  </g>`)
+  y += BAND_H - 14
+
+  // 2–4 · the chain the engine actually models
+  for (const s of m.stages) {
+    parts.push(connector(y))
+    y += gap
+    parts.push(stageBand(s, y))
+    y += BAND_H - 14
+  }
+
+  // 5 · who is affected
+  parts.push(connector(y))
+  y += gap
+  // TWO LABELLED FACTS, never one bar for both. A single bar cannot carry "how many people" and
+  // "how badly hit"; readers reasonably assume the longest bar is the biggest group, and here the
+  // hardest-hit group is the SMALLEST. The columns are headed so the two cannot be confused.
+  const gh = 92 + m.groups.length * 32
+  parts.push(`<g class="sd__band" data-stage="groups">
+    <rect class="sd__band-bg" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${gh}" rx="8"/>
+    <text class="sd__band-t" x="${PAD_X + 20}" y="${y + 30}">Who this reaches</text>
+    <text class="sd__colh" x="420" y="${y + 52}" text-anchor="end">Share of population</text>
+    <text class="sd__colh" x="440" y="${y + 52}">Impact on this group</text>
+    ${m.groups
+      .map((g, i) => {
+        const gy = y + 78 + i * 32
+        return `<g data-group-row="${escapeHtml(g.name)}">
+          <text class="sd__grp" x="${PAD_X + 20}" y="${gy + 8}">${escapeHtml(g.name)}</text>
+          <text class="sd__grp-share" x="420" y="${gy + 8}" text-anchor="end">${g.sharePercent}%</text>
+          ${bar(g.value, 440, gy + 1, 130)}
+          <text class="sd__grp-lvl" x="582" y="${gy + 8}">${escapeHtml(g.level)}${
+            g.mostAffected
+              // "most affected" could be read as "badly affected". Naming the comparison set makes
+              // it impossible to mistake "highest here" for "high in absolute terms".
+              ? '<tspan class="sd__grp-top"> · highest impact among the groups shown</tspan>'
+              : ''
+          }</text>
+        </g>`
+      })
+      .join('')}
+    <text class="sd__note" x="${PAD_X + 20}" y="${y + gh - 12}">${escapeHtml(m.groupsNote)}</text>
+  </g>`)
+  y += gh
+
+  // 6 · what trade-offs are visible
+  if (m.decision) {
+    parts.push(connector(y))
+    y += gap
+    const dh = 124
+    parts.push(`<g class="sd__band" data-stage="decision">
+      <rect class="sd__decision" x="${PAD_X}" y="${y}" width="${W - PAD_X * 2}" height="${dh}" rx="8"/>
+      <text class="sd__band-t" x="${PAD_X + 20}" y="${y + 30}">The choice in front of the government</text>
+      <text class="sd__band-s" x="${PAD_X + 20}" y="${y + 56}">${escapeHtml(m.decision.question)}</text>
+      <text class="sd__choice" x="${PAD_X + 20}" y="${y + 84}">${escapeHtml(m.decision.choices[0])}</text>
+      <text class="sd__choice" x="${PAD_X + 300}" y="${y + 84}">${escapeHtml(m.decision.choices[1])}</text>
+      ${
+        m.otherChoices > 0
+          ? `<text class="sd__note" x="${PAD_X + 600}" y="${y + 84}">and ${m.otherChoices} other${m.otherChoices === 1 ? '' : 's'}</text>`
+          : ''
+      }
+      <text class="sd__exec" x="${PAD_X + 20}" y="${y + dh - 14}">${escapeHtml(m.executionNote)}</text>
+    </g>`)
+    y += dh
+  }
+
+  const H = y + 56
+
+  return `<svg class="bmap sd" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMin meet" role="img"
+      aria-label="Situation diagram for the fictional Kestral Strait scenario. ${escapeHtml(m.kindNote)} ${
+        m.blockadeActive
+          ? `A blockade closed the strait ${m.days} days ago. Shipping reroutes, port work falls, population groups are affected, and pressure builds on the government, which has a choice open that has not been executed.`
+          : 'No incident is active.'
+      }">
+    <text class="sd__title" x="${PAD_X}" y="30">HOW THIS SITUATION FITS TOGETHER</text>
+    <text class="sd__kind" x="${PAD_X}" y="52">${escapeHtml(m.kindNote)}</text>
+    ${parts.join('')}
+    <text class="sd__foot" x="${PAD_X}" y="${H - 18}">Fictional scenario. Read top to bottom — each row follows from the one above it.</text>
   </svg>`
 }
 

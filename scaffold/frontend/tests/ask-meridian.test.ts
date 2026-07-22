@@ -24,8 +24,7 @@ import {
 } from '../src/screens/ask-meridian.ts'
 import type { AskResponse } from '../src/screens/ask-meridian.ts'
 import { API_BASE } from '../src/engine/api.ts'
-import { briefingMap } from '../src/components/briefing-viz.ts'
-import { mapCallouts } from '../src/engine/presentation.ts'
+import { causalAnswer } from '../src/screens/causal-answer.ts'
 
 function el(html: string): HTMLElement {
   const d = document.createElement('div')
@@ -109,16 +108,19 @@ describe('landing view and navigation', () => {
     mount(root, initialSnapshot())
   })
 
-  it('1 · Briefing remains the default landing view', () => {
-    const active = root.querySelector('[aria-pressed="true"], .modesw__b--on, [data-mode="briefing"]')
-    expect(root.textContent).toContain('Briefing')
-    // the briefing situation summary is present on first mount
-    expect(root.querySelector('.briefing')).not.toBeNull()
-    expect(active === null || active.textContent?.toLowerCase()).toBeTruthy()
+  it('1 · the conversation is the landing view, with the Briefing already answered', () => {
+    // Reversed on the founder's decision — see the note at the top of main.ts. The Briefing is the
+    // thread's first message now, not a separate screen.
+    expect(root.dataset.mode).toBe('ask')
+    expect(root.querySelector('[data-briefing-card]')).not.toBeNull()
+    expect(root.querySelector('[data-ask-form]')).not.toBeNull()
   })
 
-  it('2 · Ask MERIDIAN appears in navigation', () => {
-    expect(root.textContent).toContain('Ask MERIDIAN')
+  it('2 · Ask MERIDIAN is the screen itself, not a navigation item', () => {
+    // There is no primary navigation any more: the conversation IS the product, and technical
+    // evidence is reached from a claim rather than offered as half the app.
+    expect(root.querySelector('[aria-label="Ask MERIDIAN"]')).not.toBeNull()
+    expect(root.querySelectorAll('.navbar .navbtn')).toHaveLength(0)
   })
 
   /*
@@ -126,20 +128,14 @@ describe('landing view and navigation', () => {
    * handled, and no module imported the screen at all: every unit test passed while the screen was
    * unreachable in the running application. These two tests exercise the real control.
    */
-  it('2a · the Ask MERIDIAN control opens the screen from Briefing', () => {
-    const btn = root.querySelector<HTMLElement>('[data-mode="ask"]')
-    expect(btn).not.toBeNull()
-    btn!.click()
+  it('2a · the Ask MERIDIAN surface is the screen itself', () => {
     expect(root.querySelector('[aria-label="Ask MERIDIAN"]')).not.toBeNull()
     expect(root.querySelector('[data-ask-form]')).not.toBeNull()
   })
 
-  it('2b · Briefing remains reachable from the Ask screen', () => {
-    root.querySelector<HTMLElement>('[data-mode="ask"]')!.click()
-    const back = root.querySelector<HTMLElement>('[data-mode="briefing"]')
-    expect(back).not.toBeNull()
-    back!.click()
-    expect(root.querySelector('.lede__h')).not.toBeNull()
+  it('2b · the Briefing is always reachable — clearing the thread returns to it', () => {
+    root.querySelector<HTMLElement>('[data-ask-reset]')!.click()
+    expect(root.querySelector('[data-briefing-card]')).not.toBeNull()
   })
 })
 
@@ -198,21 +194,31 @@ describe('answers', () => {
    * The map card previously emitted an EMPTY div that nothing ever painted into, and asserting on
    * its data attribute alone did not catch that. These tests assert drawn content.
    */
-  it('9 · the canonical map is the real Briefing component, drawn', () => {
+  it('9 · the canonical diagram is the real Briefing component, drawn', () => {
     const run = initialSnapshot()
-    const v = el(askMeridianView([], run))
+    // It renders inside the ANSWER, at full width. It is deliberately no longer drawn in the
+    // 320px context rail, where it was an illegible postage stamp — a weaker miniature imitation
+    // of a good component is exactly what the design rule forbids.
+    const withMap = {
+      ...decisionResponse(),
+      components: [{ component_type: 'CanonicalMapCard', title: 'How this fits together', body: {} }],
+    }
+    const v = el(askMeridianView([{ role: 'meridian', text: '', response: withMap }], run))
     const map = v.querySelector('[data-canonical-map]') as HTMLElement
     expect(map.dataset.canonicalMap).toBe('briefing-canonical-map')
     // byte-identical to what the Briefing draws: the same component, not a redraw
-    const days = Math.max(1, Math.round(run.projection.simulated_hours / 24))
-    const expected = el(briefingMap(run, mapCallouts(run), days))
+    const expected = el(causalAnswer(run))
     expect(map.innerHTML.trim()).toBe(expected.innerHTML.trim())
-    expect(map.querySelector('svg')).not.toBeNull()
-    expect(map.querySelectorAll('path, circle').length).toBeGreaterThan(5)
+    // the real compact explanation, with its beats actually drawn
+    expect(map.querySelectorAll('.ca__beat').length).toBeGreaterThan(2)
   })
 
-  it('9a · with no run the map says UNAVAILABLE rather than showing an empty frame', () => {
-    const v = el(askMeridianView([]))
+  it('9a · with no run the diagram says UNAVAILABLE rather than showing an empty frame', () => {
+    const withMap = {
+      ...decisionResponse(),
+      components: [{ component_type: 'CanonicalMapCard', title: 'How this fits together', body: {} }],
+    }
+    const v = el(askMeridianView([{ role: 'meridian', text: '', response: withMap }]))
     const map = v.querySelector('[data-canonical-map]') as HTMLElement
     expect(map.dataset.canonicalMap).toBe('unavailable')
     expect(map.textContent).toContain('UNAVAILABLE')
@@ -344,7 +350,9 @@ describe('answers', () => {
       }
       // The development signal fires for every unrecognised shape. Twice per shape, because the
       // view renders the same component in the thread and again in the context panel.
-      expect(spy).toHaveBeenCalledTimes(shapes.length * 2)
+      // Once, not twice: the context rail that used to render the same component a second
+      // time has been removed.
+      expect(spy).toHaveBeenCalledTimes(shapes.length)
       for (const [message] of spy.mock.calls) {
         expect(String(message)).toContain('undeclared boundary component shape')
       }
@@ -443,7 +451,9 @@ describe('session, safety and accessibility', () => {
   it('19 · regions and live areas are labelled for screen readers', () => {
     const v = el(askMeridianView([]))
     expect(v.querySelector('[role="log"]')?.getAttribute('aria-label')).toBeTruthy()
-    expect(v.querySelector('aside')?.getAttribute('aria-label')).toBe('Current context')
     expect(v.querySelector('label[for="ask-input"]')).not.toBeNull()
+    // The context rail is GONE. It compressed prose into four-word lines and reserved empty space
+    // for content that was not there. Evidence is inline, under the claim it supports.
+    expect(v.querySelector('aside')).toBeNull()
   })
 })

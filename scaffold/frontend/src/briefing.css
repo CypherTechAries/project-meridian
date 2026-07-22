@@ -167,28 +167,59 @@
 
 /* ── Map ─────────────────────────────────────────────────────────────────── */
 /*
- * Retained unchanged and moved behind "Show where this is happening". Given the component's own
- * 960x430 ratio so its preserveAspectRatio="slice" crops nothing at any window width.
+/*
+ * SITUATION DIAGRAM — not a map.
+ *
+ * Height is intrinsic: the SVG viewBox grows with the number of bands, and `preserveAspectRatio`
+ * is xMidYMin meet, so nothing is ever cropped. A fixed aspect-ratio here would reintroduce the
+ * clipping the usability reset removed.
  */
-.bmap { display: block; width: 100%; aspect-ratio: 960 / 430; border-radius: 8px; }
-.bmap__coast { stroke: #5a86a8; stroke-width: 1.6; }
-.bmap__swell path { fill: none; stroke: rgba(120, 180, 215, 0.055); stroke-width: 1.2; }
-.bmap__zone { stroke: #ff5c6a; stroke-opacity: 0.75; stroke-width: 1.6; }
-.bmap__ship path { fill: #ff8b93; }
-.bmap__zone-t { fill: #ff7b85; font-size: 15px; font-weight: 800; letter-spacing: 0.13em; }
-.bmap__zone-s { fill: #cf7d86; font-size: 12.5px; letter-spacing: 0.04em; }
-.bmap__place { fill: #cfe2f2; font-size: 19px; font-weight: 700; letter-spacing: 0.3em; }
-.bmap__strait { fill: #7fa8c6; font-size: 15px; letter-spacing: 0.34em; }
-.rt { fill: none; stroke-linecap: round; }
-.rt--blocked { stroke: #f0a742; stroke-width: 2.2; stroke-dasharray: 9 8; }
-.rt--reroute { stroke: #3fd0e8; stroke-dasharray: 10 8; }
-.cal__lead { stroke: rgba(150, 200, 230, 0.35); stroke-width: 1.1; stroke-dasharray: 3 3; }
-.cal__pill { fill: rgba(8, 20, 32, 0.9); stroke: #2b5876; stroke-width: 1; }
-.cal__num-bg { fill: none; stroke: #3fd0e8; stroke-width: 1.4; }
-.cal__num { fill: #7fe4f5; font-size: 12px; font-weight: 700; }
-.cal__txt { fill: #d8e7f4; font-size: 13px; }
-.lgd__bg { fill: rgba(6, 16, 26, 0.86); stroke: #1d3a55; stroke-width: 1; }
-.lgd__t { fill: #9fb8cc; font-size: 11.5px; }
+.bmap { display: block; width: 100%; height: auto; border-radius: 8px; background: #0a1622; }
+
+.sd__title { fill: #cfe2f2; font-size: 15px; font-weight: 800; letter-spacing: 0.14em; }
+.sd__kind { fill: #7f9db4; font-size: 13px; }
+.sd__foot { fill: #6f8ba1; font-size: 12.5px; }
+
+/* The origin band: what is blocked. Distinct from the consequences below it. */
+.sd__origin { fill: rgba(255, 92, 106, 0.09); stroke: rgba(255, 92, 106, 0.45); stroke-width: 1.2; }
+.sd__origin-t { fill: #ff8b93; font-size: 18px; font-weight: 800; letter-spacing: 0.11em; }
+.sd__origin-s { fill: #d8b3b7; font-size: 14.5px; }
+
+.sd__band-bg { fill: rgba(20, 38, 54, 0.62); stroke: #22405a; stroke-width: 1; }
+.sd__band-t { fill: #dceaf6; font-size: 16px; font-weight: 700; }
+.sd__band-s { fill: #a8c0d3; font-size: 14px; }
+.sd__note { fill: #7d97ab; font-size: 12.5px; }
+
+.sd__lvl { fill: #dceaf6; font-size: 14.5px; font-weight: 600; }
+.sd__lvl--none { fill: #7d97ab; font-weight: 400; font-style: italic; }
+/* Direction never relies on colour alone — the word is always present beside the arrow. */
+.sd__dir { font-size: 13px; font-weight: 600; }
+.sd__dir--rising { fill: #f0a742; }
+.sd__dir--falling { fill: #4fc98a; }
+.sd__dir--steady { fill: #9fb8cc; }
+
+.sd__bar-bg { fill: rgba(120, 170, 210, 0.16); }
+.sd__bar { fill: #3fd0e8; }
+
+.sd__spark { fill: none; stroke: #7fe4f5; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.sd__spark-end { fill: #7fe4f5; }
+/* The turn, marked. The line covers the whole scenario; the direction word covers the recent
+   window. Without this the two read as a contradiction. */
+.sd__spark-peak { fill: none; stroke: #f0a742; stroke-width: 1.4; }
+.sd__spark-peakl { fill: #c99150; font-size: 10px; letter-spacing: 0.04em; }
+.sd__sparkl { fill: #6f8ba1; font-size: 11.5px; }
+.sd__sparkl--none { font-style: italic; }
+
+.sd__grp { fill: #dceaf6; font-size: 14px; text-transform: capitalize; }
+.sd__grp-share { fill: #8fa8bc; font-size: 13px; }
+
+.sd__decision { fill: rgba(63, 208, 232, 0.07); stroke: rgba(63, 208, 232, 0.4); stroke-width: 1.2; }
+.sd__choice { fill: #a9dced; font-size: 14px; font-weight: 600; }
+.sd__exec { fill: #8fb0c4; font-size: 13px; font-style: italic; }
+
+/* The flow between bands: consequence, not distance. */
+.sd__flow { stroke: #3a6180; stroke-width: 1.6; }
+.sd__flow-head { fill: #3a6180; }
 
 /* ── Technical evidence notice ───────────────────────────────────────────── */
 /* Shown above the former Analysis screen so it never reads as the normal experience. */
@@ -228,3 +259,275 @@
 }
 .askprompt__go:hover { border-color: var(--cyan); background: #123048; }
 .askprompt__go:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * BRIEFING CARD — the thread's first answer
+ *
+ * The Briefing used to be a 2,635px screen whose decision sat below the fold. This is the same
+ * content in one card: headline, three one-line impact rows, the decision. Everything deeper is
+ * reached by asking, not by expanding.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+.bcard {
+  border: 1px solid var(--line-strong); border-radius: 12px; background: var(--s-panel);
+  padding: 20px 24px 18px; margin: 0 0 20px;
+}
+.bcard__hd { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bcard__badge {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.14em; color: var(--s-void);
+  background: var(--cyan); border-radius: 3px; padding: 3px 7px;
+}
+.bcard__meta { font-size: 12px; color: var(--t-faint); letter-spacing: 0.03em; }
+
+/* The two-second read. Nothing above it, nothing competing with it. */
+.bcard__h { margin: 0 0 18px; font-size: 27px; line-height: 1.25; font-weight: 700; color: var(--t-hi); }
+
+.brows__hint { margin: 0 0 4px; font-size: 12.5px; color: var(--t-faint); }
+.brows { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; }
+/*
+ * THE ROW IS THE CONTROL. A repeated button on every row read as clutter; the label now appears on
+ * hover or focus. It is a real <button>, so keyboard and screen-reader support are inherent.
+ */
+.brow {
+  display: grid; grid-template-columns: 86px minmax(0, 1fr) auto 108px; align-items: baseline;
+  gap: 12px; padding: 10px 8px;
+  width: 100%; text-align: left; background: none; font: inherit; color: inherit;
+  border-radius: 6px;
+  /* border:0 FIRST — a <button> carries a default border on all four sides, which made the
+     interactive rows read as outlined boxes beside the inert one. */
+  border: 0; border-top: 1px solid var(--line);
+}
+.brows li:last-child .brow { border-bottom: 1px solid var(--line); }
+.brow--ask { cursor: pointer; }
+.brow--ask:hover, .brow--ask:focus-visible { background: rgba(63, 208, 232, 0.07); }
+.brow--ask:hover .brow__ask, .brow--ask:focus-visible .brow__ask { opacity: 1; }
+.brow__t { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-low); }
+.brow__l { font-size: 15px; line-height: 1.5; color: var(--t-mid); }
+/* Direction never relies on colour alone — the word is always beside the arrow. */
+.brow__d { font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.brow__d--rising { color: #f0a742; }
+.brow__d--falling { color: #4fc98a; }
+.brow__d--steady { color: var(--t-low); }
+.brow__d--none { color: var(--t-faint); font-style: italic; font-weight: 400; }
+/* Appears on hover or focus only. Opacity, not display, so the column never reflows. */
+.brow__ask {
+  font-size: 12px; color: var(--cyan); white-space: nowrap; text-align: right;
+  opacity: 0; transition: opacity 90ms ease;
+}
+/* No control where the catalogue has no question — a row that always refuses is worse. */
+.brow__ask--none { opacity: 0; }
+
+.bdec {
+  border-left: 3px solid var(--cyan); background: rgba(63, 208, 232, 0.05);
+  border-radius: 0 8px 8px 0; padding: 14px 18px; margin-bottom: 16px;
+}
+.bdec__k { margin: 0 0 4px; font-size: 11px; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--cyan); }
+.bdec__h { margin: 0 0 12px; font-size: 19px; line-height: 1.35; font-weight: 600; color: var(--t-hi); }
+.bdec__c { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.bdec__n { margin: 0; font-size: 12.5px; color: var(--t-low); font-style: italic; }
+
+.bcard__ft { display: flex; flex-wrap: wrap; gap: 8px; }
+.bcard__more {
+  font-size: 13px; color: var(--t-mid); background: var(--s-inset);
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 13px; cursor: pointer;
+}
+.bcard__more:hover { color: var(--t-hi); border-color: var(--cyan-dim); }
+.bcard__more--quiet { color: var(--t-faint); }
+
+/* Suggestions replace 598px of static "what you can ask" / "what we don't know" prose with
+   controls that actually ask a declared question. */
+.asksug { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 24px 10px; }
+.asksug__b {
+  font-size: 13px; color: var(--t-mid); background: var(--s-panel);
+  border: 1px solid var(--line-strong); border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+.asksug__b:hover { color: var(--t-hi); border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.07); }
+
+/* ── Technical evidence: a table you look things up in ───────────────────── */
+.main--tech { display: block; overflow: visible; padding: 0; }
+.tt { padding: 20px var(--sp-4) 60px; max-width: 1180px; }
+.tt__bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.tt__lbl { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t-low); }
+.tt__filter {
+  flex: 1 1 260px; max-width: 420px; font: inherit; font-size: 14px; color: var(--t-hi);
+  background: var(--s-inset); border: 1px solid var(--line-strong); border-radius: 6px; padding: 8px 12px;
+}
+.tt__count { font-size: 12.5px; color: var(--t-faint); font-family: var(--f-num); }
+.tt__note { margin: 0 0 22px; font-size: 13px; line-height: 1.6; color: var(--t-low); max-width: 74ch; }
+.tt__g { margin-bottom: 30px; }
+.tt__gh { margin: 0 0 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--t-low); }
+.tt__t { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tt__t th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--t-faint); padding: 7px 10px; border-bottom: 1px solid var(--line-strong); white-space: nowrap;
+}
+.tt__t td { padding: 9px 10px; border-bottom: 1px solid var(--line); color: var(--t-mid); vertical-align: top; }
+.tt__r:hover td { background: var(--s-inset); }
+.tt__name { color: var(--t-hi); }
+/* The identifier sits UNDER its plain name, so the table is searchable without leading with code. */
+.tt__id { display: block; font-family: var(--f-num); font-size: 11px; color: var(--t-faint); margin-top: 2px; }
+.tt__num { font-family: var(--f-num); color: var(--t-hi); white-space: nowrap; }
+.tt__mech { font-family: var(--f-num); font-size: 11.5px; color: var(--t-faint); }
+.tt__empty { font-size: 14px; color: var(--t-low); padding: 20px 0; }
+.tt__conf { font-family: var(--f-num); font-size: 11.5px; color: var(--t-faint); }
+.tt__limits { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--line-strong); max-width: 80ch; }
+.tt__lim { margin: 0 0 22px; padding-left: 20px; }
+.tt__lim li { font-size: 13px; line-height: 1.7; color: var(--t-mid); }
+/* Crop safety: a screenshot of any one section must still declare the world is fictional. */
+.tt__gh .fmark {
+  margin-left: 10px; font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+  color: var(--cyan); border: 1px solid var(--cyan-dim); border-radius: 3px; padding: 2px 5px;
+}
+.sd__colh { fill: #6f8ba1; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.sd__grp-lvl { fill: #a8c0d3; font-size: 13px; }
+.sd__grp-top { fill: #f0a742; font-weight: 600; }
+.tt__hint { margin: -14px 0 22px; font-size: 13px; color: var(--t-faint); max-width: 74ch; }
+.tt__r--ask { cursor: pointer; }
+.tt__r--ask:hover td, .tt__r--ask:focus-visible td { background: rgba(63, 208, 232, 0.07); }
+.tt__r--ask:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.tt__askc { width: 118px; text-align: right; }
+/* Appears on hover or focus only, so eighteen rows do not read as eighteen buttons. */
+.tt__ask { font-size: 12px; color: var(--cyan); white-space: nowrap; opacity: 0; transition: opacity 90ms ease; }
+.tt__r--ask:hover .tt__ask, .tt__r--ask:focus-visible .tt__ask { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * CONVERSATION LAYOUT — single column, nothing beside it
+ *
+ * The permanent 320px context rail is gone. It compressed prose into four-word lines, reserved a
+ * large empty area that read as a missing image, competed with the answer, and turned the screen
+ * back into a dashboard. Evidence now sits inline, under the claim it supports, at a readable width.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+.ask { grid-template-columns: minmax(0, 1fr); }
+.ask__thread {
+  /* Bottom padding so the last message always scrolls CLEAR of the composer. Without it the
+     transcript ended flush against the suggestions and sliced the final card mid-button. */
+  padding: 26px 24px 72px;
+}
+/*
+ * Soft fade at the transcript's bottom edge, so content reads as continuing rather than cut.
+ * A real element pulled up over the thread's last 34px — a positioned pseudo-element drifted over
+ * the suggestion pills, which looked like a rendering fault.
+ */
+.ask__fade {
+  flex: 0 0 auto; height: 34px; margin-top: -34px; pointer-events: none; position: relative;
+  background: linear-gradient(to bottom, rgba(9, 18, 29, 0), rgba(9, 18, 29, 0.96));
+}
+.askmsg__text, .askmsg--u { max-width: 74ch; }
+
+/* Starter questions: opening state only, in normal flow, never over the transcript. */
+.asksug { padding: 0 24px 12px; flex: 0 0 auto; }
+.asksug__lbl { margin: 0 0 8px; font-size: 12.5px; color: var(--t-faint); }
+.asksug__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.asksug--later { padding: 0 24px 10px; }
+.asksug__more {
+  cursor: pointer; font-size: 12.5px; color: var(--t-faint); padding: 4px 0; list-style: none;
+}
+.asksug__more:hover { color: var(--t-mid); }
+.asksug--later .asksug__list { padding-top: 8px; }
+
+/* ── Claim evidence: the numbers, attached to the claim they support ─────── */
+.brow-i { border-top: 1px solid var(--line); padding: 4px 0; }
+.brow-i:last-child { border-bottom: 1px solid var(--line); }
+.brow { border: 0; padding: 8px 8px 4px; }
+.bev { padding: 0 8px 6px; }
+.bev__s {
+  cursor: pointer; font-size: 12px; color: var(--t-faint); padding: 3px 0;
+  list-style: none; display: inline-block;
+}
+.bev__s::-webkit-details-marker { display: none; }
+.bev__s:hover, .bev[open] .bev__s { color: var(--cyan); }
+.bev__b {
+  display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 3px 14px;
+  margin: 8px 0 4px; padding: 12px 14px; background: var(--s-inset);
+  border-left: 2px solid var(--line-strong); border-radius: 0 6px 6px 0;
+}
+.bev__b dt { font-size: 12px; color: var(--t-faint); }
+.bev__b dd { margin: 0; font-size: 12.5px; color: var(--t-mid); }
+.bev__num { font-family: var(--f-num); color: var(--t-hi); }
+
+/* ── The five-beat chain ─────────────────────────────────────────────────── */
+.ca { max-width: 720px; }
+.ca__chain { list-style: none; margin: 0 0 18px; padding: 0; }
+.ca__beat {
+  position: relative; padding: 12px 0 12px 30px; font-size: 16.5px; line-height: 1.5;
+  color: var(--t-mid);
+}
+/* The connector is the only ornament, and it carries the meaning: this led to that. */
+.ca__beat:not(:last-child)::after {
+  content: ''; position: absolute; left: 8px; top: 38px; bottom: -2px; width: 1px;
+  background: var(--line-strong);
+}
+.ca__beat::before {
+  content: ''; position: absolute; left: 5px; top: 20px; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--line-strong);
+}
+.ca__beat--first { color: var(--t-hi); font-weight: 600; }
+.ca__beat--first::before { background: var(--cyan); }
+.ca__beat-t { display: block; }
+
+.ca__d { margin-top: 4px; }
+.ca__s {
+  cursor: pointer; font-size: 14px; color: var(--cyan); padding: 8px 14px; list-style: none;
+  border: 1px solid var(--line-strong); border-radius: 7px; display: inline-block;
+}
+.ca__s::-webkit-details-marker { display: none; }
+.ca__s:hover { border-color: var(--cyan-dim); background: rgba(63, 208, 232, 0.07); }
+.ca__db { padding: 20px 0 4px; }
+.ca__sec { margin-bottom: 28px; }
+.ca__h { margin: 0 0 10px; font-size: 14px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--t-low); }
+.ca__note { margin: 0 0 10px; font-size: 13.5px; line-height: 1.6; color: var(--t-low); max-width: 68ch; }
+.ca__grp { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 8px; }
+.ca__grp th {
+  text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--t-faint); padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--line-strong);
+}
+.ca__grp td { padding: 9px 10px 9px 0; border-bottom: 1px solid var(--line); color: var(--t-mid); }
+.ca__num { font-family: var(--f-num); }
+.ca__top { color: #f0a742; font-size: 12.5px; }
+.ca__deeper { margin: 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.ca__deeper-n { font-size: 12.5px; color: var(--t-faint); }
+.ca__btn {
+  font-size: 13px; color: var(--t-mid); background: var(--s-inset);
+  border: 1px solid var(--line-strong); border-radius: 6px; padding: 7px 13px; cursor: pointer;
+}
+.ca__btn:hover { color: var(--t-hi); border-color: var(--cyan-dim); }
+.bcard__more--go { border-color: var(--cyan-dim); color: var(--t-hi); }
+
+/*
+ * ONE CENTRED READING COLUMN.
+ *
+ * With the rail removed the conversation was left-aligned against ~600px of empty screen, which
+ * reads exactly like the rail is still there. Nothing is reserved — the column is simply centred,
+ * and capped so prose never runs to an unreadable line length on a wide monitor.
+ */
+:root { --ask-col: 860px; }
+/*
+ * `.ask` is a flex item of `.main`. With one grid column it shrink-wrapped to its content, so the
+ * whole conversation hugged the left edge against ~1000px of empty screen — reading exactly like
+ * the removed rail was still there. It must fill its parent.
+ */
+.main--ask > .ask { flex: 1 1 auto; width: 100%; }
+/*
+ * `.ask__thread > *` ties with `.bcard` on specificity, and `.bcard`'s `margin` shorthand resets
+ * the auto margins. The extra class raises specificity so the column actually centres.
+ */
+.ask__thread > *, .ask__thread > .bcard, .asksug, .askform {
+  max-width: var(--ask-col); margin-left: auto; margin-right: auto; width: 100%;
+}
+
+/* "Show evidence" belongs with the claim, not adrift in the label column. */
+.brow-i { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.brow { grid-column: 1; }
+.bev { grid-column: 2; padding: 12px 8px 6px 0; text-align: right; }
+.bev[open] { grid-column: 1 / -1; text-align: left; padding-left: 8px; }
+.bev__b { max-width: 520px; }
+
+/* Scenario position: short, always visible, never behind a control. */
+.bcard__pos {
+  margin: -6px 0 6px; font-size: 14.5px; line-height: 1.5; color: var(--t-mid);
+  padding-left: 11px; border-left: 2px solid var(--cyan-dim);
+}
+.bcard__poscav { margin: 0 0 18px 13px; font-size: 13px; line-height: 1.55; color: var(--t-faint); max-width: 64ch; }

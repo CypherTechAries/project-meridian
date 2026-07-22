@@ -588,3 +588,451 @@ export function plainDecision(o: OptionEntry): PlainDecision {
   return { optionId: o.option_id, question: copy.question, context: copy.context,
            choices: copy.choices, standing, described: true }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * SITUATION MODEL — the facts the situation diagram may show
+ *
+ * Issue #33. MERIDIAN's engine has NO SPATIAL MODEL: no coordinates, no geometry, no port entities,
+ * and political pressure is a single scalar with no location. A map would therefore have to invent
+ * placement for two of the five questions a reader must be able to answer.
+ *
+ * So the diagram shows STRUCTURE, not geography — the causal chain the engine actually models,
+ * arranged by relationship. This model is what it may draw. Anything absent from here must not
+ * appear on screen.
+ *
+ * "Northshore" and "Southport" are deliberately NOT here. They were hard-coded in the old map
+ * component and are not scenario entities; they were part of the mock, not engine truth.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface SituationStage {
+  id: string
+  /** Short heading, plain words. */
+  title: string
+  /** One sentence stating what is happening. */
+  sentence: string
+  /** Plain level word, or null where the run does not establish one. */
+  level: string | null
+  /** 0..1 for the magnitude bar. Null where there is no value to show. */
+  magnitude: number | null
+  direction: PlainDirection | null
+  /** The run's own recorded values, for the change-over-time line. Empty when not recorded. */
+  series: number[]
+  /** Stated when `series` is empty, so an absent line is never read as a flat one. */
+  seriesNote: string | null
+}
+
+export interface SituationGroup {
+  name: string
+  /** 0..1, how hard this group is hit. The bar length, and NOTHING else. */
+  value: number
+  /** Whole per cent of the population. Never a decimal, and never the bar. */
+  sharePercent: number
+  /**
+   * Plain level word for `value`, on the same declared thresholds every other level uses.
+   *
+   * NOTE: at the packaged state the worst-hit group sits at 0.33, which is LOW on those
+   * thresholds. Labelling it "very high" would be a false absolute claim — the same conflation of
+   * absolute level with relative position that made the Briefing and Ask contradict each other.
+   * The relative fact is carried separately by `mostAffected`.
+   */
+  level: string
+  /** True for the hardest-hit group. This is the RELATIVE fact, kept apart from the level. */
+  mostAffected: boolean
+}
+
+export interface SituationModel {
+  days: number
+  blockadeActive: boolean
+  stages: SituationStage[]
+  groups: SituationGroup[]
+  groupsNote: string
+  decision: PlainDecision | null
+  otherChoices: number
+  executionNote: string
+  /** Rendered on the diagram. The reader is told what kind of picture this is. */
+  kindNote: string
+}
+
+const NOT_RECORDED =
+  'MERIDIAN does not record that value at every step, so no change line is shown.'
+
+/** The declared thresholds, applied to a bare 0..1 value. Same words, same boundaries, one place. */
+function levelWord(v: number): string {
+  if (v >= 0.66) return 'high'
+  if (v >= 0.33) return 'moderate'
+  if (v > 0) return 'low'
+  return 'none recorded'
+}
+
+/**
+ * Declared once, here, because both the Briefing and the situation diagram state it. `briefing.ts`
+ * re-exports it so existing importers are unaffected; a second copy of this sentence is exactly the
+ * duplication the shared-state work removed.
+ */
+export const NOTHING_EXECUTES = 'Decision support only — nothing will be executed.'
+
+function stageFrom(
+  run: RunResult, id: string, field: string, title: string, sentence: string,
+): SituationStage {
+  const f = fieldState(run, field)
+  const series = run.trajectory
+    .map((t) => t[field])
+    .filter((v): v is number => typeof v === 'number')
+  return {
+    id,
+    title,
+    sentence,
+    level: f ? plainLevel(f) : null,
+    magnitude: f ? Math.min(1, Math.max(0, f.value)) : null,
+    direction: plainDirection(f),
+    series,
+    seriesNote: series.length >= 2 ? null : NOT_RECORDED,
+  }
+}
+
+/**
+ * The five questions this must answer, through layout and relationship:
+ * what is blocked · who is affected · what pressure is building (NOT as a place) ·
+ * what trade-offs are visible · what changed over time.
+ */
+export function situationModel(run: RunResult): SituationModel {
+  const p = run.projection
+  const days = Math.max(1, Math.round(p.simulated_hours / 24))
+
+  const stages: SituationStage[] = []
+
+  stages.push(
+    stageFrom(run, 'shipping', 'rerouting_level', 'Ships take the long way round',
+      'Shipping is avoiding the strait, taking a longer route.'),
+  )
+  stages.push(
+    stageFrom(run, 'ports', 'port_activity_deficit', 'Less cargo, less work',
+      'Less cargo arrives, so there is less work at the ports.'),
+  )
+  stages.push(
+    stageFrom(run, 'pressure', 'political_pressure', 'Pressure on the government',
+      'People are paying attention, and the government feels it.'),
+  )
+
+  // Top three groups by their own pressure value. Named exactly as the scenario declares them —
+  // no paraphrase, no invented group, and no location, because groups have none.
+  const groups: SituationGroup[] = p.cohorts
+    .slice()
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 3)
+    .map((c, i) => ({
+      name: c.label.replace(/-/g, ' '),
+      value: Math.min(1, Math.max(0, c.value)),
+      sharePercent: Math.round(c.population_share * 100),
+      level: levelWord(c.value),
+      mostAffected: i === 0,
+    }))
+
+  const primary = primaryDecision(p)
+
+  return {
+    days,
+    blockadeActive: p.incident_active,
+    stages,
+    groups,
+    groupsNote:
+      'The bar is impact only — not how many people are in the group. These are averages; ' +
+      'MERIDIAN does not model the individuals inside them.',
+    decision: primary ? plainDecision(primary) : null,
+    otherChoices: Math.max(0, p.government_options.length - (primary ? 1 : 0)),
+    executionNote: NOTHING_EXECUTES,
+    kindNote:
+      'This shows how one thing led to another — not where anything is. MERIDIAN does not model ' +
+      'locations, distances or routes.',
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * COMPACT IMPACT ROWS — R1/R2
+ *
+ * The three impact sections were 855px of the Briefing's 2,635px, and each carried a "Show where
+ * this comes from" disclosure whose body was raw field names (`chain.household_expectation_pressure`).
+ * Nobody who is not a backend developer needs that on a reading screen.
+ *
+ * A row is now one line, and its evidence route is A QUESTION rather than a panel. `askQuestion` is
+ * always a question the catalogue can actually answer — asking something it must decline would be
+ * a worse experience than the disclosure it replaces.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ImpactRow {
+  id: 'people' | 'economy' | 'politics'
+  title: string
+  /** One line. The first sentence of the section, which is the one that carries the state. */
+  line: string
+  direction: PlainDirection | null
+  directionSubject: string | null
+  /**
+   * The declared question that explains this row, or null where the catalogue has none.
+   *
+   * Politics is currently null: there is no catalogue question about political pressure or the
+   * government's response. That gap is issue #37, and it is left visible here rather than papered
+   * over by sending a question that would be declined.
+   */
+  askQuestion: string | null
+}
+
+const ROW_QUESTION: Record<ImpactRow['id'], string | null> = {
+  people: 'How are people and groups reacting?',
+  economy: 'How are the economy and supply chains reacting?',
+  politics: null,
+}
+
+export function impactRows(run: RunResult): ImpactRow[] {
+  return plainSections(run).map((s) => ({
+    id: s.id,
+    title: s.title,
+    line: s.sentences[0] ?? 'Not established in this scenario.',
+    direction: s.direction,
+    directionSubject: s.directionSubject,
+    askQuestion: ROW_QUESTION[s.id],
+  }))
+}
+
+/**
+ * The one sentence that must be readable in two seconds.
+ *
+ * Deliberately short and deliberately singular: what has happened, and what is being decided. If
+ * this cannot be read at a glance, no amount of detail below it helps.
+ */
+export function headlineAndAsk(run: RunResult): { headline: string; decision: string | null } {
+  const primary = primaryDecision(run.projection)
+  return {
+    headline: situationSummary(run).headline,
+    decision: primary ? plainDecision(primary).question : null,
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * COMPACT CAUSAL ANSWER
+ *
+ * The situation diagram showed six bands, each with a title, a sentence, a level, a bar, a
+ * sparkline and captions — roughly thirty pieces of information at once. It was a report wearing a
+ * diagram's clothes, and a reader lost interest before taking any of it in.
+ *
+ * THE PRODUCT RULE: MERIDIAN should be easier than having a normal conversation. One sentence,
+ * then no more than three supporting points, then detail ONLY when deliberately asked for.
+ *
+ * So the default answer is four short blocks a reader can skim by heading alone. The full chain,
+ * the group breakdown and the exact values are all still there — behind controls.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** The most steps that may appear before a reader asks for more. Three. Not "about three". */
+export const MAX_INITIAL_STEPS = 3
+
+export interface CompactCausal {
+  /** One sentence. If a reader reads nothing else, they read this. */
+  shortAnswer: string
+  /** At most MAX_INITIAL_STEPS. Plain sentences, in order, no numbers and no levels. */
+  steps: string[]
+  /** True when the engine's chain is longer than what is shown — so the control is honest. */
+  hasMoreSteps: boolean
+  totalSteps: number
+  /** One sentence naming the hardest-hit group AND its absolute level, so neither reads alone. */
+  whoIsMostAffected: string | null
+  /** One sentence. What the government must decide. */
+  needsAttention: string | null
+}
+
+export function compactCausal(run: RunResult): CompactCausal {
+  const m = situationModel(run)
+  const reroute = fieldState(run, 'rerouting_level')
+  const port = fieldState(run, 'port_activity_deficit')
+  const political = fieldState(run, 'political_pressure')
+
+  // The short answer is assembled from what the run establishes, clause by clause. A clause the
+  // run does not support is omitted rather than softened.
+  const clauses: string[] = []
+  if (reroute && reroute.value > 0) clauses.push('forcing ships onto longer routes')
+  if (port && port.value > 0.3) clauses.push('reducing work at the ports')
+  if (political) clauses.push('creating pressure on the government')
+  const shortAnswer = m.blockadeActive
+    ? `The closed strait is ${clauses.length ? clauses.join(', ').replace(/, ([^,]*)$/, ' and $1') : 'the only thing the run establishes so far'}.`
+    : 'No incident is active in this scenario.'
+
+  // Steps are the causal chain in ordinary words. The engine's chain is ten stages; three is what
+  // a reader gets before asking, and `hasMoreSteps` keeps the control from over-promising.
+  const all: string[] = []
+  if (m.blockadeActive) all.push('The strait closed.')
+  if (reroute && reroute.value > 0) all.push('Ships began taking a longer route.')
+  if (port && port.value > 0.3) all.push('Less cargo reached the ports, affecting work and households.')
+  if (political) all.push('Attention built, and pressure landed on the government.')
+
+  const top = m.groups[0]
+  const whoIsMostAffected = top
+    ? `The ${top.name} group is the most affected of the groups shown, although its current ` +
+      `impact level is still ${top.level}.`
+    : null
+
+  const needsAttention = m.decision
+    ? `The government must decide: ${m.decision.question.replace(/^Should /, 'whether to ').replace(/\?$/, '')}.`
+    : null
+
+  return {
+    shortAnswer,
+    steps: all.slice(0, MAX_INITIAL_STEPS),
+    hasMoreSteps: all.length > MAX_INITIAL_STEPS || run.projection.stages.length > all.length,
+    totalSteps: run.projection.stages.length,
+    whoIsMostAffected,
+    needsAttention,
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * GUIDED HELPERS
+ *
+ * Plain-language routes into the declared catalogue. They are HELPERS, not capabilities: every one
+ * maps to a question the catalogue already answers, so none can reliably refuse.
+ *
+ * "Help me understand the decision" is deliberately ABSENT. The catalogue has no question about
+ * the government's decision or political pressure — that is issue #37 — and a helper that always
+ * refuses would be worse than no helper.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface Helper {
+  label: string
+  question: string
+}
+
+export const HELPERS: readonly Helper[] = [
+  { label: 'Help me understand what is happening', question: 'Brief me on the current situation.' },
+  { label: 'Show me what this is doing to trade', question: 'How are the economy and supply chains reacting?' },
+  { label: 'Show me who is affected', question: 'How are people and groups reacting?' },
+  { label: 'Show me what MERIDIAN does not know', question: 'What does MERIDIAN know — and what remains uncertain?' },
+]
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * CLAIM EVIDENCE — technical detail, attached to the claim it supports
+ *
+ * A first-time reader cannot say why a table of eighteen engine values matters, what to look for,
+ * or what decision it helps them make. So the table stops being a destination. Evidence becomes
+ * claim-driven: a reader sees "pressure is low", asks to see why, and gets the exact value,
+ * direction, origin, last change and mechanism FOR THAT CLAIM — and nothing else.
+ *
+ * The full table survives as a secondary audit route. It is no longer one of the two main things
+ * the product offers.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ClaimEvidence {
+  field: string
+  label: string
+  value: string
+  level: string
+  direction: string
+  origin: string
+  lastChanged: string
+  mechanism: string
+}
+
+export function claimEvidence(run: RunResult, field: string): ClaimEvidence | null {
+  const stage = run.projection.stages.find((s) => s.field === field)
+  if (!stage) return null
+  const f = fieldState(run, field)
+  return {
+    field,
+    label: stage.label,
+    value: typeof stage.value === 'number' ? stage.value.toFixed(4) : String(stage.value),
+    level: f ? f.level : 'NOT ESTABLISHED',
+    // Never STEADY where nothing was measured — "we did not look" is a different claim.
+    direction: f ? (f.direction_measured ? f.direction : 'NOT MEASURED') : 'NOT ESTABLISHED',
+    origin: stage.origin ?? 'engine',
+    lastChanged: `tick ${stage.last_updated_tick ?? '—'}`,
+    mechanism: stage.provenance ?? '',
+  }
+}
+
+/** The chain field behind each impact row, so a row can show the evidence for its own claim. */
+export const ROW_FIELD: Record<ImpactRow['id'], string> = {
+  people: 'household_expectation_pressure',
+  economy: 'rerouting_level',
+  politics: 'political_pressure',
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * THE FIVE-BEAT CHAIN
+ *
+ * The default causal view. Five short beats and nothing else: no bars, no sparklines, no decimals,
+ * no captions, no miniature charts. A reader takes it in at a glance or the answer has failed.
+ *
+ * Beat four states the RELATIVE fact and names its comparison set. It must never imply the
+ * absolute impact is high — the hardest-hit group sits at 0.33, which is LOW on the declared
+ * thresholds.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export function fiveBeatChain(run: RunResult): string[] {
+  const m = situationModel(run)
+  const reroute = fieldState(run, 'rerouting_level')
+  const port = fieldState(run, 'port_activity_deficit')
+  const top = m.groups[0]
+
+  const beats: string[] = []
+  if (m.blockadeActive) beats.push('The strait is closed')
+  if (reroute && reroute.value > 0) beats.push('Ships go the long way round')
+  if (port && port.value > 0.3) beats.push('Less work reaches the ports')
+  if (top) beats.push(`The ${top.name} group is affected most, though the level is still ${top.level}`)
+  if (m.decision) beats.push('The government must choose')
+  return beats
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * WHERE THE READER IS IN THE SCENARIO
+ *
+ * The founder test read the situation as "halfway into the simulation and things have slowed down".
+ * It is the LAST recorded point — day five of five, three ticks past the peak. The card said
+ * "Day 5" and never said day five *of what*, so there was no way to know.
+ *
+ * That misreading is not cosmetic: it produced the wrong explanation for why the options felt
+ * weak. A reader who cannot tell where they are cannot judge anything else on the screen.
+ *
+ * EVERY CLAUSE HERE IS DERIVED from the shared packaged state — the day, the horizon and the peak
+ * position. There is deliberately no second factual account: if the run changes, this changes with
+ * it, and a shorter run will not claim to be the end of the scenario.
+ *
+ * Changing the entry point itself is issue #41. This only states, honestly, where the entry point
+ * currently is.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+export interface ScenarioPosition {
+  /** One short line. Visible without expanding anything. */
+  line: string
+  /** The standing limit on how the whole card should be read. */
+  caveat: string
+}
+
+export const POSITION_CAVEAT =
+  'This describes the packaged fictional scenario up to this point. It does not predict what ' +
+  'happens next.'
+
+export function scenarioPosition(run: RunResult): ScenarioPosition | null {
+  const state = run.state
+  if (!state) return null
+
+  const days = Math.max(1, Math.round(state.simulated_hours / 24))
+  const dayPhrase = `${dayWord(days)} day${days === 1 ? '' : 's'}`
+
+  // Where in the arc. Only claimed as final when the run actually reached its declared horizon.
+  const where = state.is_final_recorded_tick
+    ? 'Final recorded day of this scenario.'
+    : `Day ${dayWord(days)} of an unfinished scenario — ${dayPhrase} recorded so far.`
+
+  // What political pressure has done, from the same shared field the Briefing and Ask both read.
+  const political = fieldState(run, 'political_pressure')
+  let arc = ''
+  if (political) {
+    if (political.post_peak && political.direction === 'FALLING') {
+      arc = ' Political pressure peaked earlier and is now falling.'
+    } else if (political.direction === 'RISING') {
+      arc = ' Political pressure is still rising.'
+    } else if (political.post_peak) {
+      arc = ' Political pressure has passed its highest point.'
+    }
+  }
+
+  return { line: where + arc, caveat: POSITION_CAVEAT }
+}

@@ -14,12 +14,11 @@ import './tokens.css'
 import './styles.css'
 import './briefing.css'
 
-import { initialSnapshot, runDemonstration, stageByField } from './engine/client.ts'
+import { initialSnapshot, runDemonstration } from './engine/client.ts'
 import type { RunResult } from './engine/client.ts'
 import { escapeHtml } from './components/epistemic.ts'
 
-import { commandCentre, decisionRail, laggedResponse, transitionStrip } from './screens/command-centre.ts'
-import { briefingView } from './screens/briefing.ts'
+import { technicalTable, wireTechnicalTable } from './screens/technical-table.ts'
 import { ASK_ENDPOINT, askMeridianView } from './screens/ask-meridian.ts'
 import type { AskMessage, AskResponse } from './screens/ask-meridian.ts'
 
@@ -31,35 +30,36 @@ import type { AskMessage, AskResponse } from './screens/ask-meridian.ts'
  * VISIBLE rather than a keyboard shortcut, because a first-time user will not discover a shortcut
  * (usability rule 1).
  */
-export type Mode = 'briefing' | 'analysis' | 'ask'
-let currentMode: Mode = 'briefing'
+/**
+ * ASK IS THE LANDING SCREEN, and the Briefing is its first answer.
+ *
+ * This reverses the earlier "Briefing remains the landing screen" rule, on the founder's decision.
+ * The reason is measured, not stylistic: the Briefing screen was 2.9 screenfuls in which the one
+ * decision waiting began below the fold, while the conversation was the only surface anyone could
+ * read at a glance. The doctrine it restores is the project's own — chat is the doorway, visuals
+ * are the evidence, the deterministic engine is the authority.
+ *
+ * There is no longer a 'briefing' mode. There are two destinations: the conversation, and the
+ * technical evidence beneath it.
+ */
+export type Mode = 'ask' | 'analysis'
+let currentMode: Mode = 'ask'
 
 /**
  * Ask MERIDIAN session messages. Display context only — deliberately a module-level variable and
  * NOT persisted anywhere, so a reload clears them. They were never state.
  */
-let askMessages: AskMessage[] = []
+let askMessages: AskMessage[] = [{ role: 'meridian', text: '', kind: 'briefing' }]
+
+/** The thread always opens with the Briefing. Clearing returns to it, never to an empty screen. */
+function openingThread(): AskMessage[] {
+  return [{ role: 'meridian', text: '', kind: 'briefing' }]
+}
 
 export const FICTION_DISCLOSURE = 'FICTIONAL SIMULATION — NOT REAL-WORLD INTELLIGENCE OR PREDICTION'
 export const MIXED_DISCLOSURE =
   'INTERACTIVE PROTOTYPE — MIXED ENGINE AND FIXTURE DATA — NOT A PREDICTIVE SYSTEM'
 
-const NAV = [
-  { id: 'command', label: 'Command Centre', built: true },
-  { id: 'ask', label: 'Ask MERIDIAN', built: true },
-  { id: 'society', label: 'Society Pulse', built: false },
-  { id: 'timeline', label: 'Causal Timeline', built: false },
-  { id: 'entities', label: 'Entity Dossiers', built: false },
-  { id: 'composer', label: 'Command', built: false },
-]
-
-/** Plain-language band for a 0..1 chain value. Describes, never predicts. */
-function severityPhrase(v: number): string {
-  if (v >= 0.5) return 'severe'
-  if (v >= 0.25) return 'elevated'
-  if (v > 0) return 'emerging'
-  return 'at rest'
-}
 
 function disclosures(): string {
   return `<div class="disclosures" role="region" aria-label="Prototype disclosures">
@@ -69,17 +69,7 @@ function disclosures(): string {
   </div>`
 }
 
-function brandMark(): string {
-  return `<svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true">
-    <circle cx="16" cy="16" r="13" fill="none" stroke="var(--cyan-dim)" stroke-width="1.2"/>
-    <ellipse cx="16" cy="16" rx="6.5" ry="13" fill="none" stroke="var(--cyan-dim)" stroke-width="0.9"/>
-    <line x1="3" y1="16" x2="29" y2="16" stroke="var(--cyan-dim)" stroke-width="0.9"/>
-    <line x1="16" y1="1" x2="16" y2="31" stroke="var(--cyan)" stroke-width="1.2"/>
-    <circle cx="16" cy="16" r="2.2" fill="var(--cyan)"/>
-  </svg>`
-}
-
-function topbar(run: RunResult, mode: Mode = 'briefing'): string {
+function topbar(run: RunResult, mode: Mode = 'ask'): string {
   const p = run.projection
   const conn =
     run.connection === 'live'
@@ -108,29 +98,6 @@ function topbar(run: RunResult, mode: Mode = 'briefing'): string {
   </div>`
 }
 
-function nav(run: RunResult): string {
-  const p = run.projection
-  return `<nav class="nav" aria-label="Primary">
-    <div class="brand">${brandMark()}<span class="brand__name">MERIDIAN</span></div>
-    <ul>
-      ${NAV.map(
-        (n) => `<li><a class="nav__item ${n.built ? 'is-active' : 'is-disabled'}"
-          ${n.built ? 'href="#main" aria-current="page"' : 'aria-disabled="true" tabindex="-1"'}>
-          <span>${n.label}</span>${n.built ? '' : '<span class="nav__tag">not built</span>'}
-        </a></li>`,
-      ).join('')}
-    </ul>
-    <div class="sysblock">
-      <h2 class="sysblock__h">System status</h2>
-      <div class="sysrow"><span class="sysrow__k">Engine</span><span class="sysrow__v ${run.connection === 'live' ? 'sysrow__v--ok' : 'sysrow__v--warn'}">${run.connection === 'live' ? 'ONLINE' : 'OFFLINE'}</span></div>
-      <div class="sysrow"><span class="sysrow__k">Data</span><span class="sysrow__v sysrow__v--warn">MIXED</span></div>
-      <div class="sysrow"><span class="sysrow__k">Scenario</span><span class="sysrow__v">${escapeHtml(p.scenario_id)}</span></div>
-      <div class="sysrow"><span class="sysrow__k">Seed</span><span class="sysrow__v">${run.seed}</span></div>
-      <div class="sysrow"><span class="sysrow__k">Revision</span><span class="sysrow__v">${p.state_revision}</span></div>
-    </div>
-  </nav>`
-}
-
 /**
  * Primary navigation.
  *
@@ -142,30 +109,28 @@ function nav(run: RunResult): string {
  * ASK MERIDIAN IS A BUTTON. Observation 10: it read as a logo. It now sits beside Briefing, in the
  * same shape and weight as its sibling, with an icon and a real label.
  */
-function modeSwitch(mode: Mode): string {
-  const tab = (m: Mode, label: string, icon: string) =>
-    `<button class="navbtn${mode === m ? ' is-on' : ''}" type="button" data-mode="${m}"
-      aria-pressed="${mode === m}"><span class="navbtn__i" aria-hidden="true">${icon}</span><span
-      class="navbtn__l">${label}</span></button>`
-  return `<nav class="navbar" aria-label="Primary">
-    ${tab('briefing', 'Briefing', '▤')}
-    ${tab('ask', 'Ask MERIDIAN', '✦')}
-  </nav>`
+/**
+ * THERE IS NO PRIMARY NAVIGATION.
+ *
+ * "Exact numbers" used to sit here as one of two things the product offered. A first-time reader
+ * cannot say why those values matter, what to look for, or what decision the table helps them
+ * make — so offering it as half the product was a category error.
+ *
+ * The conversation is the product. Technical evidence is reached from a specific claim
+ * ("Show evidence" on a row) or from inside an explanation ("Show the exact evidence"), which is
+ * where it means something. The full table remains as a secondary audit route, not a destination.
+ */
+function modeSwitch(_mode: Mode): string {
+  return ''
 }
 
 function shell(run: RunResult, mode: Mode): string {
   if (mode === 'ask') {
-    // Briefing remains the landing screen, so Ask MERIDIAN always offers the way back to it.
     return `${briefingDisclosure()}
     ${topbar(run, mode)}
     <main class="main main--ask" id="main" aria-label="Ask MERIDIAN">
       ${askMeridianView(askMessages, run)}
     </main>`
-  }
-  if (mode === 'briefing') {
-    return `${briefingDisclosure()}
-    ${topbar(run, mode)}
-    <main class="main main--briefing" id="main" aria-label="Situation briefing">${briefingView(run)}</main>`
   }
   /*
    * TECHNICAL EVIDENCE. Formerly "Analysis", and formerly one of two equal reading modes. The
@@ -175,16 +140,11 @@ function shell(run: RunResult, mode: Mode): string {
   return `${disclosures()}
   ${topbar(run, mode)}
   <div class="techbar" role="region" aria-label="Technical evidence notice">
-    <span class="techbar__t">Technical evidence — exact values, engine identifiers and update
-      history. Built for inspection, not for reading.</span>
-    <button type="button" class="techbar__back" data-mode="briefing">Back to Briefing</button>
+    <span class="techbar__t">Technical evidence — every exact value, with its identifier, origin and
+      mechanism. Built to be looked up, not read.</span>
+    <button type="button" class="techbar__back" data-mode="ask">Back to the briefing</button>
   </div>
-  <div class="layout">
-    ${nav(run)}
-    <main class="main" id="main" aria-label="Strategic Command Centre">${commandCentre(run)}</main>
-    <aside class="rail" aria-label="Decisions and inspector">${decisionRail(run)}</aside>
-  </div>
-  ${transitionStrip(run)}`
+  <main class="main main--tech" id="main" aria-label="Technical evidence">${technicalTable(run)}</main>`
 }
 
 /** Briefing keeps the disclosure, compactly. Simplification may not remove an honesty property. */
@@ -194,157 +154,6 @@ function briefingDisclosure(): string {
     <span class="disc__sep" aria-hidden="true">│</span>
     <span class="disc disc--mixed">${MIXED_DISCLOSURE}</span>
   </div>`
-}
-
-/** Inspector: full provenance lives here, not on every card. */
-function wireInspector(root: HTMLElement, run: RunResult): void {
-  const p = run.projection
-  const body = root.querySelector<HTMLElement>('#inspector-body')
-  if (!body) return
-
-  const index = new Map<string, { title: string; detail: string }>()
-
-  /*
-   * TWO LAYERS. Mechanism identifiers and raw chain field names made the inspector read as a
-   * debugger. The operational summary now leads in plain language; the identifiers are unchanged
-   * and complete, one disclosure away, so a technical reviewer loses nothing.
-   */
-  const plain = (f: string): string => (f.replace('chain.', '').replace(/_/g, ' '))
-
-  // Derived from the SAME gate the panel uses, so the inspector can never explain a lag the
-  // screen is not currently showing.
-  const lag = laggedResponse(p, run.trajectory)
-
-  for (const s of p.stages) {
-    const sources = s.source_fields.map(plain)
-    index.set(s.field, {
-      title: s.label,
-      detail: `
-        <ul class="insp__sum">
-          <li><strong>${escapeHtml(s.label)}</strong> is ${escapeHtml(severityPhrase(s.value))},
-              at ${s.value.toFixed(4)} of 1.000.</li>
-          ${sources.length ? `<li>Driven by ${escapeHtml(sources.join(' and '))}.</li>` : ''}
-          <li>${escapeHtml(s.lifecycle)}</li>
-          <li>Updated at tick ${s.last_updated_tick}${s.lag_ticks ? `, ${s.lag_ticks} tick(s) behind its cause` : ''}.</li>
-        </ul>
-        ${
-          lag && s.field === 'political_pressure'
-            ? `<div class="insp__lag">
-                 <h4 class="insp__lag-h">${
-                   lag.kind === 'rising'
-                     ? 'Why this is rising while upstream indicators ease'
-                     : 'Why this peaked after its upstream causes'
-                 }</h4>
-                 <ul class="insp__sum">
-                   <li>${
-                     lag.kind === 'rising'
-                       ? 'This value is <strong>still rising</strong>'
-                       : `This value <strong>peaked at tick ${lag.peakTick}</strong>, ${lag.ticksBehind} tick(s) after the last upstream indicator peaked (tick ${lag.upstreamPeakTick})`
-                   }, while ${escapeHtml(lag.easing.length.toString())} upstream indicator(s) are easing:
-                       ${escapeHtml(lag.easing.map((f) => f.replace(/_/g, ' ')).join(', '))}.</li>
-                   <li>It is computed from ${escapeHtml(lag.sources.join(' and '))}, so it responds
-                       to society's reaction rather than to the disruption directly.</li>
-                   <li>It carries a declared lag of ${lag.lagTicks} tick(s), so its inputs reach it
-                       after they have already moved.</li>
-                   <li>${escapeHtml(lag.lifecycle)} — which is why it ${
-                     lag.kind === 'rising' ? 'keeps climbing' : 'peaks later and falls more slowly'
-                   } after the upstream cause has begun to fade.</li>
-                 </ul>
-                 <p class="insp__lag-note">Derived from this run's trajectory and the mechanism's
-                 declared metadata. It is not shown when the values do not support it.</p>
-               </div>`
-            : ''
-        }
-        <details class="insp__tech">
-          <summary>Technical detail</summary>
-          <dl class="provgrid">
-            <dt>Mechanism</dt><dd>${escapeHtml(s.mechanism ?? '—')}</dd>
-            <dt>Version</dt><dd>${escapeHtml(s.mechanism_version ?? '—')}</dd>
-            <dt>Exact value</dt><dd>${s.value.toFixed(6)}</dd>
-            <dt>Origin</dt><dd>${escapeHtml(s.origin)}</dd>
-            <dt>Status</dt><dd>${escapeHtml(s.epistemic_status)}</dd>
-            <dt>Confidence</dt><dd>${escapeHtml(s.confidence)}</dd>
-            <dt>Stage</dt><dd>${s.stage} — ${escapeHtml(s.stage_name)}</dd>
-            <dt>Lag</dt><dd>${s.lag_ticks} tick(s)</dd>
-            <dt>Raw sources</dt><dd>${escapeHtml(s.source_fields.join(', '))}</dd>
-            <dt>Updated</dt><dd>tick ${s.last_updated_tick}</dd>
-          </dl>
-        </details>`,
-    })
-  }
-  for (const c of p.cohorts) {
-    index.set(c.cohort_id, {
-      title: c.label.replace(/-/g, ' '),
-      detail: `
-        <p class="insp__mech">${escapeHtml(c.provenance)}</p>
-        <dl class="provgrid">
-          <dt>Concern</dt><dd>${c.value.toFixed(6)}</dd>
-          <dt>Population</dt><dd>${c.represents_population.toLocaleString()}</dd>
-          <dt>Share</dt><dd>${(c.population_share * 100).toFixed(2)}% of aggregate weight</dd>
-          <dt>Exposure</dt><dd>${c.income_sensitivity.toFixed(2)} (declared in scenario)</dd>
-          <dt>Origin</dt><dd>${escapeHtml(c.origin)}</dd>
-        </dl>
-        <p class="insp__note">Population affects aggregate magnitude only. It says nothing about
-        whether this cohort is right, and nothing about what any individual does.</p>`,
-    })
-  }
-  for (const o of p.government_options) {
-    index.set(o.option_id, {
-      title: o.label.replace(/_/g, ' '),
-      detail: `
-        <p class="insp__mech">${escapeHtml(o.provenance)}</p>
-        <dl class="provgrid">
-          <dt>Status</dt><dd>${escapeHtml(o.value)}</dd>
-          <dt>Driven by</dt><dd>${escapeHtml(o.driven_by)}</dd>
-          <dt>Origin</dt><dd>${escapeHtml(o.origin)}</dd>
-        </dl>
-        <p class="insp__note">Status only. No cost, effect or execution path exists for any option
-        in this prototype.</p>`,
-    })
-  }
-  for (const t of p.recent_transitions) {
-    index.set(t.transition_id, {
-      title: `${t.mechanism} · t${t.tick}`,
-      detail: `
-        <p class="insp__mech">${escapeHtml(t.mechanism)}@${escapeHtml(t.mechanism_version)}</p>
-        <dl class="provgrid">
-          <dt>Sources</dt><dd>${escapeHtml(t.source_fields.join(', ') || '—')}</dd>
-          <dt>Parents</dt><dd>${escapeHtml(t.causal_parents.join(', ') || 'none')}</dd>
-          <dt>Draws</dt><dd>${escapeHtml(t.draw_refs.join(', ') || 'none')}</dd>
-          <dt>Change</dt><dd>${escapeHtml(JSON.stringify(t.delta).slice(0, 160))}</dd>
-        </dl>
-        <p class="insp__note">Causal parents record adjacency within a tick. This is not a replay
-        and not a reconstructed causal graph — the run is ephemeral and nothing is persisted.</p>`,
-    })
-  }
-
-  const select = (id: string): void => {
-    const hit = index.get(id)
-    if (!hit) return
-    root.querySelectorAll('.is-selected').forEach((n) => n.classList.remove('is-selected'))
-    // Attribute-value matching without CSS.escape, which jsdom does not provide.
-    root.querySelectorAll('[data-card-id]').forEach((n) => {
-      if ((n as HTMLElement).dataset.cardId === id) n.classList.add('is-selected')
-    })
-    body.innerHTML = `<h3 class="insp__title">${escapeHtml(hit.title)}</h3>${hit.detail}`
-  }
-
-  const handler = (ev: Event): void => {
-    const el = (ev.target as HTMLElement | null)?.closest<HTMLElement>('[data-card-id]')
-    if (!el?.dataset.cardId) return
-    if (ev.type === 'keydown') {
-      const k = (ev as KeyboardEvent).key
-      if (k !== 'Enter' && k !== ' ') return
-      ev.preventDefault()
-    }
-    select(el.dataset.cardId)
-  }
-  root.addEventListener('click', handler)
-  root.addEventListener('keydown', handler)
-
-  // Open with the headline value selected, so the inspector is never an empty box.
-  const political = stageByField(p, 'political_pressure')
-  if (political) select(political.field)
 }
 
 /**
@@ -409,7 +218,18 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
     void ask(q)
   })
   root.querySelector<HTMLElement>('[data-ask-reset]')?.addEventListener('click', () => {
-    askMessages = []
+    // Back to the briefing, not to an empty screen. The briefing is the thread's floor.
+    askMessages = openingThread()
+    remount()
+  })
+  // R2 — evidence by ASKING. A row's "Explain this" sends a question the catalogue can answer,
+  // replacing the per-section disclosure that used to print raw field names on a reading screen.
+  root.querySelectorAll<HTMLElement>('[data-ask-question]').forEach((b) => {
+    b.addEventListener('click', () => void ask(b.dataset.askQuestion ?? ''))
+  })
+  // The situation diagram is an ANSWER in the thread, not a panel bolted to a screen.
+  root.querySelector<HTMLElement>('[data-show-diagram]')?.addEventListener('click', () => {
+    askMessages = [...askMessages, { role: 'meridian', text: '', kind: 'diagram' }]
     remount()
   })
   // Evidence opens the read-only route the answer was derived from. GET only.
@@ -421,38 +241,67 @@ function wireAsk(root: HTMLElement, run: RunResult): void {
   })
 }
 
-export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'briefing'): void {
+/**
+ * Send a question that originated outside the Ask screen (a technical-table row).
+ *
+ * The user message is appended by the caller before the mode switch, so the question is visible
+ * immediately rather than appearing only once the answer resolves.
+ */
+async function askFromTable(root: HTMLElement, run: RunResult, question: string): Promise<void> {
+  try {
+    const res = await fetch(ASK_ENDPOINT, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ question }),
+    })
+    if (!res.ok) throw new Error(`the engine returned HTTP ${res.status}`)
+    const response = (await res.json()) as AskResponse
+    if (!response || typeof response.supported !== 'boolean' || typeof response.short_answer !== 'string') {
+      throw new Error('the response was not a MERIDIAN answer')
+    }
+    askMessages = [...askMessages, { role: 'meridian', text: '', response }]
+  } catch (e) {
+    const why = e instanceof Error ? e.message : 'the engine could not be reached'
+    askMessages = [...askMessages, {
+      role: 'meridian',
+      text: `Answer UNAVAILABLE — ${why}. Nothing has been assumed in its place.`,
+    }]
+  }
+  mount(root, run, 'ask')
+}
+
+export function mount(root: HTMLElement, run: RunResult, mode: Mode = 'ask'): void {
   currentMode = mode
   // Releases the Analysis viewport lock on the reading screens — see #app in styles.css.
   root.dataset.mode = mode
   root.innerHTML = shell(run, mode)
-  if (mode === 'analysis') wireInspector(root, run)
-  if (mode === 'ask') wireAsk(root, run)
+  if (mode === 'analysis') {
+    // Selecting a row returns to the conversation and asks. Evidence is a question, not a panel.
+    wireTechnicalTable(root, (question) => {
+      askMessages = [...askMessages, { role: 'user', text: question }]
+      mount(root, run, 'ask')
+      void askFromTable(root, run, question)
+    })
+  }
+  if (mode === 'ask') {
+    wireAsk(root, run)
+    /*
+     * SCROLL TO THE NEWEST MESSAGE.
+     *
+     * Without this a new answer lands below the fold and the control that produced it appears to
+     * have done nothing — which is exactly how it looked when "Show how this fits together" was
+     * first wired up. A conversation must always show what it just said.
+     */
+    // ONLY when a new answer has arrived. On first load the thread holds just the Briefing, and
+    // scrolling to its bottom skipped the headline and the scenario-position line on a short
+    // screen — the reader landed mid-card with no idea what they were looking at.
+    const thread = root.querySelector<HTMLElement>('.ask__thread')
+    if (thread && askMessages.length > 1) thread.scrollTop = thread.scrollHeight
+  }
 
   // Depth switch, and the Briefing affordances that open Analysis at the relevant detail.
   root.querySelectorAll<HTMLElement>('[data-mode]').forEach((btn) => {
     btn.addEventListener('click', () => mount(root, run, btn.dataset.mode as Mode))
-  })
-  root.querySelectorAll<HTMLElement>('[data-open-analysis]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      mount(root, run, 'analysis')
-      const id = btn.dataset.openAnalysis
-      if (!id) return
-      root.querySelectorAll<HTMLElement>('[data-card-id]').forEach((n) => {
-        if (n.dataset.cardId === id) n.click()
-      })
-    })
-  })
-  // A consequence card opens Analysis focused on the value behind it.
-  root.querySelectorAll<HTMLElement>('.bcard').forEach((card) => {
-    card.addEventListener('click', () => {
-      const id = card.dataset.cardId
-      mount(root, run, 'analysis')
-      if (!id) return
-      root.querySelectorAll<HTMLElement>('[data-card-id]').forEach((n) => {
-        if (n.dataset.cardId === id) n.click()
-      })
-    })
   })
 }
 
@@ -460,6 +309,6 @@ const app = document.getElementById('app')
 if (app) {
   // First paint from the bundled recorded snapshot so the layout is inspectable immediately,
   // then replace with a genuine live run. The status chip states which is showing.
-  mount(app, initialSnapshot(), 'briefing')
+  mount(app, initialSnapshot(), 'ask')
   void runDemonstration('incident', 20).then((run) => mount(app, run, currentMode))
 }

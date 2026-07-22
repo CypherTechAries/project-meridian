@@ -116,6 +116,8 @@ export interface ScenarioState {
   scenario_id: string
   seed: number
   ticks: number
+  horizon_ticks: number
+  is_final_recorded_tick: boolean
   simulated_hours: number
   fields: Record<string, FieldState>
 }
