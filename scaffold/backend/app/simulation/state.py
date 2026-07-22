@@ -177,6 +177,41 @@ class AcceptedAction(BaseModel):
     client_supplied: dict[str, Any] = Field(default_factory=dict)
 
 
+class GovernmentResources(BaseModel):
+    """
+    What the government can actually spend. Added for Kestral Consequence Slice v0.2.
+
+    Minimal on purpose: enough for one decision to have a cost and a limit, not a fiscal model.
+    Every field is read by the declared resolution rule and by nothing else.
+    """
+
+    budget_reserve_m: float = 0.0
+    political_capital: float = 0.0
+    implementation_capacity: float = 0.0
+    intelligence_confidence: float = 0.0
+
+
+class QueuedDecision(BaseModel):
+    """A submitted decision awaiting consumption. Queued, never applied on submission."""
+
+    submission_id: str
+    option_id: str
+    submitted_tick: int
+    #: The tick at which the engine will consume it. Never earlier than submission.
+    apply_at_tick: int
+
+
+class DelayedEffect(BaseModel):
+    """An effect scheduled by a resolved decision, due at a declared future tick."""
+
+    due_tick: int
+    kind: str
+    field: str
+    value: float
+    cause_submission_id: str
+    why: str
+
+
 class AuthoritativeState(BaseModel):
     """The single authoritative state object for one simulation run."""
 
@@ -209,6 +244,19 @@ class AuthoritativeState(BaseModel):
 
     # --- pending, unapplied ---
     pending_actions: list[AcceptedAction] = Field(default_factory=list)
+
+    # --- Kestral Consequence Slice v0.2 ---
+    #: What the government can spend. Declared by the scenario; read by the resolution rule.
+    government: GovernmentResources = Field(default_factory=GovernmentResources)
+    #: Decisions waiting to be consumed. The tick loop drains this; nothing else writes it.
+    decision_queue: list[QueuedDecision] = Field(default_factory=list)
+    #: Submission ids already consumed. IDEMPOTENCY: a repeat submission is refused, so the same
+    #: decision cannot apply its effects twice.
+    consumed_submissions: list[str] = Field(default_factory=list)
+    #: Effects scheduled by a resolved decision, applied when their tick arrives.
+    delayed_effects: list[DelayedEffect] = Field(default_factory=list)
+    #: Append-only trace: what was decided, what it resolved to, and exactly why.
+    decision_log: list[dict[str, Any]] = Field(default_factory=list)
 
     # --- versioning hooks for capabilities that do NOT exist yet ---
     # These are deliberately empty. They are declared so the successor work has a defined home
@@ -289,4 +337,5 @@ def build_initial_state(
             i.agent_id: InstitutionRecord(agent_id=i.agent_id, role=i.role) for i in institutions
         },
         campaign=scenario.get("hidden_campaign"),
+        government=GovernmentResources(**(scenario.get("government_resources") or {})),
     )

@@ -81,6 +81,15 @@ class TransitionType(str, Enum):
     SET_COHORT_CONCERN = "set_cohort_concern"
     SET_OPTION_STATUS = "set_option_status"
     SNAPSHOT_CHAIN_PREVIOUS = "snapshot_chain_previous"
+    # --- Kestral Consequence Slice v0.2 ---
+    # Declared here because the type set is closed on purpose: a decision cannot reach state
+    # through a path that was never named. Consequences themselves still flow through the
+    # EXISTING types above (set_chain_scalar, set_cohort_concern) - there is no second pathway.
+    QUEUE_PLAYER_DECISION = "queue_player_decision"
+    CONSUME_PLAYER_DECISION = "consume_player_decision"
+    SPEND_GOVERNMENT_RESOURCE = "spend_government_resource"
+    SCHEDULE_DELAYED_EFFECT = "schedule_delayed_effect"
+    RETIRE_DELAYED_EFFECT = "retire_delayed_effect"
 
 
 class TransitionOrigin(str, Enum):
@@ -273,6 +282,46 @@ class TransitionService:
             elif field in _CHAIN_NON_NEGATIVE_INT and (value < 0 or int(value) != value):
                 errors.append(f"chain scalar {field!r} must be a non-negative integer: {value}")
 
+        elif t is TransitionType.QUEUE_PLAYER_DECISION:
+            from .decisions import DECLARED_OPTIONS
+            sid, oid = p.get("submission_id"), p.get("option_id")
+            if not isinstance(sid, str) or not sid:
+                errors.append("queue_player_decision requires a submission_id")
+            if oid not in DECLARED_OPTIONS:
+                errors.append(f"unknown or unavailable option: {oid!r}")
+            if isinstance(sid, str) and sid in s.consumed_submissions:
+                errors.append(f"submission {sid!r} has already been consumed")
+            if isinstance(sid, str) and any(q.submission_id == sid for q in s.decision_queue):
+                errors.append(f"submission {sid!r} is already queued")
+
+        elif t is TransitionType.CONSUME_PLAYER_DECISION:
+            sid = p.get("submission_id")
+            if not any(q.submission_id == sid for q in s.decision_queue):
+                errors.append(f"submission {sid!r} is not queued and cannot be consumed")
+            if sid in s.consumed_submissions:
+                errors.append(f"submission {sid!r} has already been consumed")
+
+        elif t is TransitionType.SPEND_GOVERNMENT_RESOURCE:
+            field, amount = p.get("field"), p.get("amount")
+            if field not in {"budget_reserve_m", "political_capital"}:
+                errors.append(f"unknown government resource: {field!r}")
+            elif not isinstance(amount, (int, float)) or amount < 0:
+                errors.append("spend_government_resource requires a non-negative amount")
+            elif amount > getattr(s.government, field):
+                errors.append(
+                    f"cannot spend {amount} of {field}: only {getattr(s.government, field)} held"
+                )
+
+        elif t is TransitionType.SCHEDULE_DELAYED_EFFECT:
+            if not isinstance(p.get("due_tick"), int) or p["due_tick"] <= s.tick:
+                errors.append("schedule_delayed_effect requires a due_tick in the future")
+            if p.get("field") not in _CHAIN_SCALARS:
+                errors.append(f"unknown chain scalar for delayed effect: {p.get('field')!r}")
+
+        elif t is TransitionType.RETIRE_DELAYED_EFFECT:
+            if not isinstance(p.get("index"), int):
+                errors.append("retire_delayed_effect requires an index")
+
         elif t is TransitionType.SET_COHORT_CONCERN:
             cid = p.get("cohort_id")
             value = p.get("value")
@@ -424,6 +473,45 @@ class TransitionService:
             before = getattr(s.chain, field)
             setattr(s.chain, field, type(before)(value) if isinstance(before, int) and not isinstance(before, bool) else float(value))
             delta[f"chain.{field}"] = {"before": before, "after": getattr(s.chain, field)}
+
+        elif t is TransitionType.QUEUE_PLAYER_DECISION:
+            from .state import QueuedDecision
+            q = QueuedDecision(
+                submission_id=p["submission_id"],
+                option_id=p["option_id"],
+                submitted_tick=s.tick,
+                apply_at_tick=int(p.get("apply_at_tick", s.tick + 1)),
+            )
+            s.decision_queue = [*s.decision_queue, q]
+            delta["decision_queue"] = {"before": len(s.decision_queue) - 1, "after": len(s.decision_queue)}
+
+        elif t is TransitionType.CONSUME_PLAYER_DECISION:
+            sid = p["submission_id"]
+            s.decision_queue = [q for q in s.decision_queue if q.submission_id != sid]
+            s.consumed_submissions = [*s.consumed_submissions, sid]
+            delta["consumed_submissions"] = {"before": None, "after": sid}
+
+        elif t is TransitionType.SPEND_GOVERNMENT_RESOURCE:
+            field, amount = p["field"], float(p["amount"])
+            before = getattr(s.government, field)
+            setattr(s.government, field, round(before - amount, 6))
+            delta[f"government.{field}"] = {"before": before, "after": getattr(s.government, field)}
+
+        elif t is TransitionType.SCHEDULE_DELAYED_EFFECT:
+            from .state import DelayedEffect
+            e = DelayedEffect(
+                due_tick=int(p["due_tick"]), kind=str(p.get("kind", "chain_scalar")),
+                field=str(p["field"]), value=float(p["value"]),
+                cause_submission_id=str(p["cause_submission_id"]), why=str(p.get("why", "")),
+            )
+            s.delayed_effects = [*s.delayed_effects, e]
+            delta["delayed_effects"] = {"before": len(s.delayed_effects) - 1, "after": len(s.delayed_effects)}
+
+        elif t is TransitionType.RETIRE_DELAYED_EFFECT:
+            idx = int(p["index"])
+            remaining = [e for i, e in enumerate(s.delayed_effects) if i != idx]
+            delta["delayed_effects"] = {"before": len(s.delayed_effects), "after": len(remaining)}
+            s.delayed_effects = remaining
 
         elif t is TransitionType.SET_COHORT_CONCERN:
             cid, value = p["cohort_id"], float(p["value"])

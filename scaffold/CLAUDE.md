@@ -51,11 +51,15 @@ preventing a model call path from being added — `app/config.py:23-25` already 
 - Never introduce unseeded randomness (`random.random()`, `numpy.random.*` without the
   model's RNG, `time`-based values, `dict` ordering assumptions, `set` iteration). Use
   `self.rng` (the model's seeded `random.Random`).
-- **There are no named RNG substreams.** The single shared stream is itself a defect: adding a
-  draw in one subsystem silently shifts every later draw everywhere else, which is why perturbing
-  cohort counts appears to move macro numbers when no causal channel exists
-  (`../docs/delivery/A3-VERIFICATION-RESULTS.md:142-175`). Replacing it is Phase 0 item **P0.4A**,
-  ordered P0.4 → P0.4A → P0.5. **Nothing of P0.4A is implemented.**
+- **CORRECTED 22 July 2026 — P0.4A IS IMPLEMENTED.** This entry previously read "Nothing of P0.4A
+  is implemented", and that was stale: it caused an agent to advise the owner that randomness was
+  blocked for a reason that no longer applied. `engine.py` builds a `DeterministicDrawService`
+  (ADR-010, accepted) in which every draw is a pure function of (run seed, canonical key). There
+  is **no shared stream**, nothing accumulates and nothing advances, so adding, removing or
+  reordering a draw in one subsystem **cannot** shift results in another. That was the mechanism
+  behind A3's finding that apparent meso→macro coupling was stream displacement rather than
+  causality (`../docs/delivery/A3-VERIFICATION-RESULTS.md:142-175`), and it is fixed. There is no
+  `self.rng`; mesa's own `Model.random` is seeded but never used for authoritative values.
 - LLM text is NOT part of reproducible state — it is an interpretive layer. It is **intended** to
   be logged separately by `model_id + prompt_version + temperature`; that is the contract for when
   a live model is wired, not current behaviour. `PROMPT_VERSION = "v1"` is declared once

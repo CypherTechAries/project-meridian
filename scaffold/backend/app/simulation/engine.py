@@ -42,6 +42,7 @@ from .schemas.macro_schema import (
 from .pipeline import ChainRunner
 from .rules.kestral_v1 import RULE_PACK
 from .state import AuthoritativeState, build_initial_state, canonical_json
+from .decisions import RESOLUTION_RULE_VERSION
 from .transitions import Transition, TransitionOrigin, TransitionRecord, TransitionService, TransitionType
 
 # The engine's entire action vocabulary and every magnitude, hardcoded here. This is not a rule
@@ -182,6 +183,140 @@ class MeridianModel(mesa.Model):
     def campaign(self) -> Optional[dict]:
         return self.state.campaign
 
+    def _consume_due_decisions(self) -> None:
+        """Drain the decision queue for this tick, resolve deterministically, and apply.
+
+        CONSUMED EXACTLY ONCE. The submission id moves to `consumed_submissions` inside the same
+        transition sequence, and both the queue transition and this method refuse an id already
+        there - so a repeat submission cannot apply its effects twice.
+
+        NO RANDOM DRAW is taken here and the shared RNG is not touched.
+        """
+        from .decisions import ResolutionInputs, resolve
+
+        due = [q for q in self.state.decision_queue if q.apply_at_tick <= self.tick]
+        for queued in sorted(due, key=lambda q: (q.apply_at_tick, q.submission_id)):
+            gov = self.state.government
+            cohort_id = "coastal-creole-fishing"
+            cohort = self.state.cohorts.get(cohort_id)
+            campaign = self.state.campaign or {}
+            targets = campaign.get("target_cohorts") or []
+
+            inputs = ResolutionInputs(
+                implementation_capacity=gov.implementation_capacity,
+                budget_reserve_m=gov.budget_reserve_m,
+                political_capital=gov.political_capital,
+                affected_population=int(getattr(cohort, "represents_population", 0) or 0),
+                adversary_targets_affected_cohort=cohort_id in targets,
+            )
+            resolution = resolve(
+                queued.option_id,
+                inputs,
+                current_concern=float(getattr(cohort, "economic_concern", 0.0) or 0.0),
+                current_employment_pressure=float(self.state.chain.employment_pressure),
+            )
+
+            trace = {
+                "mechanism": resolution.rule + " option=" + queued.option_id,
+                "mechanism_version": resolution.rule_version,
+                "actor": "player",
+                "source_fields": resolution.source_fields,
+            }
+
+            # Mark consumed FIRST, so nothing below can leave a decision replayable.
+            self.submit(Transition(
+                type=TransitionType.CONSUME_PLAYER_DECISION,
+                origin=TransitionOrigin.PLAYER_DECISION,
+                payload={"submission_id": queued.submission_id}, **trace))
+
+            # Cost is paid on attempting, not on succeeding.
+            for field, amount in (
+                ("budget_reserve_m", resolution.budget_spent_m),
+                ("political_capital", resolution.political_capital_spent),
+            ):
+                if amount > 0:
+                    self.submit(Transition(
+                        type=TransitionType.SPEND_GOVERNMENT_RESOURCE,
+                        origin=TransitionOrigin.PLAYER_DECISION,
+                        payload={"field": field, "amount": amount}, **trace))
+
+            # Immediate effects, through the EXISTING declared types. No second pathway.
+            for eff in resolution.immediate_effects:
+                if eff["kind"] == "cohort_concern":
+                    self.submit(Transition(
+                        type=TransitionType.SET_COHORT_CONCERN,
+                        origin=TransitionOrigin.PLAYER_DECISION,
+                        payload={"cohort_id": eff["cohort_id"], "value": eff["value"]}, **trace))
+
+            # Delayed effects are scheduled, not applied now.
+            for eff in resolution.delayed_effects:
+                self.submit(Transition(
+                    type=TransitionType.SCHEDULE_DELAYED_EFFECT,
+                    origin=TransitionOrigin.PLAYER_DECISION,
+                    payload={
+                        "due_tick": self.tick + int(eff["due_in_ticks"]),
+                        "kind": eff["kind"], "field": eff["field"], "value": eff["value"],
+                        "cause_submission_id": queued.submission_id, "why": eff["why"],
+                    }, **trace))
+
+            # The declared adversary reacts, where the scenario supports it.
+            if resolution.adversary_response:
+                a = resolution.adversary_response
+                current = float(getattr(self.state.chain, a["field"]))
+                self.submit(Transition(
+                    type=TransitionType.SET_CHAIN_SCALAR,
+                    origin=TransitionOrigin.EXTERNAL_INPUT,
+                    payload={"field": a["field"], "value": min(1.0, round(current + a["delta"], 6))},
+                    mechanism="declared adversary campaign response to " + queued.option_id,
+                    mechanism_version=resolution.rule_version,
+                    actor=str(campaign.get("campaign_id", "declared-campaign")),
+                    source_fields=["chain." + a["field"], "campaign.target_cohorts"]))
+
+            self.state.decision_log.append({
+                "submission_id": queued.submission_id,
+                "option_id": queued.option_id,
+                "submitted_tick": queued.submitted_tick,
+                "consumed_tick": self.tick,
+                "rule": resolution.rule,
+                "rule_version": resolution.rule_version,
+                "inputs": resolution.inputs.model_dump(),
+                "outcome": resolution.outcome.value,
+                "effectiveness": resolution.effectiveness,
+                "limiting_factor": resolution.limiting_factor,
+                "budget_spent_m": resolution.budget_spent_m,
+                "political_capital_spent": resolution.political_capital_spent,
+                "immediate_effects": resolution.immediate_effects,
+                "delayed_effects": resolution.delayed_effects,
+                "adversary_response": resolution.adversary_response,
+                "explanation": resolution.explanation,
+            })
+            self.event_log.append({
+                "event_id": "evt-" + str(self.tick) + "-" + queued.submission_id,
+                "tick": self.tick, "type": "decision_resolved",
+                "actors_involved": ["player"],
+                "effects": [{"outcome": resolution.outcome.value,
+                             "effectiveness": resolution.effectiveness}],
+            })
+
+    def _apply_due_delayed_effects(self) -> None:
+        """Apply scheduled effects whose tick has arrived, then retire them."""
+        for idx in range(len(self.state.delayed_effects) - 1, -1, -1):
+            eff = self.state.delayed_effects[idx]
+            if eff.due_tick > self.tick:
+                continue
+            self.submit(Transition(
+                type=TransitionType.SET_CHAIN_SCALAR,
+                origin=TransitionOrigin.PLAYER_DECISION,
+                payload={"field": eff.field, "value": eff.value},
+                mechanism="delayed effect of decision " + eff.cause_submission_id + ": " + eff.why,
+                mechanism_version=RESOLUTION_RULE_VERSION,
+                actor="player",
+                source_fields=["chain." + eff.field]))
+            self.submit(Transition(
+                type=TransitionType.RETIRE_DELAYED_EFFECT,
+                origin=TransitionOrigin.ENGINE_RULE,
+                payload={"index": idx}, mechanism="delayed effect applied"))
+
     def submit(self, transition: Transition) -> TransitionRecord:
         """Route a transition through the boundary and record the outcome."""
         record = self._transitions.apply(transition)
@@ -257,6 +392,12 @@ class MeridianModel(mesa.Model):
                 mechanism="tick_advance",
             )
         )
+
+        # 0. PLAYER DECISIONS, consumed at the authoritative boundary.
+        #    Runs first so a decision taken this tick is visible to every rule below it, and so a
+        #    reader can say "this tick is the one where the choice landed".
+        self._consume_due_decisions()
+        self._apply_due_delayed_effects()
 
         # 1. Meso agents drift (fixed order for reproducibility).
         for cohort in self.cohorts:

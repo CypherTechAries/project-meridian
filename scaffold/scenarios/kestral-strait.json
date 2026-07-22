@@ -2,7 +2,7 @@
   "world_mode": "fictional",
   "scenario_version": "1.0.0",
   "scenario_id": "kestral-strait",
-  "title": "Kestral Strait — Republic of Vantara",
+  "title": "Kestral Strait \u2014 Republic of Vantara",
   "archetype": "small_island_strait_state",
   "government_structure": "unitary_parliamentary_republic",
   "default_seed": 88213,
@@ -553,5 +553,12 @@
       "label": "Two bulk carriers held at the northern approach of the Kestral Strait",
       "_note": "Fictional. An EXTERNAL input applied through the transition boundary - not hard-coded in the tick loop. Omit this list for a baseline run with no incident."
     }
-  ]
+  ],
+  "government_resources": {
+    "_note": "Kestral Consequence Slice v0.2. Declared so one decision can have a real cost and a real limit. Authored fictional values, calibrated against nothing - like every other coefficient in this scenario. NOT a fiscal model.",
+    "budget_reserve_m": 240.0,
+    "political_capital": 0.7,
+    "implementation_capacity": 0.72,
+    "intelligence_confidence": 0.55
+  }
 }
