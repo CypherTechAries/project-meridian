@@ -187,3 +187,55 @@ from different models in the same scenario. They do not contradict each other �
 quantities over different populations — but a reader who asks "how are people reacting?" gets a
 different list of groups from the one the Briefing shows. Unifying them means changing scenario data,
 which is out of scope here and needs a founder decision.
+
+---
+
+## Fourth pass — Ask-first, and the test that ended the UI phase
+
+The interface was rebuilt again: **Ask MERIDIAN became the landing screen and the Briefing became
+its first answer.** The permanent context rail was removed, "Exact numbers" was removed from
+primary navigation, evidence became claim-driven, and the causal explanation was cut from roughly
+thirty simultaneous facts to five beats behind one control.
+
+Measured: the landing screen went from **2,635px and 2.9 screenfuls to 1.0**, and the one decision
+waiting moved from **257px below the fold** to above it.
+
+### The founder test, 21 July 2026
+
+The founder tested the merged interface as head of state. **No interface failure was reported** —
+nothing could not be found, clicked, read or navigated, and for the first time there was no
+dashboard, debug-screen or wall-of-information complaint. The tester went straight past the
+interface and began arguing with the product.
+
+That is the result that ended this phase:
+
+> **The interface is no longer the main problem. The world is too shallow and the decisions do
+> nothing.**
+
+One explanation failure was found and fixed: the situation read as *"halfway into the simulation"*
+when it is the **last** recorded point, three ticks past the peak. The card said "Day 5" and never
+said day five *of what*. It now states its position in the scenario, derived from the shared state.
+
+Everything else the test surfaced was **capability**, not interface:
+
+- The only decision offered was whether to publish a legal assessment — *"the general public do not
+  give a single flying fuck about the government's legal assessment"*. All three government options
+  are posture and communications, because nothing else exists for a decision to touch.
+- Nine reasonable questions about the fishing industry, the economy, the source of pressure, the
+  antagonist and how to end the blockade. The product answers roughly one and a half.
+- The scenario declares a **foreign proxy running a knowingly false campaign** against the fishing
+  cohort, and **win conditions** — and surfaces neither.
+
+### What this phase established
+
+The usability work succeeded, and the evidence is that it stopped being the thing people talk
+about. A cold usability test was never run against the final build, and is now **lower value than
+the capability work**: it would rediscover gaps already documented in
+[#40](https://github.com/CypherTechAries/project-meridian/issues/40),
+[#41](https://github.com/CypherTechAries/project-meridian/issues/41) and
+[#42](https://github.com/CypherTechAries/project-meridian/issues/42).
+
+**The next milestone is Kestral Consequence Slice v0.2**, and its acceptance test is not a usability
+test at all:
+
+> I make one meaningful decision, the simulated world changes, and MERIDIAN can explain exactly why.

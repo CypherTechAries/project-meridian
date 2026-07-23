@@ -18,9 +18,15 @@ questions. Decisions are **selected and never executed**.
 
 That is the whole of it. Everything else below is research.
 
-**One caveat on the interface.** A rebuild of the Briefing — after it failed its first usability test
-with a first-time user — is on the unmerged branch `fix/first-user-usability-reset`. **The screens on
-`main` are the pre-reset ones.** This register describes `main`.
+**The interface.** After failing its first usability test, the interface was rebuilt three times and
+is now on `main`: **Ask MERIDIAN is the landing screen and the Briefing is its first answer.** One
+conversation, evidence attached to the claim it supports, and the exact values reachable but not
+offered as a destination.
+
+**The limitation that matters.** The demonstration explains a packaged simulated state and supports
+**inspectable but unexecuted** decisions. *Selected decisions do not yet change the run.* The
+interface is honest about this on every choice, and closing it is the next milestone —
+[#42](https://github.com/CypherTechAries/project-meridian/issues/42).
 
 ---
 
@@ -28,7 +34,7 @@ with a first-time user — is on the unmerged branch `fix/first-user-usability-r
 
 | Use case | In one sentence | Likely users | Status | What exists today | Key missing capability | Research | Reviewed |
 |---|---|---|---|---|---|---|---|
-| [Crisis Simulation and Decision Support](CRISIS-SIMULATION-AND-DECISION-SUPPORT.md) | Run a fictional crisis and inspect how events move through organisations, the economy, population groups and individual decisions | Analysts, planners, researchers | **EARLY DEMONSTRATION** | One scenario, ten-stage causal chain, briefing and technical views, virtual people, Ask MERIDIAN Phase 1 | A second scenario; scenario authoring; anything beyond one crisis type | [belief API](../design/BELIEF-READ-MODEL-API.md) · [VP-1…VP-5](../design/) | 2026-07-21 |
+| [Crisis Simulation and Decision Support](CRISIS-SIMULATION-AND-DECISION-SUPPORT.md) | Run a fictional crisis and inspect how events move through organisations, the economy, population groups and individual decisions | Analysts, planners, researchers | **EARLY DEMONSTRATION** | One scenario, ten-stage causal chain, briefing and technical views, virtual people, Ask MERIDIAN Phase 1 | **Decisions that change the run** ([#42](https://github.com/CypherTechAries/project-meridian/issues/42)); a second scenario; scenario authoring | [belief API](../design/BELIEF-READ-MODEL-API.md) · [VP-1…VP-5](../design/) | 2026-07-22 |
 | [Training, Exercises and Wargaming](TRAINING-EXERCISES-AND-WARGAMING.md) | Repeatable fictional exercises where participants explore decisions, consequences, information gaps and competing organisational pressures | Emergency services, resilience teams, public sector | **FUTURE DIRECTION** | Nothing exercise-specific. The engine and one scenario exist | Scenario authoring, participant roles, facilitation, replay, objectives, after-action review, **multiplayer** | [entity graduation §12](../research/SIMULATION-BORN-ENTITIES.md) | 2026-07-21 |
 | [Adaptive Futures Engine](ADAPTIVE-FUTURES-ENGINE.md) | Run many controlled variations of a scenario to understand plausible outcomes, risks, critical decisions and where small changes alter the path | Planners, analysts, decision-makers | **UNDER RESEARCH** | Deterministic reproducible single runs | Ensembles, parameter variation, outcome classification, **dispersion testing**, calibration, sensitivity analysis, rare-event handling, novelty | [next-strand note](../research/NEXT-STRAND-ADAPTIVE-FUTURES-ENGINE.md) · [issue #26](https://github.com/CypherTechAries/project-meridian/issues/26) | 2026-07-21 |
 | [Simulation-Born Entities](SIMULATION-BORN-ENTITIES.md) | Preserve useful organisations, products, processes or characters created in simulation and potentially export them as real-world blueprints or IP | Founders, product teams, training providers | **FUTURE DIRECTION** | Typed fictional entities within a run; append-only histories; origin labels | Persistent cross-run entities, asset manifests, ownership, permissions, legal wrappers, validation envelopes, connectors, revocation | [research](../research/SIMULATION-BORN-ENTITIES.md) · [lifecycle](../research/ENTITY-GRADUATION-LIFECYCLE.md) · [evidence pack](../research/GRADUATION-EVIDENCE-PACK.md) · [risks](../research/ENTITY-GRADUATION-RISK-REGISTER.md) | 2026-07-21 |
@@ -41,7 +47,7 @@ about what is buildable.**
 
 | Use case | Priority | Why |
 |---|---|---|
-| Crisis Simulation and Decision Support | **HIGH** | It is the product. It just failed its first usability test with a first-time user |
+| Crisis Simulation and Decision Support | **HIGH** | It is the product. The interface rebuild is merged and the blocker is now **capability, not usability** — selected decisions change nothing ([#42](https://github.com/CypherTechAries/project-meridian/issues/42)) |
 | Adaptive Futures Engine | **HIGH** | Blocked on one measurement — [does MERIDIAN under-disperse?](https://github.com/CypherTechAries/project-meridian/issues/26) — which also matters for the current product |
 | Training, Exercises and Wargaming | **MEDIUM** | Research says it is the strongest commercial direction, and it needs no truth boundary crossed |
 | Narrative Supply-Chain Analysis | **MEDIUM** | High value as an internal input to the futures engine; low value and high risk as a standalone product |
